@@ -1,4 +1,5 @@
 import { render, screen } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 import { Pagination } from "@/components/ui/pagination";
 
@@ -25,7 +26,13 @@ vi.mock("lucide-react", () => ({
   ChevronRight: () => <svg data-testid="icon-next" />,
 }));
 
+const mockPush = vi.fn();
+vi.mock("next/navigation", () => ({
+  useRouter: () => ({ push: mockPush }),
+}));
+
 const buildHref = (p: number) => `/items?page=${p}`;
+const buildLimitHref = (limit: number) => `/items?limit=${limit}`;
 
 describe("Pagination", () => {
   it("renders nothing when totalPages is 1", () => {
@@ -109,5 +116,96 @@ describe("Pagination", () => {
       "href",
       "/items?page=3",
     );
+  });
+
+  describe("rows-per-page dropdown", () => {
+    it("renders a rows-per-page select when pageSize and buildLimitHref are provided", () => {
+      render(
+        <Pagination
+          page={1}
+          totalPages={3}
+          buildHref={buildHref}
+          pageSize={10}
+          buildLimitHref={buildLimitHref}
+        />,
+      );
+      expect(
+        screen.getByRole("combobox", { name: /rows per page/i }),
+      ).toBeInTheDocument();
+    });
+
+    it("does not render a rows-per-page select without pageSize/buildLimitHref", () => {
+      render(<Pagination page={1} totalPages={3} buildHref={buildHref} />);
+      expect(
+        screen.queryByRole("combobox", { name: /rows per page/i }),
+      ).toBeNull();
+    });
+
+    it("select shows the current pageSize as the selected value", () => {
+      render(
+        <Pagination
+          page={1}
+          totalPages={5}
+          buildHref={buildHref}
+          pageSize={20}
+          buildLimitHref={buildLimitHref}
+        />,
+      );
+      const select = screen.getByRole("combobox", {
+        name: /rows per page/i,
+      }) as HTMLSelectElement;
+      expect(select.value).toBe("20");
+    });
+
+    it("select contains options 10, 20, 50, 100", () => {
+      render(
+        <Pagination
+          page={1}
+          totalPages={3}
+          buildHref={buildHref}
+          pageSize={10}
+          buildLimitHref={buildLimitHref}
+        />,
+      );
+      const options = screen
+        .getAllByRole("option")
+        .map((o) => (o as HTMLOptionElement).value);
+      expect(options).toEqual(["10", "20", "50", "100"]);
+    });
+
+    it("calls router.push with buildLimitHref result when limit changes", async () => {
+      mockPush.mockClear();
+      render(
+        <Pagination
+          page={1}
+          totalPages={3}
+          buildHref={buildHref}
+          pageSize={10}
+          buildLimitHref={buildLimitHref}
+        />,
+      );
+      const select = screen.getByRole("combobox", { name: /rows per page/i });
+      await userEvent.selectOptions(select, "50");
+      expect(mockPush).toHaveBeenCalledWith("/items?limit=50");
+    });
+
+    it("renders the dropdown even when totalPages is 1", () => {
+      render(
+        <Pagination
+          page={1}
+          totalPages={1}
+          buildHref={buildHref}
+          pageSize={10}
+          buildLimitHref={buildLimitHref}
+        />,
+      );
+      expect(
+        screen.getByRole("combobox", { name: /rows per page/i }),
+      ).toBeInTheDocument();
+      // nav should not be present when there's only 1 page
+      expect(
+        screen.queryByRole("navigation", { name: /pagination/i }),
+      ).toBeNull();
+    });
   });
 });

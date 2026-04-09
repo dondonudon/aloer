@@ -62,6 +62,7 @@ export interface Translations {
     nextPageDisabled: string;
     /** prefix: "Page " */
     page: string;
+    rowsPerPage: string;
   };
 
   filter: {
@@ -584,6 +585,7 @@ export const en: Translations = {
     nextPage: "Next page",
     nextPageDisabled: "Next page (disabled)",
     page: "Page",
+    rowsPerPage: "Rows per page",
   },
 
   filter: {
@@ -1110,6 +1112,7 @@ export const id: Translations = {
     nextPage: "Halaman berikutnya",
     nextPageDisabled: "Halaman berikutnya (nonaktif)",
     page: "Halaman",
+    rowsPerPage: "Baris per halaman",
   },
 
   filter: {

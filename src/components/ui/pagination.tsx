@@ -2,7 +2,10 @@
 
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useI18n } from "@/lib/i18n/context";
+
+const PAGE_SIZE_OPTIONS = [10, 20, 50, 100] as const;
 
 interface PaginationProps {
   /** Current 1-based page number */
@@ -11,15 +14,31 @@ interface PaginationProps {
   totalPages: number;
   /** Function that returns the href for a given page number */
   buildHref: (page: number) => string;
+  /** Current page size (enables the rows-per-page dropdown when provided) */
+  pageSize?: number;
+  /** Function that returns the href for a new limit value; resets to page 1 */
+  buildLimitHref?: (limit: number) => string;
 }
 
 /**
  * Accessible pagination control rendered as a nav landmark with
  * previous / page numbers / next links.
  */
-export function Pagination({ page, totalPages, buildHref }: PaginationProps) {
+export function Pagination({
+  page,
+  totalPages,
+  buildHref,
+  pageSize,
+  buildLimitHref,
+}: PaginationProps) {
   const { t } = useI18n();
-  if (totalPages <= 1) return null;
+  const router = useRouter();
+
+  const showLimitDropdown =
+    pageSize !== undefined && buildLimitHref !== undefined;
+  const showPageNav = totalPages > 1;
+
+  if (!showLimitDropdown && !showPageNav) return null;
 
   // Compute the window of page numbers to show (max 5 visible)
   const delta = 2;
@@ -44,69 +63,100 @@ export function Pagination({ page, totalPages, buildHref }: PaginationProps) {
   const disabledLink = `${linkBase} text-gray-300 dark:text-gray-600 pointer-events-none`;
 
   return (
-    <nav
-      aria-label={t.pagination.label}
-      className="flex items-center justify-center gap-1 py-4"
+    <div
+      className={`flex items-center py-4 ${showLimitDropdown && showPageNav ? "justify-between" : "justify-center"}`}
     >
-      {page > 1 ? (
-        <Link
-          href={buildHref(page - 1)}
-          className={inactiveLink}
-          aria-label={t.pagination.previousPage}
-        >
-          <ChevronLeft className="h-4 w-4" aria-hidden="true" />
-        </Link>
-      ) : (
-        <button
-          type="button"
-          disabled
-          className={disabledLink}
-          aria-label={t.pagination.previousPageDisabled}
-        >
-          <ChevronLeft className="h-4 w-4" aria-hidden="true" />
-        </button>
+      {showLimitDropdown && (
+        <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
+          <label
+            htmlFor="pagination-rows-per-page"
+            className="whitespace-nowrap"
+          >
+            {t.pagination.rowsPerPage}
+          </label>
+          <select
+            id="pagination-rows-per-page"
+            value={pageSize}
+            onChange={(e) =>
+              router.push(buildLimitHref(Number(e.target.value)))
+            }
+            className="rounded-md border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 py-1 pl-2 pr-7 text-sm text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          >
+            {PAGE_SIZE_OPTIONS.map((opt) => (
+              <option key={opt} value={opt}>
+                {opt}
+              </option>
+            ))}
+          </select>
+        </div>
       )}
 
-      {pages.map((p, i) =>
-        p === "…" ? (
-          <span
-            key={`ellipsis-before-${pages[i + 1] ?? "end"}`}
-            className="px-1 text-gray-400 select-none"
-            aria-hidden="true"
-          >
-            …
-          </span>
-        ) : (
-          <Link
-            key={p}
-            href={buildHref(p)}
-            className={p === page ? activeLink : inactiveLink}
-            aria-label={`${t.pagination.page} ${p}`}
-            aria-current={p === page ? "page" : undefined}
-          >
-            {p}
-          </Link>
-        ),
-      )}
+      {showPageNav && (
+        <nav
+          aria-label={t.pagination.label}
+          className="flex items-center gap-1"
+        >
+          {page > 1 ? (
+            <Link
+              href={buildHref(page - 1)}
+              className={inactiveLink}
+              aria-label={t.pagination.previousPage}
+            >
+              <ChevronLeft className="h-4 w-4" aria-hidden="true" />
+            </Link>
+          ) : (
+            <button
+              type="button"
+              disabled
+              className={disabledLink}
+              aria-label={t.pagination.previousPageDisabled}
+            >
+              <ChevronLeft className="h-4 w-4" aria-hidden="true" />
+            </button>
+          )}
 
-      {page < totalPages ? (
-        <Link
-          href={buildHref(page + 1)}
-          className={inactiveLink}
-          aria-label={t.pagination.nextPage}
-        >
-          <ChevronRight className="h-4 w-4" aria-hidden="true" />
-        </Link>
-      ) : (
-        <button
-          type="button"
-          disabled
-          className={disabledLink}
-          aria-label={t.pagination.nextPageDisabled}
-        >
-          <ChevronRight className="h-4 w-4" aria-hidden="true" />
-        </button>
+          {pages.map((p, i) =>
+            p === "…" ? (
+              <span
+                key={`ellipsis-before-${pages[i + 1] ?? "end"}`}
+                className="px-1 text-gray-400 select-none"
+                aria-hidden="true"
+              >
+                …
+              </span>
+            ) : (
+              <Link
+                key={p}
+                href={buildHref(p)}
+                className={p === page ? activeLink : inactiveLink}
+                aria-label={`${t.pagination.page} ${p}`}
+                aria-current={p === page ? "page" : undefined}
+              >
+                {p}
+              </Link>
+            ),
+          )}
+
+          {page < totalPages ? (
+            <Link
+              href={buildHref(page + 1)}
+              className={inactiveLink}
+              aria-label={t.pagination.nextPage}
+            >
+              <ChevronRight className="h-4 w-4" aria-hidden="true" />
+            </Link>
+          ) : (
+            <button
+              type="button"
+              disabled
+              className={disabledLink}
+              aria-label={t.pagination.nextPageDisabled}
+            >
+              <ChevronRight className="h-4 w-4" aria-hidden="true" />
+            </button>
+          )}
+        </nav>
       )}
-    </nav>
+    </div>
   );
 }

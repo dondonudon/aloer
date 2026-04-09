@@ -73,7 +73,23 @@ export function SalesListClient({
       if (startDate) params.set("startDate", startDate);
       if (endDate) params.set("endDate", endDate);
       if (statusFilter) params.set("status", statusFilter);
+      if (pageSize !== 10) params.set("limit", String(pageSize));
       if (p > 1) params.set("page", String(p));
+      const qs = params.toString();
+      return qs ? `${pathname}?${qs}` : pathname;
+    },
+    [pathname, search, startDate, endDate, statusFilter, pageSize],
+  );
+
+  const buildLimitHref = useCallback(
+    (limit: number) => {
+      const params = new URLSearchParams();
+      if (search) params.set("search", search);
+      if (startDate) params.set("startDate", startDate);
+      if (endDate) params.set("endDate", endDate);
+      if (statusFilter) params.set("status", statusFilter);
+      if (limit !== 10) params.set("limit", String(limit));
+      // page intentionally omitted — resets to 1
       const qs = params.toString();
       return qs ? `${pathname}?${qs}` : pathname;
     },
@@ -281,7 +297,13 @@ export function SalesListClient({
         </div>
       </div>
 
-      <Pagination page={page} totalPages={totalPages} buildHref={buildHref} />
+      <Pagination
+        page={page}
+        totalPages={totalPages}
+        buildHref={buildHref}
+        pageSize={pageSize}
+        buildLimitHref={buildLimitHref}
+      />
     </div>
   );
 }

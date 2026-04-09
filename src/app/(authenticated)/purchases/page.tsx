@@ -5,7 +5,8 @@ import { Button } from "@/components/ui/button";
 import { getPurchaseOrders } from "@/lib/actions/purchases";
 import { getServerTranslations } from "@/lib/i18n/server";
 
-const PAGE_SIZE = 20;
+const VALID_PAGE_SIZES = [10, 20, 50, 100] as const;
+type ValidPageSize = (typeof VALID_PAGE_SIZES)[number];
 
 interface Props {
   searchParams: Promise<Record<string, string | undefined>>;
@@ -18,6 +19,12 @@ export default async function PurchasesPage({ searchParams }: Props) {
   const startDate = params.startDate ?? "";
   const endDate = params.endDate ?? "";
   const status = params.status ?? "";
+  const rawLimit = Number(params.limit ?? 10);
+  const limit: ValidPageSize = VALID_PAGE_SIZES.includes(
+    rawLimit as ValidPageSize,
+  )
+    ? (rawLimit as ValidPageSize)
+    : 10;
 
   const [t, { data: orders, count }] = await Promise.all([
     getServerTranslations(),
@@ -27,7 +34,7 @@ export default async function PurchasesPage({ searchParams }: Props) {
       endDate,
       status,
       page,
-      limit: PAGE_SIZE,
+      limit,
     }),
   ]);
 
@@ -49,7 +56,7 @@ export default async function PurchasesPage({ searchParams }: Props) {
         orders={orders}
         total={count}
         page={page}
-        pageSize={PAGE_SIZE}
+        pageSize={limit}
         search={search}
         startDate={startDate}
         endDate={endDate}

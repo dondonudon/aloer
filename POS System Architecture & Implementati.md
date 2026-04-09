@@ -29,7 +29,7 @@
 | **Image upload** | Drag-drop `ImageUpload` component → Supabase Storage `pos-assets` bucket |
 | **Loading states** | `loading.tsx` skeleton files on all major routes |
 | **Action utilities** | `ownerAction()` (now passes `userId` to handler), `validateName()`, `ActionResult<T>`, `insertAuditLog()` — all action files migrated |
-| **Server-side pagination** | Sales, Purchases, Products — URL-driven, 20 per page. `Pagination` component with accessible prev/next/page links |
+| **Server-side pagination** | Sales, Purchases, Products — URL-driven, configurable per page (10/20/50/100, default 10). `Pagination` component with accessible prev/next/page links and a "Rows per page" dropdown |
 | **XLSX / CSV export** | Sales and Purchases list pages — SheetJS (`xlsx`) export buttons for both formats |
 | **PDF export (reports)** | Sales Summary, Profit & Loss, Stock Report, and Balance Sheet pages — jsPDF + autoTable "Export PDF" button |
 | **`getProfitLoss` SQL function** | Moved from app-level aggregation to `get_profit_loss(p_start_date, p_end_date)` Postgres RPC. Merged into `supabase/migrations/00001_schema.sql` |
@@ -587,7 +587,7 @@ npx playwright test --project=authenticated    # needs e2e/.auth/user.json
 
 | File | Coverage |
 |---|---|
-| `ui/__tests__/pagination.test.tsx` | Renders nothing ≤1 page; `aria-current`; prev/next disabled states; href correctness; ellipsis at range boundaries |
+| `ui/__tests__/pagination.test.tsx` | Renders nothing ≤1 page; `aria-current`; prev/next disabled states; href correctness; ellipsis at range boundaries; rows-per-page dropdown renders with correct options (10/20/50/100), reflects current pageSize, calls `router.push` on change, and shows when `totalPages === 1` |
 | `sales/__tests__/sale-return-actions.test.tsx` | Returns null for non-completed sales; hides button when all items fully returned; shows button with returnable items; opens return modal; renders return history; respects prior return quantities when computing max returnable |
 
 ### E2E tests (`e2e/`)
