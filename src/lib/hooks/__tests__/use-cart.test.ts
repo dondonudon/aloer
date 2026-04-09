@@ -310,3 +310,211 @@ describe("useCart — buildSaleItems", () => {
     });
   });
 });
+
+// ---------------------------------------------------------------------------
+// useCart — updateQuantity with positive delta
+// ---------------------------------------------------------------------------
+
+describe("useCart — updateQuantity with positive delta", () => {
+  it("increases quantity when a positive delta is given", () => {
+    const product = makeProduct({ selling_price: 5000 });
+    const { result } = renderHook(() => useCart([]));
+
+    act(() => {
+      result.current.addToCart(product); // qty = 1
+      result.current.updateQuantity(product.id, 2); // qty = 3
+    });
+
+    expect(result.current.cart[0].quantity).toBe(3);
+    expect(result.current.subtotal).toBe(15000);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// useCart — campaignSavings
+// ---------------------------------------------------------------------------
+
+describe("useCart — campaignSavings", () => {
+  it("reports savings when a percentage campaign reduces item price", () => {
+    const campaign = makeActiveCampaign({
+      discount_type: "percentage",
+      discount_value: 20, // 20% off
+      campaign_products: [],
+    });
+    const product = makeProduct({ selling_price: 10000 });
+    const { result } = renderHook(() => useCart([campaign]));
+
+    act(() => {
+      result.current.addToCart(product);
+    });
+
+    // original 10000 - discounted 8000 = 2000 savings per item
+    expect(result.current.campaignSavings).toBe(2000);
+  });
+
+  it("reports zero savings when no campaign is active", () => {
+    const product = makeProduct({ selling_price: 10000 });
+    const { result } = renderHook(() => useCart([]));
+
+    act(() => {
+      result.current.addToCart(product);
+    });
+
+    expect(result.current.campaignSavings).toBe(0);
+  });
+
+  it("multiplies savings across quantity", () => {
+    const campaign = makeActiveCampaign({
+      discount_type: "fixed",
+      discount_value: 1000,
+      campaign_products: [],
+    });
+    const product = makeProduct({ selling_price: 5000 });
+    const { result } = renderHook(() => useCart([campaign]));
+
+    act(() => {
+      result.current.addToCart(product);
+      result.current.addToCart(product); // qty = 2
+    });
+
+    // 1000 savings × 2 items = 2000
+    expect(result.current.campaignSavings).toBe(2000);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// useCart — product-specific campaign
+// ---------------------------------------------------------------------------
+
+describe("useCart — product-specific campaign", () => {
+  it("applies a campaign only to the targeted product", () => {
+    const targeted = makeProduct({ id: "targeted", selling_price: 10000 });
+    const other = makeProduct({ id: "other", selling_price: 10000 });
+
+    const campaign = makeActiveCampaign({
+      discount_type: "percentage",
+      discount_value: 50,
+      campaign_products: [{ product_id: "targeted", min_quantity: null } as never],
+    });
+
+    const { result } = renderHook(() => useCart([campaign]));
+
+    act(() => {
+      result.current.addToCart(targeted);
+      result.current.addToCart(other);
+    });
+
+    expect(result.current.getEffectivePrice(targeted, 1)).toBe(5000);
+    expect(result.current.getEffectivePrice(other, 1)).toBe(10000);
+    // subtotal = 5000 + 10000 = 15000
+    expect(result.current.subtotal).toBe(15000);
+  });
+
+  it("respects min_product_qty threshold on targeted campaigns", () => {
+    const product = makeProduct({ id: "prod", selling_price: 10000 });
+    const campaign = makeActiveCampaign({
+      trigger_type: "min_product_qty",
+      discount_type: "percentage",
+      discount_value: 30,
+      campaign_products: [
+        { product_id: "prod", min_quantity: 3 } as never,
+      ],
+    });
+
+    const { result } = renderHook(() => useCart([campaign]));
+
+    // below threshold — no discount
+    expect(result.current.getEffectivePrice(product, 2)).toBe(10000);
+    // at threshold — discount applies
+    expect(result.current.getEffectivePrice(product, 3)).toBe(7000);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// useCart — buildReceiptData
+// ---------------------------------------------------------------------------
+
+describe("useCart — buildReceiptData", () => {
+  it("populates receipt fields correctly for a simple sale", () => {
+    const product = makeProduct({ selling_price: 10000, name: "Espresso" });
+    const { result } = renderHook(() => useCart([]));
+
+    act(() => {
+      result.current.addToCart(product);
+      result.current.addToCart(product); // qty = 2
+    });
+
+    const receipt = result.current.buildReceiptData("INV-001", [
+      { method: "cash", amount: 20000 },
+    ]);
+
+    expect(receipt.invoiceNumber).toBe("INV-001");
+    expect(receipt.items).toHaveLength(1);
+    expect(receipt.items[0].name).toBe("Espresso");
+    expect(receipt.items[0].quantity).toBe(2);
+    expect(receipt.items[0].price).toBe(10000);
+    expect(receipt.items[0].subtotal).toBe(20000);
+    expect(receipt.subtotal).toBe(20000);
+    expect(receipt.total).toBe(20000);
+    expect(receipt.payments).toHaveLength(1);
+    expect(receipt.isCreditSale).toBeUndefined();
+  });
+
+  it("includes discount in receipt when a manual discount is set", () => {
+    const product = makeProduct({ selling_price: 10000 });
+    const { result } = renderHook(() => useCart([]));
+
+    act(() => {
+      result.current.addToCart(product);
+      result.current.setDiscountType("percentage");
+      result.current.setDiscountValue("10"); // 10% off → 1000
+    });
+
+    const receipt = result.current.buildReceiptData("INV-002", []);
+
+    expect(receipt.discount).toBeDefined();
+    expect(receipt.discount?.amount).toBe(1000);
+    expect(receipt.total).toBe(9000);
+  });
+
+  it("marks credit sales", () => {
+    const product = makeProduct({ selling_price: 5000 });
+    const { result } = renderHook(() => useCart([]));
+
+    act(() => {
+      result.current.addToCart(product);
+    });
+
+    const receipt = result.current.buildReceiptData("INV-003", [], true);
+    expect(receipt.isCreditSale).toBe(true);
+  });
+
+  it("omits discount field when no discount is applied", () => {
+    const product = makeProduct({ selling_price: 5000 });
+    const { result } = renderHook(() => useCart([]));
+
+    act(() => {
+      result.current.addToCart(product);
+    });
+
+    const receipt = result.current.buildReceiptData("INV-004", []);
+    expect(receipt.discount).toBeUndefined();
+  });
+
+  it("includes campaignSavings in receipt when a campaign reduces price", () => {
+    const campaign = makeActiveCampaign({
+      discount_type: "percentage",
+      discount_value: 10,
+      campaign_products: [],
+    });
+    const product = makeProduct({ selling_price: 10000 });
+    const { result } = renderHook(() => useCart([campaign]));
+
+    act(() => {
+      result.current.addToCart(product);
+    });
+
+    const receipt = result.current.buildReceiptData("INV-005", []);
+    expect(receipt.campaignSavings).toBe(1000);
+  });
+});
