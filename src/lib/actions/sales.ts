@@ -3,8 +3,13 @@
 import { revalidatePath } from "next/cache";
 import { getCurrentUser } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
-import type { CreateSaleInput } from "@/lib/types";
-import { ownerAction, insertAuditLog } from "./action-utils";
+import type {
+  CreateSaleInput,
+  CreateSaleReturnInput,
+  SaleReturn,
+  SaleReturnItem,
+} from "@/lib/types";
+import { insertAuditLog, ownerAction } from "./action-utils";
 
 export async function createSale(input: CreateSaleInput) {
   const user = await getCurrentUser();
@@ -118,7 +123,9 @@ export async function voidSale(saleId: string, reason: string) {
       p_reason: reason,
     });
     if (error) return { error: error.message };
-    await insertAuditLog(supabase, userId, "VOID_SALE", "sales", saleId, { reason });
+    await insertAuditLog(supabase, userId, "VOID_SALE", "sales", saleId, {
+      reason,
+    });
     revalidatePath("/pos");
     revalidatePath("/inventory");
     revalidatePath("/reports");
@@ -126,4 +133,87 @@ export async function voidSale(saleId: string, reason: string) {
     revalidatePath("/sales/history");
     return { data };
   });
+}
+
+export async function createSaleReturn(input: CreateSaleReturnInput) {
+  return ownerAction(async (supabase, userId) => {
+    const { data, error } = await supabase.rpc("create_sale_return", {
+      p_payload: input,
+    });
+    if (error) return { error: error.message };
+    await insertAuditLog(
+      supabase,
+      userId,
+      "CREATE_SALE_RETURN",
+      "sale_returns",
+      input.sale_id,
+      {
+        return_id: (data as { return_id: string }).return_id,
+      },
+    );
+    revalidatePath("/sales");
+    revalidatePath("/inventory");
+    revalidatePath("/reports");
+    return {
+      data: data as {
+        return_id: string;
+        return_number: string;
+        total_refund: number;
+      },
+    };
+  });
+}
+
+export async function getSaleReturns(saleId: string): Promise<{
+  returns: (SaleReturn & { items: SaleReturnItem[] })[];
+}> {
+  const supabase = await createClient();
+
+  const { data: returnsData, error: returnsError } = await supabase
+    .from("sale_returns")
+    .select("*")
+    .eq("sale_id", saleId)
+    .order("created_at", { ascending: true });
+
+  if (returnsError) throw new Error(returnsError.message);
+  if (!returnsData || returnsData.length === 0) return { returns: [] };
+
+  const returnIds = returnsData.map((r) => r.id);
+
+  const [itemsResult, profilesResult] = await Promise.all([
+    supabase
+      .from("sale_return_items")
+      .select("*, products(name, sku)")
+      .in("return_id", returnIds),
+    supabase
+      .from("profiles")
+      .select("id, full_name")
+      .in(
+        "id",
+        returnsData
+          .map((r) => r.created_by)
+          .filter((id): id is string => Boolean(id)),
+      ),
+  ]);
+
+  if (itemsResult.error) throw new Error(itemsResult.error.message);
+
+  const userNames: Record<string, string> = {};
+  for (const p of profilesResult.data ?? []) {
+    userNames[p.id] = p.full_name;
+  }
+
+  const itemsByReturn: Record<string, SaleReturnItem[]> = {};
+  for (const item of itemsResult.data ?? []) {
+    if (!itemsByReturn[item.return_id]) itemsByReturn[item.return_id] = [];
+    itemsByReturn[item.return_id].push(item as SaleReturnItem);
+  }
+
+  return {
+    returns: returnsData.map((r) => ({
+      ...r,
+      created_by_name: r.created_by ? (userNames[r.created_by] ?? null) : null,
+      items: itemsByReturn[r.id] ?? [],
+    })),
+  };
 }

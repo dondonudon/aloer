@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
-import { ownerAction, validateName, insertAuditLog } from "./action-utils";
+import { insertAuditLog, ownerAction, validateName } from "./action-utils";
 
 /** Returns all resellers, active ones first then alphabetical. */
 export async function getResellers() {
@@ -37,13 +37,23 @@ export async function createReseller(formData: FormData) {
   const name = (formData.get("name") as string).trim();
 
   return ownerAction(async (supabase, userId) => {
-    const { data: reseller, error } = await supabase.from("resellers").insert({
-      name,
-      phone: (formData.get("phone") as string) || null,
-      address: (formData.get("address") as string) || null,
-    }).select("id").single();
+    const { data: reseller, error } = await supabase
+      .from("resellers")
+      .insert({
+        name,
+        phone: (formData.get("phone") as string) || null,
+        address: (formData.get("address") as string) || null,
+      })
+      .select("id")
+      .single();
     if (error) return { error: error.message };
-    await insertAuditLog(supabase, userId, "CREATE_RESELLER", "resellers", reseller.id);
+    await insertAuditLog(
+      supabase,
+      userId,
+      "CREATE_RESELLER",
+      "resellers",
+      reseller.id,
+    );
     revalidatePath("/catalog/resellers");
     revalidatePath("/pos");
     return {};

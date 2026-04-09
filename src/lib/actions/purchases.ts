@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { getCurrentUser } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import type { POPaymentMethod } from "@/lib/types";
-import { ownerAction, insertAuditLog } from "./action-utils";
+import { insertAuditLog, ownerAction } from "./action-utils";
 
 export async function getPurchaseOrders(options?: {
   status?: string;
@@ -150,7 +150,13 @@ export async function createPurchaseOrder(formData: FormData) {
 
     if (itemsError) return { error: itemsError.message };
 
-    await insertAuditLog(supabase, user.id, "CREATE_PURCHASE_ORDER", "purchase_orders", po.id);
+    await insertAuditLog(
+      supabase,
+      user.id,
+      "CREATE_PURCHASE_ORDER",
+      "purchase_orders",
+      po.id,
+    );
     revalidatePath("/purchases");
     return { data: po };
   });
@@ -162,7 +168,13 @@ export async function receivePurchaseOrder(poId: string) {
       p_po_id: poId,
     });
     if (error) return { error: error.message };
-    await insertAuditLog(supabase, userId, "RECEIVE_PURCHASE_ORDER", "purchase_orders", poId);
+    await insertAuditLog(
+      supabase,
+      userId,
+      "RECEIVE_PURCHASE_ORDER",
+      "purchase_orders",
+      poId,
+    );
     revalidatePath("/purchases");
     revalidatePath("/inventory");
     revalidatePath("/reports");
@@ -178,7 +190,13 @@ export async function cancelPurchaseOrder(poId: string) {
       .eq("id", poId)
       .eq("status", "draft");
     if (error) return { error: error.message };
-    await insertAuditLog(supabase, userId, "CANCEL_PURCHASE_ORDER", "purchase_orders", poId);
+    await insertAuditLog(
+      supabase,
+      userId,
+      "CANCEL_PURCHASE_ORDER",
+      "purchase_orders",
+      poId,
+    );
     revalidatePath("/purchases");
     return {};
   });

@@ -15,7 +15,10 @@ export type ActionResult<T = undefined> =
  * @param handler - Receives the supabase client and the authenticated user's ID.
  */
 export async function ownerAction<T = undefined>(
-  handler: (supabase: SupabaseClient, userId: string) => Promise<ActionResult<T>>,
+  handler: (
+    supabase: SupabaseClient,
+    userId: string,
+  ) => Promise<ActionResult<T>>,
 ): Promise<ActionResult<T>> {
   const user = await getCurrentUser();
   if (!user || !isOwner(user.role)) {

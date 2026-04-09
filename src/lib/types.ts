@@ -334,3 +334,40 @@ export interface StockReportRow {
   stock_on_hand: number;
   stock_value: number;
 }
+
+export interface SaleReturn {
+  id: string;
+  return_number: string;
+  sale_id: string;
+  refund_method: "cash" | "transfer";
+  total_refund: number;
+  total_cogs_returned: number;
+  notes: string | null;
+  created_by: string | null;
+  created_at: string;
+  /** Resolved display name of the user who created this return. */
+  created_by_name?: string | null;
+}
+
+export interface SaleReturnItem {
+  id: string;
+  return_id: string;
+  product_id: string;
+  quantity: number;
+  unit_price: number;
+  refund_amount: number;
+  /** Resolved product name (joined query). */
+  products?: { name: string; sku: string } | null;
+}
+
+export interface SaleReturnItemInput {
+  product_id: string;
+  quantity: number;
+}
+
+export interface CreateSaleReturnInput {
+  sale_id: string;
+  refund_method: "cash" | "transfer";
+  notes?: string;
+  items: SaleReturnItemInput[];
+}

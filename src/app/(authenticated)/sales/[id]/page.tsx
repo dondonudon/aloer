@@ -1,9 +1,10 @@
 import { notFound } from "next/navigation";
 import { SaleCreditPaymentsClient } from "@/components/sales/sale-credit-payments-client";
+import { SaleReturnActions } from "@/components/sales/sale-return-actions";
 import { SaleVoidActions } from "@/components/sales/sale-void-actions";
 import { PageHeader } from "@/components/ui/page-header";
 import { getSaleCreditPayments } from "@/lib/actions/credit";
-import { getSaleWithItems } from "@/lib/actions/sales";
+import { getSaleReturns, getSaleWithItems } from "@/lib/actions/sales";
 import { getServerTranslations } from "@/lib/i18n/server";
 import { formatCurrency, formatDateTime } from "@/lib/utils";
 
@@ -30,10 +31,11 @@ export default async function SaleDetailPage({ params }: Props) {
     notFound();
   }
 
-  const [creditPayments, t] = await Promise.all([
+  const [creditPayments, saleReturnsResult, t] = await Promise.all([
     sale.payment_method === "credit" && sale.status === "completed"
       ? getSaleCreditPayments(id)
       : Promise.resolve([]),
+    getSaleReturns(id),
     getServerTranslations(),
   ]);
 
@@ -52,6 +54,19 @@ export default async function SaleDetailPage({ params }: Props) {
           {sale.status}
         </span>
         <SaleVoidActions saleId={sale.id} status={sale.status} />
+        <SaleReturnActions
+          saleId={sale.id}
+          saleStatus={sale.status}
+          saleItems={items.map((item) => ({
+            id: item.id,
+            product_id: item.product_id,
+            quantity: item.quantity,
+            price: item.price,
+            subtotal: item.subtotal,
+            products: item.products as { name: string; sku: string } | null,
+          }))}
+          existingReturns={saleReturnsResult.returns}
+        />
       </PageHeader>
 
       <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-6 space-y-4">

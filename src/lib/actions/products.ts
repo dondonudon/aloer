@@ -80,18 +80,28 @@ export async function createProduct(formData: FormData) {
   const { name, sku, sellingPrice, bulkPrice, bulkMinQty } = parsed;
 
   return ownerAction(async (supabase, userId) => {
-    const { data: product, error } = await supabase.from("products").insert({
-      name,
-      sku,
-      category: (formData.get("category") as string) || null,
-      unit: (formData.get("unit") as string) || "pcs",
-      selling_price: sellingPrice,
-      bulk_price: bulkPrice,
-      bulk_min_qty: bulkMinQty,
-      image_url: (formData.get("image_url") as string) || null,
-    }).select("id").single();
+    const { data: product, error } = await supabase
+      .from("products")
+      .insert({
+        name,
+        sku,
+        category: (formData.get("category") as string) || null,
+        unit: (formData.get("unit") as string) || "pcs",
+        selling_price: sellingPrice,
+        bulk_price: bulkPrice,
+        bulk_min_qty: bulkMinQty,
+        image_url: (formData.get("image_url") as string) || null,
+      })
+      .select("id")
+      .single();
     if (error) return { error: error.message };
-    await insertAuditLog(supabase, userId, "CREATE_PRODUCT", "products", product.id);
+    await insertAuditLog(
+      supabase,
+      userId,
+      "CREATE_PRODUCT",
+      "products",
+      product.id,
+    );
     revalidatePath("/products");
     return {};
   });
@@ -178,16 +188,32 @@ export async function upsertProductUnit(
         })
         .eq("id", unit.id);
       if (error) return { error: error.message };
-      await insertAuditLog(supabase, userId, "UPDATE_PRODUCT_UNIT", "product_units", unit.id);
+      await insertAuditLog(
+        supabase,
+        userId,
+        "UPDATE_PRODUCT_UNIT",
+        "product_units",
+        unit.id,
+      );
     } else {
-      const { data: newUnit, error } = await supabase.from("product_units").insert({
-        product_id: productId,
-        unit_name: unitName,
-        conversion_to_base: unit.conversion_to_base,
-        is_base: unit.is_base,
-      }).select("id").single();
+      const { data: newUnit, error } = await supabase
+        .from("product_units")
+        .insert({
+          product_id: productId,
+          unit_name: unitName,
+          conversion_to_base: unit.conversion_to_base,
+          is_base: unit.is_base,
+        })
+        .select("id")
+        .single();
       if (error) return { error: error.message };
-      await insertAuditLog(supabase, userId, "CREATE_PRODUCT_UNIT", "product_units", newUnit.id);
+      await insertAuditLog(
+        supabase,
+        userId,
+        "CREATE_PRODUCT_UNIT",
+        "product_units",
+        newUnit.id,
+      );
     }
     revalidatePath("/products");
     return {};
@@ -201,7 +227,13 @@ export async function deleteProductUnit(id: string) {
       .delete()
       .eq("id", id);
     if (error) return { error: error.message };
-    await insertAuditLog(supabase, userId, "DELETE_PRODUCT_UNIT", "product_units", id);
+    await insertAuditLog(
+      supabase,
+      userId,
+      "DELETE_PRODUCT_UNIT",
+      "product_units",
+      id,
+    );
     revalidatePath("/products");
     return {};
   });

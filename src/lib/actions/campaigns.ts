@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { getCurrentUser } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import type { CampaignWithProducts } from "@/lib/types";
-import { ownerAction, insertAuditLog } from "./action-utils";
+import { insertAuditLog, ownerAction } from "./action-utils";
 
 /**
  * Parses the shared campaign form fields used by both create and update.
@@ -152,7 +152,13 @@ export async function createCampaign(formData: FormData) {
 
     revalidatePath("/catalog/campaigns");
     revalidatePath("/pos");
-    await insertAuditLog(supabase, user.id, "CREATE_CAMPAIGN", "campaigns", campaign.id);
+    await insertAuditLog(
+      supabase,
+      user.id,
+      "CREATE_CAMPAIGN",
+      "campaigns",
+      campaign.id,
+    );
     return {};
   });
 }
@@ -209,7 +215,13 @@ export async function updateCampaign(campaignId: string, formData: FormData) {
       if (cpError) return { error: cpError.message };
     }
 
-    await insertAuditLog(supabase, userId, "UPDATE_CAMPAIGN", "campaigns", campaignId);
+    await insertAuditLog(
+      supabase,
+      userId,
+      "UPDATE_CAMPAIGN",
+      "campaigns",
+      campaignId,
+    );
     revalidatePath("/catalog/campaigns");
     revalidatePath("/pos");
     return {};
@@ -238,7 +250,13 @@ export async function deleteCampaign(campaignId: string) {
       .delete()
       .eq("id", campaignId);
     if (error) return { error: error.message };
-    await insertAuditLog(supabase, userId, "DELETE_CAMPAIGN", "campaigns", campaignId);
+    await insertAuditLog(
+      supabase,
+      userId,
+      "DELETE_CAMPAIGN",
+      "campaigns",
+      campaignId,
+    );
     revalidatePath("/catalog/campaigns");
     revalidatePath("/pos");
     return {};

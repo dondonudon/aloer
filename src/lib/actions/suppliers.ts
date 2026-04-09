@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
-import { ownerAction, validateName, insertAuditLog } from "./action-utils";
+import { insertAuditLog, ownerAction, validateName } from "./action-utils";
 
 export async function getSuppliers() {
   const supabase = await createClient();
@@ -21,13 +21,23 @@ export async function createSupplier(formData: FormData) {
   const name = (formData.get("name") as string).trim();
 
   return ownerAction(async (supabase, userId) => {
-    const { data: supplier, error } = await supabase.from("suppliers").insert({
-      name,
-      phone: (formData.get("phone") as string) || null,
-      address: (formData.get("address") as string) || null,
-    }).select("id").single();
+    const { data: supplier, error } = await supabase
+      .from("suppliers")
+      .insert({
+        name,
+        phone: (formData.get("phone") as string) || null,
+        address: (formData.get("address") as string) || null,
+      })
+      .select("id")
+      .single();
     if (error) return { error: error.message };
-    await insertAuditLog(supabase, userId, "CREATE_SUPPLIER", "suppliers", supplier.id);
+    await insertAuditLog(
+      supabase,
+      userId,
+      "CREATE_SUPPLIER",
+      "suppliers",
+      supplier.id,
+    );
     revalidatePath("/purchases");
     revalidatePath("/catalog/suppliers");
     return {};
