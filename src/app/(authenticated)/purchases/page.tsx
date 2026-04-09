@@ -1,0 +1,56 @@
+import { Plus } from "lucide-react";
+import Link from "next/link";
+import { PurchasesListClient } from "@/components/purchases/purchases-list-client";
+import { Button } from "@/components/ui/button";
+import { getPurchaseOrders } from "@/lib/actions/purchases";
+
+const PAGE_SIZE = 20;
+
+interface Props {
+  searchParams: Promise<Record<string, string | undefined>>;
+}
+
+export default async function PurchasesPage({ searchParams }: Props) {
+  const params = await searchParams;
+  const page = Math.max(1, Number(params.page ?? 1));
+  const search = params.search ?? "";
+  const startDate = params.startDate ?? "";
+  const endDate = params.endDate ?? "";
+  const status = params.status ?? "";
+
+  const { data: orders, count } = await getPurchaseOrders({
+    search,
+    startDate,
+    endDate,
+    status,
+    page,
+    limit: PAGE_SIZE,
+  });
+
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center justify-between">
+        <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
+          Purchase Orders
+        </h1>
+        <Link href="/purchases/new">
+          <Button>
+            <Plus className="h-4 w-4" aria-hidden="true" />
+            New PO
+          </Button>
+        </Link>
+      </div>
+
+      <PurchasesListClient
+        orders={orders}
+        total={count}
+        page={page}
+        pageSize={PAGE_SIZE}
+        search={search}
+        startDate={startDate}
+        endDate={endDate}
+        status={status}
+      />
+    </div>
+  );
+}

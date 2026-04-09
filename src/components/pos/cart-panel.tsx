@@ -1,0 +1,460 @@
+"use client";
+
+import {
+  Banknote,
+  Clock,
+  CreditCard,
+  Minus,
+  Percent,
+  Plus,
+  ShoppingCart,
+  SplitSquareHorizontal,
+  Tag,
+  Trash2,
+} from "lucide-react";
+import { useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import type { CartItem } from "@/lib/hooks/use-cart";
+import type {
+  CampaignWithProducts,
+  Product,
+  Reseller,
+  SalePaymentInput,
+} from "@/lib/types";
+import { formatCurrency } from "@/lib/utils";
+
+interface CartPanelProps {
+  cart: CartItem[];
+  discountType: "percentage" | "fixed";
+  discountValue: string;
+  subtotal: number;
+  campaignSavings: number;
+  cartCampaignDiscount: number;
+  discountAmount: number;
+  finalTotal: number;
+  loading: boolean;
+  getCampaignForProduct: (
+    productId: string,
+    quantity?: number,
+  ) => CampaignWithProducts | null;
+  getEffectivePrice: (product: Product, quantity: number) => number;
+  onUpdateQuantity: (productId: string, delta: number) => void;
+  onRemove: (productId: string) => void;
+  onDiscountTypeChange: (type: "percentage" | "fixed") => void;
+  onDiscountValueChange: (value: string) => void;
+  onCheckout: (payments: SalePaymentInput[], isCreditSale?: boolean) => void;
+  resellers?: Reseller[];
+  selectedResellerId?: string;
+  onResellerChange?: (id: string) => void;
+}
+
+/**
+ * Cart panel for the POS screen.
+ *
+ * Purely presentational — receives all data and callbacks from the parent
+ * orchestrator (POSClient). No internal state of its own, which makes it
+ * straightforward to test and reason about.
+ */
+export function CartPanel({
+  cart,
+  discountType,
+  discountValue,
+  subtotal,
+  campaignSavings,
+  cartCampaignDiscount,
+  discountAmount,
+  finalTotal,
+  loading,
+  getCampaignForProduct,
+  getEffectivePrice,
+  onUpdateQuantity,
+  onRemove,
+  onDiscountTypeChange,
+  onDiscountValueChange,
+  onCheckout,
+  resellers = [],
+  selectedResellerId = "",
+  onResellerChange,
+}: CartPanelProps) {
+  const [splitMode, setSplitMode] = useState(false);
+  const [cashAmt, setCashAmt] = useState("");
+  const [transferAmt, setTransferAmt] = useState("");
+
+  function resetSplit() {
+    setSplitMode(false);
+    setCashAmt("");
+    setTransferAmt("");
+  }
+
+  function handleQuickPay(method: "cash" | "transfer") {
+    resetSplit();
+    onCheckout([{ method, amount: finalTotal }]);
+  }
+
+  function handleCreditSale() {
+    resetSplit();
+    onCheckout([], true);
+  }
+
+  function handleSplitPay() {
+    const cash = parseFloat(cashAmt) || 0;
+    const transfer = parseFloat(transferAmt) || 0;
+    const payments: SalePaymentInput[] = [];
+    if (cash > 0) payments.push({ method: "cash", amount: cash });
+    if (transfer > 0) payments.push({ method: "transfer", amount: transfer });
+    onCheckout(payments);
+  }
+
+  const splitCash = parseFloat(cashAmt) || 0;
+  const splitTransfer = parseFloat(transferAmt) || 0;
+  const splitRemaining = finalTotal - splitCash - splitTransfer;
+  const splitValid =
+    splitRemaining === 0 && (splitCash > 0 || splitTransfer > 0);
+
+  return (
+    <div className="w-full lg:w-96 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl flex flex-col">
+      <div className="p-4 border-b border-gray-200 dark:border-gray-700">
+        <div className="flex items-center gap-2">
+          <ShoppingCart
+            className="h-5 w-5 text-gray-600 dark:text-gray-400"
+            aria-hidden="true"
+          />
+          <h2 className="font-semibold text-gray-900 dark:text-white">
+            Cart ({cart.length})
+          </h2>
+        </div>
+      </div>
+
+      {/* Reseller / customer picker */}
+      {resellers.length > 0 && (
+        <div className="px-4 pt-3 pb-1">
+          <label
+            htmlFor="reseller-select"
+            className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1"
+          >
+            Customer (Reseller)
+          </label>
+          <select
+            id="reseller-select"
+            value={selectedResellerId}
+            onChange={(e) => onResellerChange?.(e.target.value)}
+            className="w-full text-sm rounded-md border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 px-2.5 py-1.5 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            aria-label="Select reseller or customer"
+          >
+            <option value="">— None —</option>
+            {resellers.map((r) => (
+              <option key={r.id} value={r.id}>
+                {r.name}
+              </option>
+            ))}
+          </select>
+        </div>
+      )}
+
+      <div className="flex-1 overflow-y-auto p-4 space-y-3">
+        {cart.length === 0 && (
+          <p className="text-center text-gray-400 py-8 text-sm">
+            Cart is empty
+          </p>
+        )}
+        {cart.map((item) => {
+          const price = getEffectivePrice(item.product, item.quantity);
+          const isBulk =
+            item.product.bulk_price != null &&
+            item.product.bulk_min_qty != null &&
+            item.quantity >= item.product.bulk_min_qty;
+          const campaign = getCampaignForProduct(
+            item.product.id,
+            item.quantity,
+          );
+          return (
+            <div
+              key={item.product.id}
+              className="flex items-center gap-3 p-2 rounded-lg bg-gray-50 dark:bg-gray-700/50"
+            >
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-medium text-gray-900 dark:text-gray-100 truncate">
+                  {item.product.name}
+                  {isBulk && (
+                    <span className="ml-1 inline-flex items-center rounded-full bg-blue-50 px-1.5 py-0.5 text-[10px] font-medium text-blue-700">
+                      BULK
+                    </span>
+                  )}
+                  {campaign && (
+                    <span className="ml-1 inline-flex items-center rounded-full bg-orange-50 px-1.5 py-0.5 text-[10px] font-medium text-orange-700">
+                      PROMO
+                    </span>
+                  )}
+                </p>
+                <p className="text-xs text-gray-500 dark:text-gray-400">
+                  {campaign && price < item.product.selling_price && (
+                    <span className="line-through mr-1 text-gray-400 dark:text-gray-500">
+                      {formatCurrency(item.product.selling_price)}
+                    </span>
+                  )}
+                  {formatCurrency(price)} × {item.quantity}
+                </p>
+              </div>
+              <div className="flex items-center gap-1">
+                <button
+                  type="button"
+                  onClick={() => onUpdateQuantity(item.product.id, -1)}
+                  className="p-1 rounded hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
+                  aria-label={`Decrease quantity of ${item.product.name}`}
+                >
+                  <Minus className="h-4 w-4" aria-hidden="true" />
+                </button>
+                <span className="w-8 text-center text-sm font-medium dark:text-gray-100">
+                  {item.quantity}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => onUpdateQuantity(item.product.id, 1)}
+                  className="p-1 rounded hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
+                  aria-label={`Increase quantity of ${item.product.name}`}
+                >
+                  <Plus className="h-4 w-4" aria-hidden="true" />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => onRemove(item.product.id)}
+                  className="p-1 rounded hover:bg-red-100 text-red-500 transition-colors ml-1"
+                  aria-label={`Remove ${item.product.name} from cart`}
+                >
+                  <Trash2 className="h-4 w-4" aria-hidden="true" />
+                </button>
+              </div>
+              <p className="text-sm font-semibold text-gray-900 dark:text-gray-100 w-24 text-right">
+                {formatCurrency(price * item.quantity)}
+              </p>
+            </div>
+          );
+        })}
+      </div>
+
+      <div className="p-4 border-t border-gray-200 dark:border-gray-700 space-y-3">
+        {/* Discount input */}
+        <div>
+          <label
+            htmlFor="discount-value"
+            className="flex items-center gap-1.5 text-xs font-medium text-gray-600 dark:text-gray-400 mb-1.5"
+          >
+            <Tag className="h-3.5 w-3.5" aria-hidden="true" />
+            Discount
+          </label>
+          <div className="flex gap-1.5">
+            <div className="flex rounded-md border border-gray-200 dark:border-gray-600 overflow-hidden text-xs">
+              <button
+                type="button"
+                onClick={() => {
+                  onDiscountTypeChange("percentage");
+                  onDiscountValueChange("");
+                }}
+                className={`px-2.5 py-1.5 flex items-center gap-1 transition-colors ${
+                  discountType === "percentage"
+                    ? "bg-blue-600 text-white"
+                    : "bg-white dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-600"
+                }`}
+                aria-pressed={discountType === "percentage"}
+                aria-label="Percentage discount"
+              >
+                <Percent className="h-3 w-3" aria-hidden="true" />%
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  onDiscountTypeChange("fixed");
+                  onDiscountValueChange("");
+                }}
+                className={`px-2.5 py-1.5 transition-colors ${
+                  discountType === "fixed"
+                    ? "bg-blue-600 text-white"
+                    : "bg-white dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-600"
+                }`}
+                aria-pressed={discountType === "fixed"}
+                aria-label="Fixed amount discount"
+              >
+                Rp
+              </button>
+            </div>
+            <div className="flex-1">
+              <Input
+                id="discount-value"
+                type="number"
+                min="0"
+                max={discountType === "percentage" ? "100" : String(subtotal)}
+                placeholder={
+                  discountType === "percentage" ? "0 – 100" : "Amount"
+                }
+                value={discountValue}
+                onChange={(e) => onDiscountValueChange(e.target.value)}
+                className="flex-1 text-sm w-full"
+                aria-label="Discount value"
+              />
+            </div>
+          </div>
+        </div>
+
+        {/* Totals */}
+        <div className="space-y-1">
+          {campaignSavings > 0 && (
+            <div className="flex justify-between text-sm text-green-600 dark:text-green-400">
+              <span className="flex items-center gap-1">
+                <Tag className="h-3.5 w-3.5" aria-hidden="true" />
+                Campaign savings
+              </span>
+              <span>- {formatCurrency(campaignSavings)}</span>
+            </div>
+          )}
+          {cartCampaignDiscount > 0 && (
+            <div className="flex justify-between text-sm text-green-600 dark:text-green-400">
+              <span className="flex items-center gap-1">
+                <Tag className="h-3.5 w-3.5" aria-hidden="true" />
+                Cart campaign
+              </span>
+              <span>- {formatCurrency(cartCampaignDiscount)}</span>
+            </div>
+          )}
+          {discountAmount > 0 && (
+            <>
+              <div className="flex justify-between text-sm text-gray-600 dark:text-gray-400">
+                <span>Subtotal</span>
+                <span>{formatCurrency(subtotal)}</span>
+              </div>
+              <div className="flex justify-between text-sm text-red-600">
+                <span>
+                  Discount (
+                  {discountType === "percentage"
+                    ? `${discountValue}%`
+                    : "Fixed"}
+                  )
+                </span>
+                <span>- {formatCurrency(discountAmount)}</span>
+              </div>
+            </>
+          )}
+          <div className="flex justify-between items-center">
+            <span className="text-lg font-bold text-gray-900 dark:text-white">
+              Total
+            </span>
+            <span className="text-lg font-bold text-gray-900 dark:text-white">
+              {formatCurrency(finalTotal)}
+            </span>
+          </div>
+        </div>
+
+        {/* Payment */}
+        {!splitMode ? (
+          <div className="space-y-2">
+            <div className="grid grid-cols-2 gap-2">
+              <Button
+                onClick={() => handleQuickPay("cash")}
+                disabled={cart.length === 0 || loading}
+                className="flex items-center justify-center gap-2"
+              >
+                <Banknote className="h-4 w-4" aria-hidden="true" />
+                Cash
+              </Button>
+              <Button
+                onClick={() => handleQuickPay("transfer")}
+                disabled={cart.length === 0 || loading}
+                variant="secondary"
+                className="flex items-center justify-center gap-2"
+              >
+                <CreditCard className="h-4 w-4" aria-hidden="true" />
+                Transfer
+              </Button>
+            </div>
+            <div className="grid grid-cols-2 gap-2">
+              <Button
+                onClick={() => setSplitMode(true)}
+                disabled={cart.length === 0 || loading}
+                variant="secondary"
+                className="flex items-center justify-center gap-2 text-xs"
+              >
+                <SplitSquareHorizontal
+                  className="h-3.5 w-3.5"
+                  aria-hidden="true"
+                />
+                Split
+              </Button>
+              <Button
+                onClick={handleCreditSale}
+                disabled={cart.length === 0 || loading || !selectedResellerId}
+                variant="secondary"
+                className="flex items-center justify-center gap-2 text-xs text-amber-600 dark:text-amber-400 border-amber-300 dark:border-amber-600 hover:bg-amber-50 dark:hover:bg-amber-900/20 disabled:opacity-40"
+                title={
+                  !selectedResellerId
+                    ? "Select a reseller to sell on credit"
+                    : undefined
+                }
+              >
+                <Clock className="h-3.5 w-3.5" aria-hidden="true" />
+                Credit
+              </Button>
+            </div>
+          </div>
+        ) : (
+          <div className="space-y-2">
+            <div className="grid grid-cols-2 gap-2">
+              <Input
+                label="Cash"
+                id="split-cash"
+                type="number"
+                min="0"
+                step="1"
+                placeholder="0"
+                value={cashAmt}
+                onChange={(e) => setCashAmt(e.target.value)}
+                aria-label="Cash amount"
+              />
+              <Input
+                label="Transfer"
+                id="split-transfer"
+                type="number"
+                min="0"
+                step="1"
+                placeholder="0"
+                value={transferAmt}
+                onChange={(e) => setTransferAmt(e.target.value)}
+                aria-label="Transfer amount"
+              />
+            </div>
+            <div
+              className={`flex justify-between text-xs font-medium px-1 ${
+                splitRemaining === 0
+                  ? "text-green-600 dark:text-green-400"
+                  : "text-red-500 dark:text-red-400"
+              }`}
+            >
+              <span>Remaining</span>
+              <span>
+                {formatCurrency(Math.abs(splitRemaining))}
+                {splitRemaining < 0 ? " over" : ""}
+              </span>
+            </div>
+            <div className="grid grid-cols-2 gap-2">
+              <Button
+                type="button"
+                variant="secondary"
+                onClick={resetSplit}
+                className="text-xs"
+              >
+                Cancel
+              </Button>
+              <Button
+                type="button"
+                onClick={handleSplitPay}
+                disabled={!splitValid || loading}
+                className="text-xs"
+              >
+                Confirm
+              </Button>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
