@@ -11,30 +11,35 @@
 | Area | Detail |
 |---|---|
 | **Tech stack** | Next.js 16.2.2 (App Router, TypeScript 5), React 19, Supabase (PostgreSQL + Auth + Storage), Tailwind CSS v4, Biome |
-| **Database** | All 18 tables + 8 RPC functions implemented. All migrations squashed to `supabase/migrations/00001_schema.sql` |
+| **Database** | All 23 tables + 8 RPC functions implemented. Base schema in `supabase/migrations/00001_schema.sql`; incremental migrations `00002` – `00007` extend it |
 | **Auth** | Google OAuth only. Whitelist-based: users must exist in `user_roles` to access the app |
 | **RBAC** | Owner and Cashier roles enforced at Server Action level (`ownerAction()` wrapper) and via RLS |
 | **POS screen** | `/pos` — product grid, cart, FIFO sale, cash/transfer/split/credit payment, discount (% or fixed), campaign discounts, reseller picker, receipt modal |
-| **Sales** | `/sales` — filterable by date range and status. `/sales/[id]` — line items, COGS, profit, void button (owner only) |
-| **Products** | `/products` — CRUD, cost tracking, margin badge, category dropdown, drag-drop image upload |
+| **Sales** | `/sales` — filterable by date range and status. `/sales/[id]` — line items, COGS, profit, void button (owner only), partial return flow (owner only) |
+| **Products** | `/products` — CRUD, cost tracking, margin badge, category dropdown, drag-drop image upload, price history modal, unit management |
 | **Inventory** | `/inventory` — stock on hand + value per product, per-batch detail. `/inventory/adjustments` — history and create new |
 | **Purchases** | `/purchases` — create PO, receive PO (inventory + journal), cancel PO, pay supplier (AP flow) |
 | **Credit (AR/AP)** | `/credit` — outstanding credit sales (AR) and credit POs (AP), payment collection per record |
-| **Catalog** | `/catalog/categories`, `/catalog/suppliers`, `/catalog/resellers`, `/catalog/campaigns` — full CRUD |
+| **Catalog** | `/catalog/categories`, `/catalog/suppliers` (with inline edit), `/catalog/resellers`, `/catalog/campaigns` — full CRUD |
 | **Campaigns** | Percentage or fixed discount, product-level targeting, date range, min cart total / min qty triggers |
-| **Reports** | `/reports` — Sales summary, Profit & Loss (date range), Balance Sheet, Stock Report |
+| **Reports** | `/reports` — Sales summary (server-translated), Profit & Loss (date range), Balance Sheet (period filtering: monthly/yearly), Stock Report page removed (Inventory page covers this) |
 | **Settings** | Store name + icon upload; User role assignment (owner/cashier) inline, no Supabase dashboard needed |
 | **Sidebar** | Minimize/expand toggle (desktop, `w-14`/`w-64`), role badge, dark mode toggle, role-filtered nav |
 | **Dark mode** | Full dark/light toggle, persisted in localStorage |
 | **Image upload** | Drag-drop `ImageUpload` component → Supabase Storage `pos-assets` bucket |
 | **Loading states** | `loading.tsx` skeleton files on all major routes |
-| **Action utilities** | `ownerAction()`, `validateName()`, `ActionResult<T>` — all action files migrated |
+| **Action utilities** | `ownerAction()` (now passes `userId` to handler), `validateName()`, `ActionResult<T>`, `insertAuditLog()` — all action files migrated |
 | **Server-side pagination** | Sales, Purchases, Products — URL-driven, 20 per page. `Pagination` component with accessible prev/next/page links |
 | **XLSX / CSV export** | Sales and Purchases list pages — SheetJS (`xlsx`) export buttons for both formats |
 | **PDF export (reports)** | Sales Summary, Profit & Loss, Stock Report, and Balance Sheet pages — jsPDF + autoTable "Export PDF" button |
 | **`getProfitLoss` SQL function** | Moved from app-level aggregation to `get_profit_loss(p_start_date, p_end_date)` Postgres RPC. Merged into `supabase/migrations/00001_schema.sql` |
-| **Tests** | Vitest (unit) + Testing Library (component) + Playwright (E2E) scaffolded. 87 passing tests. See [§18](#18-testing) |
-| **Internationalisation (i18n)** | Full EN / ID translation system. User locale preference persisted in `user_roles.locale` (DB column added via `00002_add_locale.sql`). `I18nProvider` + `useI18n()` context mirrors the theme-provider pattern. Server Components use `getServerTranslations()` (cached). Language switcher in sidebar footer shows active locale code (EN / ID). System-seeded chart-of-account names translated via `getAccountName()` helper keyed by account code — no schema duplication needed. |
+| **Tests** | Vitest (unit) + Testing Library (component) + Playwright (E2E) scaffolded. See [§18](#18-testing) |
+| **Internationalisation (i18n)** | Full EN / ID translation system. User locale preference persisted in `user_roles.locale` (DB column added via `00002_add_locale.sql`). `I18nProvider` + `useI18n()` context mirrors the theme-provider pattern. Server Components use `getServerTranslations()` (cached). Language switcher in sidebar footer shows active locale code (EN / ID). System-seeded chart-of-account names translated via `getAccountName()` helper keyed by account code — no schema duplication needed. Report pages (Balance Sheet, Sales Report) use server translations. |
+| **Product price history** | `product_price_history` table tracks selling price changes over time. Price history modal in `/products` shows a timestamped log of price edits per product. |
+| **Product units** | `product_units` table; per-product unit management (e.g. pcs, box, kg) with full CRUD in `/products`. |
+| **Audit logging** | `audit_logs` table records all owner mutations (action, entity, entity_id, payload, user_id). `insertAuditLog()` helper in `action-utils.ts` — failures swallowed silently so they never block the primary operation. `ownerAction()` now surfaces `userId` to every handler. |
+| **Partial sale return** | Owner can select individual line items and quantities to return from a completed sale (`sale_returns` + `sale_return_items` tables). Return restores FIFO batch stock, inserts RETURN inventory movements, creates reversal journal entries, and records a `partial_return` status on the sale. UI: `SaleReturnActions` component on `/sales/[id]`. Migration: `00007_sale_returns.sql`. |
+| **User profiles** | `00003_user_profiles.sql` migration adds a `user_profiles` view/table so `created_by` fields are enriched with display names throughout the app. |
 
 ### ⏳ Future Work
 
@@ -47,8 +52,10 @@ See [§17. Future Work](#17-future-work) for the full list.
 | Decision | Detail |
 |---|---|
 | **Google OAuth only** | Email+password login replaced with Google OAuth. Whitelist-based access via `user_roles` table |
-| **`ownerAction()` wrapper** | All owner-only Server Actions use a shared wrapper that checks auth + role, creates the Supabase client, returns `ActionResult<T>`. Utility file has no `"use server"` directive (only async entry-point action files do) |
+| **`ownerAction()` wrapper** | All owner-only Server Actions use a shared wrapper that checks auth + role, creates the Supabase client, and now passes `userId` to the handler. Returns `ActionResult<T>`. Utility file has no `"use server"` directive (only async entry-point action files do) |
+| **`insertAuditLog()` silent** | Audit logging failures are swallowed so they never block the primary mutation. Called at the end of every owner action handler. |
 | **Void on detail page only** | Void action placed on `/sales/[id]` only — requires navigating to the record first to prevent accidental clicks |
+| **Partial return on detail page only** | `SaleReturnActions` component on `/sales/[id]`; same reasoning as void — intentional navigation required |
 | **`pos-assets` Storage bucket** | Single public bucket for all images, organized under `products/` and `store/` folder prefixes |
 | **Stock Report in Inventory** | Stock Report removed from `/reports` — Inventory page covers stock-on-hand, value, and batch detail |
 | **User management inline** | Settings page lists all signed-in users; owner assigns roles inline, no Supabase dashboard needed |
@@ -202,6 +209,39 @@ Seeded chart of accounts:
 
 ---
 
+### 4.9 Product Price History (`00004_product_prices.sql`)
+
+**product_price_history** — product_id FK, old_price, new_price, changed_by (user_id), changed_at (timestamptz)
+
+Populated automatically when `products.selling_price` is updated. UI: price history modal in `/products`.
+
+---
+
+### 4.10 Product Units (`00005_product_units.sql`)
+
+**product_units** — id (uuid, pk), product_id FK, name (e.g. 'pcs', 'box', 'kg'), is_default, created_at
+
+Full CRUD management inside the `/products` page.
+
+---
+
+### 4.11 Audit Logs (`00006_audit_logs.sql`)
+
+**audit_logs** — id (uuid, pk), user_id FK, action (text), entity (text), entity_id (text, nullable), payload (jsonb, nullable), created_at (timestamptz)
+
+Written via `insertAuditLog()` helper inside every `ownerAction()` handler. Failures silently ignored.
+
+---
+
+### 4.12 Sale Returns (`00007_sale_returns.sql`)
+
+**sale_returns** — id (uuid, pk), sale_id FK, reason (text), created_by FK, created_at  
+**sale_return_items** — return_id FK, sale_item_id FK, product_id FK, quantity (int), cost_price (numeric), batch_id FK
+
+On partial return: restores `inventory_batches.quantity_remaining`, inserts `inventory_movements` (type = 'RETURN'), creates reversal journal entry for returned amount only.
+
+---
+
 ### 4.9 Invoice Number Sequences
 
 PostgreSQL sequences (`invoice_number_seq`, `po_number_seq`, `adj_number_seq`) generate zero-padded numbers formatted as:
@@ -314,6 +354,21 @@ Owner-only. All steps within ONE transaction:
 
 ---
 
+## 9a. Partial Return Flow
+
+Owner-only. Operates on an individual sale item selection (not the whole sale):
+
+1. Validate sale exists and status = 'completed'
+2. For each returned item + quantity:
+   - Validate quantity ≤ original sale item quantity (minus any previously returned qty)
+   - Restore `inventory_batches.quantity_remaining` for the original consumed batch
+   - Insert `inventory_movements` (type = 'RETURN')
+3. Insert `sale_returns` + `sale_return_items` rows
+4. Create partial reversal journal entry (only for the returned amount)
+5. Sale status remains 'completed' (not voided); partial returns are tracked separately
+
+---
+
 ## 10. PostgreSQL RPC Functions
 
 All critical operations run as atomic PostgreSQL functions. Implementations live in `supabase/migrations/00001_schema.sql`.
@@ -389,7 +444,7 @@ src/app/
     pos/page.tsx                  → POS interface
     sales/
       page.tsx                    → sales list (filter by date, status)
-      [id]/page.tsx               → sale detail + void
+      [id]/page.tsx               → sale detail + void + partial return
     inventory/
       page.tsx                    → stock report
       [id]/page.tsx               → batch detail
@@ -419,7 +474,7 @@ src/lib/
   auth.ts                         → getCurrentUser() (React cache), isOwner()
   utils.ts                        → formatCurrency, formatDate, formatDateTime (id-ID locale)
   actions/
-    action-utils.ts               → ownerAction(), validateName() — NO "use server"
+    action-utils.ts               → ownerAction() (passes userId to handler), validateName(), insertAuditLog() — NO "use server"
     auth.ts, products.ts, categories.ts, suppliers.ts, resellers.ts
     campaigns.ts, sales.ts, purchases.ts, inventory.ts
     credit.ts, supplier-payments.ts, reports.ts, store-settings.ts, users.ts
@@ -429,17 +484,17 @@ src/lib/
     use-cart.ts                   → cart state + campaign pricing
     use-toast.ts                  → toast notification
 
-src/components/
+  components/
   ui/                             → button, input, select, modal, toast, sidebar,
                                     page-header, list-filter, image-upload,
                                     table-page-loading, theme-provider
   pos/                            → pos-client, product-grid, cart-panel, receipt-modal
-  sales/                          → sales-list-client, sale-void-actions, sale-credit-payments-client
+  sales/                          → sales-list-client, sale-void-actions, sale-return-actions, sale-credit-payments-client
   inventory/                      → inventory-list-client, new-adjustment-client
   purchases/                      → purchases-list-client, new-po-client, po-detail-actions, supplier-payments-client
-  products/                       → products-client
-  reports/                        → sales-report-client, profit-loss-client, stock-report-client
-  settings/                       → store-settings-form, categories-client, suppliers-client,
+  products/                       → products-client (incl. price history modal, unit management)
+  reports/                        → sales-report-client, profit-loss-client, balance-sheet-client (period filter)
+  settings/                       → store-settings-form, categories-client, suppliers-client (with edit),
                                     resellers-client, campaigns-client, users-client, sales-history-client
 ```
 
