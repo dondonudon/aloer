@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
-import { ownerAction, validateName } from "./action-utils";
+import { ownerAction, validateName, insertAuditLog } from "./action-utils";
 
 /** Gets all categories, ordered by name. */
 export async function getCategories() {
@@ -35,12 +35,13 @@ export async function createCategory(formData: FormData) {
   if (nameErr) return { error: nameErr };
   const name = (formData.get("name") as string).trim();
 
-  return ownerAction(async (supabase) => {
-    const { error } = await supabase.from("categories").insert({ name });
+  return ownerAction(async (supabase, userId) => {
+    const { data: cat, error } = await supabase.from("categories").insert({ name }).select("id").single();
     if (error) {
       if (error.code === "23505") return { error: "Category already exists" };
       return { error: error.message };
     }
+    await insertAuditLog(supabase, userId, "CREATE_CATEGORY", "categories", cat.id);
     revalidatePath("/catalog/categories");
     revalidatePath("/products");
     return {};
@@ -54,7 +55,7 @@ export async function updateCategory(id: string, formData: FormData) {
   const name = (formData.get("name") as string).trim();
   const isActive = formData.get("is_active") === "true";
 
-  return ownerAction(async (supabase) => {
+  return ownerAction(async (supabase, userId) => {
     const { error } = await supabase
       .from("categories")
       .update({ name, is_active: isActive })
@@ -63,6 +64,7 @@ export async function updateCategory(id: string, formData: FormData) {
       if (error.code === "23505") return { error: "Category already exists" };
       return { error: error.message };
     }
+    await insertAuditLog(supabase, userId, "UPDATE_CATEGORY", "categories", id);
     revalidatePath("/catalog/categories");
     revalidatePath("/products");
     return {};

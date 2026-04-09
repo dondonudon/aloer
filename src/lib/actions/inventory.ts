@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import type { CreateAdjustmentInput } from "@/lib/types";
-import { ownerAction } from "./action-utils";
+import { ownerAction, insertAuditLog } from "./action-utils";
 
 export async function getStockReport() {
   const supabase = await createClient();
@@ -30,11 +30,12 @@ export async function getInventoryBatches(productId?: string) {
 }
 
 export async function createAdjustment(input: CreateAdjustmentInput) {
-  return ownerAction(async (supabase) => {
+  return ownerAction(async (supabase, userId) => {
     const { data, error } = await supabase.rpc("create_inventory_adjustment", {
       adj_payload: input,
     });
     if (error) return { error: error.message };
+    await insertAuditLog(supabase, userId, "CREATE_ADJUSTMENT", "inventory_adjustments");
     revalidatePath("/inventory");
     revalidatePath("/reports");
     return { data };

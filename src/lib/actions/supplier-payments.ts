@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
-import { ownerAction } from "./action-utils";
+import { ownerAction, insertAuditLog } from "./action-utils";
 
 /** Fetches all supplier payments for a given purchase order, oldest-first, with resolved creator names. */
 export async function getSupplierPayments(poId: string) {
@@ -59,11 +59,12 @@ export async function paySupplier(poId: string, formData: FormData) {
     return { error: "Invalid payment method" };
   }
 
-  return ownerAction(async (supabase) => {
+  return ownerAction(async (supabase, userId) => {
     const { data, error } = await supabase.rpc("pay_supplier", {
       p_payload: { po_id: poId, amount, payment_method: paymentMethod, notes },
     });
     if (error) return { error: error.message };
+    await insertAuditLog(supabase, userId, "PAY_SUPPLIER", "purchase_orders", poId, { amount, payment_method: paymentMethod });
     revalidatePath(`/purchases/${poId}`);
     revalidatePath("/purchases");
     return { data };

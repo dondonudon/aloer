@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
-import { ownerAction } from "./action-utils";
+import { ownerAction, insertAuditLog } from "./action-utils";
 
 /**
  * Fetches all credit payment collections for a given sale.
@@ -64,7 +64,7 @@ export async function collectSalePayment(saleId: string, formData: FormData) {
     return { error: "Invalid payment method" };
   }
 
-  return ownerAction(async (supabase) => {
+  return ownerAction(async (supabase, userId) => {
     const { data, error } = await supabase.rpc("collect_sale_payment", {
       p_payload: {
         sale_id: saleId,
@@ -74,6 +74,7 @@ export async function collectSalePayment(saleId: string, formData: FormData) {
       },
     });
     if (error) return { error: error.message };
+    await insertAuditLog(supabase, userId, "COLLECT_CREDIT_PAYMENT", "sales", saleId, { amount, payment_method: paymentMethod });
     revalidatePath(`/sales/${saleId}`);
     revalidatePath("/sales");
     revalidatePath("/credit");

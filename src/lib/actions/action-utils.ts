@@ -12,17 +12,38 @@ export type ActionResult<T = undefined> =
  * Handles auth/role check and Supabase client creation so individual
  * actions only contain business logic.
  *
- * @param handler - Receives the supabase client and returns an ActionResult.
+ * @param handler - Receives the supabase client and the authenticated user's ID.
  */
 export async function ownerAction<T = undefined>(
-  handler: (supabase: SupabaseClient) => Promise<ActionResult<T>>,
+  handler: (supabase: SupabaseClient, userId: string) => Promise<ActionResult<T>>,
 ): Promise<ActionResult<T>> {
   const user = await getCurrentUser();
   if (!user || !isOwner(user.role)) {
     return { error: "Unauthorized" } as ActionResult<T>;
   }
   const supabase = await createClient();
-  return handler(supabase);
+  return handler(supabase, user.id);
+}
+
+/**
+ * Writes an audit log entry recording a user action.
+ * Failures are silently swallowed — audit errors must never block the primary operation.
+ */
+export async function insertAuditLog(
+  supabase: SupabaseClient,
+  userId: string,
+  action: string,
+  entity: string,
+  entityId?: string | null,
+  payload?: Record<string, unknown> | null,
+): Promise<void> {
+  await supabase.from("audit_logs").insert({
+    user_id: userId,
+    action,
+    entity,
+    entity_id: entityId ?? null,
+    payload: payload ?? null,
+  });
 }
 
 /**

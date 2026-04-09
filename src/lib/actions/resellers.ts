@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
-import { ownerAction, validateName } from "./action-utils";
+import { ownerAction, validateName, insertAuditLog } from "./action-utils";
 
 /** Returns all resellers, active ones first then alphabetical. */
 export async function getResellers() {
@@ -36,13 +36,14 @@ export async function createReseller(formData: FormData) {
   if (nameErr) return { error: nameErr };
   const name = (formData.get("name") as string).trim();
 
-  return ownerAction(async (supabase) => {
-    const { error } = await supabase.from("resellers").insert({
+  return ownerAction(async (supabase, userId) => {
+    const { data: reseller, error } = await supabase.from("resellers").insert({
       name,
       phone: (formData.get("phone") as string) || null,
       address: (formData.get("address") as string) || null,
-    });
+    }).select("id").single();
     if (error) return { error: error.message };
+    await insertAuditLog(supabase, userId, "CREATE_RESELLER", "resellers", reseller.id);
     revalidatePath("/catalog/resellers");
     revalidatePath("/pos");
     return {};
@@ -55,7 +56,7 @@ export async function updateReseller(id: string, formData: FormData) {
   if (nameErr) return { error: nameErr };
   const name = (formData.get("name") as string).trim();
 
-  return ownerAction(async (supabase) => {
+  return ownerAction(async (supabase, userId) => {
     const { error } = await supabase
       .from("resellers")
       .update({
@@ -66,6 +67,7 @@ export async function updateReseller(id: string, formData: FormData) {
       })
       .eq("id", id);
     if (error) return { error: error.message };
+    await insertAuditLog(supabase, userId, "UPDATE_RESELLER", "resellers", id);
     revalidatePath("/catalog/resellers");
     revalidatePath("/pos");
     return {};

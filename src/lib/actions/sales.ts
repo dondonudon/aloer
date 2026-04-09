@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { getCurrentUser } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import type { CreateSaleInput } from "@/lib/types";
-import { ownerAction } from "./action-utils";
+import { ownerAction, insertAuditLog } from "./action-utils";
 
 export async function createSale(input: CreateSaleInput) {
   const user = await getCurrentUser();
@@ -17,6 +17,7 @@ export async function createSale(input: CreateSaleInput) {
 
   if (error) return { error: error.message };
 
+  await insertAuditLog(supabase, user.id, "CREATE_SALE", "sales");
   revalidatePath("/pos");
   revalidatePath("/inventory");
   revalidatePath("/reports");
@@ -111,12 +112,13 @@ export async function getSaleWithItems(saleId: string) {
 }
 
 export async function voidSale(saleId: string, reason: string) {
-  return ownerAction(async (supabase) => {
+  return ownerAction(async (supabase, userId) => {
     const { data, error } = await supabase.rpc("void_sale", {
       p_sale_id: saleId,
       p_reason: reason,
     });
     if (error) return { error: error.message };
+    await insertAuditLog(supabase, userId, "VOID_SALE", "sales", saleId, { reason });
     revalidatePath("/pos");
     revalidatePath("/inventory");
     revalidatePath("/reports");
