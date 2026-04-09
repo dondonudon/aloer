@@ -581,12 +581,14 @@ npx playwright test --project=authenticated    # needs e2e/.auth/user.json
 |---|---|
 | `utils.test.ts` | `formatCurrency`, `formatDate`, `formatDateTime` |
 | `hooks/__tests__/use-cart.test.ts` | Add/update/remove/clear cart; bulk pricing; campaign discounts (%, fixed, inactive, expired, min_cart_total); manual discounts (%, fixed, cap); `buildSaleItems` |
+| `actions/__tests__/action-utils.test.ts` | `validateName` (all branches); `ownerAction` (unauthenticated, cashier role, owner passes userId, propagates handler result); `insertAuditLog` (correct fields, null defaults, silently ignores error responses) |
 
-### Component tests (`src/components/ui/__tests__/`)
+### Component tests (`src/components/ui/__tests__/`, `src/components/sales/__tests__/`)
 
 | File | Coverage |
 |---|---|
-| `pagination.test.tsx` | Renders nothing ≤1 page; `aria-current`; prev/next disabled states; href correctness; ellipsis at range boundaries |
+| `ui/__tests__/pagination.test.tsx` | Renders nothing ≤1 page; `aria-current`; prev/next disabled states; href correctness; ellipsis at range boundaries |
+| `sales/__tests__/sale-return-actions.test.tsx` | Returns null for non-completed sales; hides button when all items fully returned; shows button with returnable items; opens return modal; renders return history; respects prior return quantities when computing max returnable |
 
 ### E2E tests (`e2e/`)
 
