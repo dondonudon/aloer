@@ -326,7 +326,9 @@ export function Sidebar({
               {!collapsed && "Sign out"}
             </button>
           </form>
-          <div className="flex items-center gap-1">
+          <div
+            className={`flex items-center gap-1 ${collapsed ? "flex-col" : ""}`}
+          >
             {/* Language toggle — shows current locale so the choice is always visible */}
             <button
               type="button"
