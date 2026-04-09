@@ -73,7 +73,7 @@ npm install
 npm run dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000). You will be redirected to `/login` until you authenticate with Google and are added to `user_roles`.
+Open the URL printed by the dev server (defaults to `http://localhost:3000`; set `NEXT_PUBLIC_SITE_URL` in `.env.local` to override). You will be redirected to `/login` until you authenticate with Google and are added to `user_roles`.
 
 ## Scripts
 
@@ -86,7 +86,8 @@ npm run format        # Biome format
 npm test              # Vitest (run once)
 npm run test:watch    # Vitest (watch mode)
 npm run test:coverage # Vitest with coverage (v8)
-npm run test:e2e      # Playwright E2E tests
+npm run test:e2e      # Playwright E2E tests (all projects)
+npm run test:e2e:setup # Save browser auth state for authenticated tests
 ```
 
 ## Testing
@@ -101,7 +102,9 @@ npx playwright test --project=unauthenticated
 npx playwright test --project=authenticated
 ```
 
-Because the app uses Google OAuth, Playwright cannot automate the consent screen. See `e2e/README.md` for instructions on generating the auth session file.
+Because the app uses Google OAuth, Playwright cannot automate the consent screen.
+Run `npm run test:e2e:setup` once to capture your session cookies and write `e2e/.auth/user.json`.
+See `e2e/README.md` for the full walkthrough.
 
 ## Project Structure
 

@@ -1,5 +1,29 @@
-
+import { readFileSync } from "node:fs";
 import { defineConfig, devices } from "@playwright/test";
+
+/**
+ * Load key=value pairs from .env.local into process.env so that
+ * NEXT_PUBLIC_SITE_URL is available without having to export it manually.
+ * Variables already in the environment take precedence.
+ */
+function loadEnvLocal() {
+  try {
+    for (const line of readFileSync(".env.local", "utf8").split("\n")) {
+      const t = line.trim();
+      if (!t || t.startsWith("#") || !t.includes("=")) continue;
+      const i = t.indexOf("=");
+      const key = t.slice(0, i).trim();
+      const value = t.slice(i + 1).trim();
+      if (!(key in process.env)) process.env[key] = value;
+    }
+  } catch {
+    // .env.local is optional (e.g. in CI)
+  }
+}
+
+loadEnvLocal();
+
+const BASE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
 
 /**
  * Playwright configuration for end-to-end tests.
@@ -21,7 +45,7 @@ export default defineConfig({
   reporter: "html",
 
   use: {
-    baseURL: "http://localhost:3000",
+    baseURL: BASE_URL,
     trace: "on-first-retry",
   },
 
@@ -52,13 +76,12 @@ export default defineConfig({
 
   /**
    * Start the Next.js dev server before any test runs.
-   * This is commented out by default so CI can start it separately.
-   * Uncomment when running locally without a running server.
+   * Skipped in CI where the server is started separately.
    */
-  // webServer: {
-  //   command: "npm run dev",
-  //   url: "http://localhost:3000",
-  //   reuseExistingServer: !process.env.CI,
-  //   timeout: 120_000,
-  // },
+  webServer: {
+    command: "npm run dev",
+    url: BASE_URL,
+    reuseExistingServer: !process.env.CI,
+    timeout: 120_000,
+  },
 });
