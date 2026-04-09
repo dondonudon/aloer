@@ -3,6 +3,7 @@
 import { Search } from "lucide-react";
 import { useMemo, useState } from "react";
 import { Input } from "@/components/ui/input";
+import { useI18n } from "@/lib/i18n/context";
 import type { CampaignWithProducts, Product } from "@/lib/types";
 import { formatCurrency } from "@/lib/utils";
 
@@ -26,6 +27,7 @@ export function ProductGrid({
   getCampaignForProduct,
   onAddToCart,
 }: ProductGridProps) {
+  const { t } = useI18n();
   const [search, setSearch] = useState("");
 
   const filtered = useMemo(() => {
@@ -43,7 +45,7 @@ export function ProductGrid({
     <div className="flex-1 flex flex-col min-h-0">
       <div className="mb-4">
         <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-3">
-          Point of Sale
+          {t.pos.title}
         </h1>
         <div className="relative">
           <Search
@@ -51,11 +53,11 @@ export function ProductGrid({
             aria-hidden="true"
           />
           <Input
-            placeholder="Search products by name, SKU, or category..."
+            placeholder={t.pos.searchProducts}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="pl-10"
-            aria-label="Search products"
+            aria-label={t.pos.searchProducts}
           />
         </div>
       </div>
@@ -111,7 +113,7 @@ export function ProductGrid({
           })}
           {filtered.length === 0 && (
             <p className="col-span-full text-center text-gray-400 py-8">
-              No products found
+              {t.pos.noProductsFound}
             </p>
           )}
         </div>

@@ -16,7 +16,7 @@ export const getCurrentUser = cache(async () => {
 
   const { data: roleData } = await supabase
     .from("user_roles")
-    .select("role, theme")
+    .select("role, theme, locale")
     .eq("user_id", user.id)
     .single();
 
@@ -35,6 +35,7 @@ export const getCurrentUser = cache(async () => {
     name,
     role: roleData.role as UserRole,
     theme: (roleData.theme ?? null) as "light" | "dark" | null,
+    locale: (roleData.locale ?? null) as "en" | "id" | null,
   };
 });
 

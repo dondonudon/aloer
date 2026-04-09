@@ -2,6 +2,8 @@
 
 import { Download } from "lucide-react";
 import { exportPdf } from "@/lib/export";
+import { useI18n } from "@/lib/i18n/context";
+import { getAccountName } from "@/lib/i18n/translations";
 import { formatCurrency } from "@/lib/utils";
 
 export interface AccountRow {
@@ -32,58 +34,59 @@ export function BalanceSheetClient({
   totalLiabilities,
   totalEquity,
 }: BalanceSheetClientProps) {
+  const { t } = useI18n();
   function handleExportPdf() {
     const rows: Record<string, unknown>[] = [];
 
     for (const a of assets) {
       rows.push({
-        Section: "Assets",
+        Section: t.reports.assets,
         Code: a.code,
-        Account: a.name,
+        Account: getAccountName(a.code, a.name, t),
         Balance: formatCurrency(a.balance),
       });
     }
     rows.push({
-      Section: "Assets",
+      Section: t.reports.assets,
       Code: "",
-      Account: "Total Assets",
+      Account: `${t.reports.total} ${t.reports.assets}`,
       Balance: formatCurrency(totalAssets),
     });
 
     for (const l of liabilities) {
       rows.push({
-        Section: "Liabilities",
+        Section: t.reports.liabilities,
         Code: l.code,
-        Account: l.name,
+        Account: getAccountName(l.code, l.name, t),
         Balance: formatCurrency(l.balance),
       });
     }
     rows.push({
-      Section: "Liabilities",
+      Section: t.reports.liabilities,
       Code: "",
-      Account: "Total Liabilities",
+      Account: `${t.reports.total} ${t.reports.liabilities}`,
       Balance: formatCurrency(totalLiabilities),
     });
 
     for (const e of equity) {
       rows.push({
-        Section: "Equity",
+        Section: t.reports.equity,
         Code: e.code,
-        Account: e.name,
+        Account: getAccountName(e.code, e.name, t),
         Balance: formatCurrency(e.balance),
       });
     }
     rows.push({
-      Section: "Equity",
+      Section: t.reports.equity,
       Code: "",
-      Account: "Total Equity",
+      Account: `${t.reports.total} ${t.reports.equity}`,
       Balance: formatCurrency(totalEquity),
     });
 
     rows.push({
       Section: "",
       Code: "",
-      Account: "Liabilities + Equity",
+      Account: t.reports.liabilitiesEquity,
       Balance: formatCurrency(totalLiabilities + totalEquity),
     });
 
@@ -110,23 +113,31 @@ export function BalanceSheetClient({
           type="button"
           onClick={handleExportPdf}
           className="inline-flex items-center gap-1.5 rounded-lg border border-gray-200 dark:border-gray-700 px-3 py-1.5 text-xs font-medium text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
-          aria-label="Export balance sheet as PDF"
+          aria-label={t.reports.exportPdf}
         >
           <Download className="h-3.5 w-3.5" aria-hidden="true" />
-          Export PDF
+          {t.reports.exportPdf}
         </button>
       </div>
 
-      <AccountSection title="Assets" items={assets} total={totalAssets} />
       <AccountSection
-        title="Liabilities"
+        title={t.reports.assets}
+        items={assets}
+        total={totalAssets}
+      />
+      <AccountSection
+        title={t.reports.liabilities}
         items={liabilities}
         total={totalLiabilities}
       />
-      <AccountSection title="Equity" items={equity} total={totalEquity} />
+      <AccountSection
+        title={t.reports.equity}
+        items={equity}
+        total={totalEquity}
+      />
 
       <div className="flex justify-between py-2 border-t-2 border-gray-300 dark:border-gray-600 font-bold dark:text-white">
-        <span>Liabilities + Equity</span>
+        <span>{t.reports.liabilitiesEquity}</span>
         <span>{formatCurrency(totalLiabilities + totalEquity)}</span>
       </div>
     </div>
@@ -142,6 +153,7 @@ function AccountSection({
   items: AccountRow[];
   total: number;
 }) {
+  const { t } = useI18n();
   return (
     <div className="space-y-2">
       <h2 className="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">
@@ -150,7 +162,7 @@ function AccountSection({
       {items.map((a) => (
         <div key={a.code} className="flex justify-between py-1">
           <span className="text-sm text-gray-700 dark:text-gray-300">
-            {a.code} — {a.name}
+            {a.code} — {getAccountName(a.code, a.name, t)}
           </span>
           <span className="text-sm font-medium text-gray-900 dark:text-gray-100">
             {formatCurrency(a.balance)}
@@ -159,7 +171,7 @@ function AccountSection({
       ))}
       <div className="flex justify-between py-1 border-t border-gray-200 dark:border-gray-700 font-semibold">
         <span className="text-sm text-gray-900 dark:text-white">
-          Total {title}
+          {t.reports.total} {title}
         </span>
         <span className="text-sm text-gray-900 dark:text-white">
           {formatCurrency(total)}

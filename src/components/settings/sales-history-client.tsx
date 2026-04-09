@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Modal } from "@/components/ui/modal";
 import { Toast } from "@/components/ui/toast";
 import { voidSale } from "@/lib/actions/sales";
+import { useI18n } from "@/lib/i18n/context";
 import type { Sale } from "@/lib/types";
 import { formatCurrency, formatDateTime } from "@/lib/utils";
 
@@ -22,6 +23,7 @@ const statusColors: Record<string, string> = {
 
 export function SalesHistoryClient({ sales }: Props) {
   const router = useRouter();
+  const { t } = useI18n();
   const [voidingId, setVoidingId] = useState<string | null>(null);
   const [voidReason, setVoidReason] = useState("");
   const [loading, setLoading] = useState(false);
@@ -38,7 +40,7 @@ export function SalesHistoryClient({ sales }: Props) {
     if (result.error) {
       setToast({ message: result.error, type: "error" });
     } else {
-      setToast({ message: "Sale voided", type: "success" });
+      setToast({ message: t.settings.saleVoided, type: "success" });
       router.refresh();
     }
     setVoidingId(null);
@@ -49,7 +51,7 @@ export function SalesHistoryClient({ sales }: Props) {
   return (
     <div className="space-y-4">
       <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
-        Sales History
+        {t.settings.salesHistory}
       </h2>
 
       <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl overflow-hidden">
@@ -58,22 +60,22 @@ export function SalesHistoryClient({ sales }: Props) {
             <thead>
               <tr className="border-b border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-700/50">
                 <th className="text-left py-3 px-4 font-medium text-gray-500 dark:text-gray-400">
-                  Invoice
+                  {t.settings.invoice}
                 </th>
                 <th className="text-right py-3 px-4 font-medium text-gray-500 dark:text-gray-400">
-                  Amount
+                  {t.settings.amount}
                 </th>
                 <th className="text-left py-3 px-4 font-medium text-gray-500 dark:text-gray-400">
-                  Payment
+                  {t.settings.payment}
                 </th>
                 <th className="text-center py-3 px-4 font-medium text-gray-500 dark:text-gray-400">
-                  Status
+                  {t.settings.status}
                 </th>
                 <th className="text-left py-3 px-4 font-medium text-gray-500 dark:text-gray-400">
-                  Date
+                  {t.settings.date}
                 </th>
                 <th className="text-center py-3 px-4 font-medium text-gray-500 dark:text-gray-400">
-                  Actions
+                  {t.settings.actions}
                 </th>
               </tr>
             </thead>
@@ -113,7 +115,7 @@ export function SalesHistoryClient({ sales }: Props) {
                         aria-label={`Void sale ${sale.invoice_number}`}
                       >
                         <XCircle className="h-3.5 w-3.5" aria-hidden="true" />
-                        Void
+                        {t.settings.void}
                       </button>
                     )}
                     {sale.status === "voided" && sale.void_reason && (
@@ -130,7 +132,7 @@ export function SalesHistoryClient({ sales }: Props) {
                     colSpan={6}
                     className="py-8 text-center text-gray-400 dark:text-gray-500"
                   >
-                    No sales yet
+                    {t.settings.noSalesYet}
                   </td>
                 </tr>
               )}
@@ -142,30 +144,29 @@ export function SalesHistoryClient({ sales }: Props) {
       <Modal
         open={!!voidingId}
         onClose={() => setVoidingId(null)}
-        title="Void Sale"
+        title={t.settings.voidSale}
       >
         <div className="space-y-4">
           <p className="text-sm text-gray-600 dark:text-gray-400">
-            This will reverse the sale, restore inventory, and create a reversal
-            journal entry. This action cannot be undone.
+            {t.settings.voidConfirmFull}
           </p>
           <Input
-            label="Reason for voiding"
+            label={t.settings.reasonForVoiding}
             value={voidReason}
             onChange={(e) => setVoidReason(e.target.value)}
             required
-            placeholder="e.g. Customer cancelled, wrong items"
+            placeholder={t.settings.voidPlaceholder}
           />
           <div className="flex justify-end gap-2">
             <Button variant="secondary" onClick={() => setVoidingId(null)}>
-              Cancel
+              {t.common.cancel}
             </Button>
             <Button
               variant="danger"
               onClick={handleVoid}
               disabled={loading || !voidReason.trim()}
             >
-              {loading ? "Processing..." : "Void Sale"}
+              {loading ? t.common.processing : t.settings.voidSale}
             </Button>
           </div>
         </div>

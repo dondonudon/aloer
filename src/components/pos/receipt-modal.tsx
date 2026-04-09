@@ -3,6 +3,7 @@
 import { Printer, X } from "lucide-react";
 import { useRef } from "react";
 import { Button } from "@/components/ui/button";
+import { useI18n } from "@/lib/i18n/context";
 import type { SalePaymentInput } from "@/lib/types";
 import { formatCurrency, formatDateTime } from "@/lib/utils";
 
@@ -42,6 +43,7 @@ export function ReceiptModal({
   storeName,
   onClose,
 }: ReceiptModalProps) {
+  const { t } = useI18n();
   const receiptRef = useRef<HTMLDivElement>(null);
 
   function handlePrint() {
@@ -96,7 +98,7 @@ export function ReceiptModal({
             ${
               receipt.campaignSavings
                 ? `<div class="row" style="color:#16a34a;">
-              <span>Campaign savings</span>
+              <span>${t.pos.campaignSavings}</span>
               <span>- ${formatCurrency(receipt.campaignSavings)}</span>
             </div>`
                 : ""
@@ -104,7 +106,7 @@ export function ReceiptModal({
             ${
               receipt.cartCampaignDiscount
                 ? `<div class="row" style="color:#16a34a;">
-              <span>Cart campaign</span>
+              <span>${t.pos.cartCampaign}</span>
               <span>- ${formatCurrency(receipt.cartCampaignDiscount)}</span>
             </div>`
                 : ""
@@ -113,7 +115,7 @@ export function ReceiptModal({
               receipt.discount
                 ? `
             <div class="row">
-              <span>Subtotal</span>
+              <span>${t.pos.subtotal}</span>
               <span>${formatCurrency(receipt.subtotal)}</span>
             </div>
             <div class="row" style="color:#dc2626;">
@@ -123,12 +125,12 @@ export function ReceiptModal({
                 : ""
             }
             <div class="total-row">
-              <span>Total</span>
+              <span>${t.pos.total}</span>
               <span>${formatCurrency(receipt.total)}</span>
             </div>
             ${
               receipt.isCreditSale
-                ? `<div class="row" style="color:#d97706;"><span>Payment</span><span>Credit</span></div>`
+                ? `<div class="row" style="color:#d97706;"><span>${t.pos.payment}</span><span>${t.common.credit}</span></div>`
                 : receipt.payments
                     .map(
                       (p) => `<div class="row">
@@ -139,7 +141,7 @@ export function ReceiptModal({
                     .join("")
             }
           </div>
-          <div class="center small" style="margin-top:16px;">Thank you for your purchase!</div>
+          <div class="center small" style="margin-top:16px;">${t.pos.thankYou}</div>
         </body>
       </html>
     `);
@@ -154,13 +156,13 @@ export function ReceiptModal({
       <div className="bg-white dark:bg-gray-800 rounded-xl shadow-xl w-full max-w-sm mx-4">
         <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700">
           <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
-            Receipt
+            {t.pos.receipt}
           </h2>
           <button
             type="button"
             onClick={onClose}
             className="p-1 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
-            aria-label="Close receipt"
+            aria-label={t.pos.closeReceipt}
           >
             <X
               className="h-5 w-5 text-gray-500 dark:text-gray-400"
@@ -212,20 +214,20 @@ export function ReceiptModal({
           <div className="border-t border-dashed border-gray-300 dark:border-gray-600 pt-3 space-y-1">
             {receipt.campaignSavings != null && (
               <div className="flex justify-between text-sm text-green-600 dark:text-green-400">
-                <span>Campaign savings</span>
+                <span>{t.pos.campaignSavings}</span>
                 <span>- {formatCurrency(receipt.campaignSavings)}</span>
               </div>
             )}
             {receipt.cartCampaignDiscount != null && (
               <div className="flex justify-between text-sm text-green-600 dark:text-green-400">
-                <span>Cart campaign</span>
+                <span>{t.pos.cartCampaign}</span>
                 <span>- {formatCurrency(receipt.cartCampaignDiscount)}</span>
               </div>
             )}
             {receipt.discount && (
               <>
                 <div className="flex justify-between text-sm text-gray-600 dark:text-gray-400">
-                  <span>Subtotal</span>
+                  <span>{t.pos.subtotal}</span>
                   <span>{formatCurrency(receipt.subtotal)}</span>
                 </div>
                 <div className="flex justify-between text-sm text-red-600">
@@ -235,13 +237,13 @@ export function ReceiptModal({
               </>
             )}
             <div className="flex justify-between text-base font-bold text-gray-900 dark:text-white">
-              <span>Total</span>
+              <span>{t.pos.total}</span>
               <span>{formatCurrency(receipt.total)}</span>
             </div>
             {receipt.isCreditSale ? (
               <div className="flex justify-between text-sm text-amber-600 dark:text-amber-400 font-medium">
-                <span>Payment</span>
-                <span>Credit</span>
+                <span>{t.pos.payment}</span>
+                <span>{t.common.credit}</span>
               </div>
             ) : (
               receipt.payments.map((p) => (
@@ -257,7 +259,7 @@ export function ReceiptModal({
           </div>
 
           <p className="text-center text-xs text-gray-400 mt-4">
-            Thank you for your purchase!
+            {t.pos.thankYou}
           </p>
         </div>
 
@@ -269,10 +271,10 @@ export function ReceiptModal({
             onClick={handlePrint}
           >
             <Printer className="h-4 w-4" aria-hidden="true" />
-            Print
+            {t.pos.print}
           </Button>
           <Button type="button" className="flex-1" onClick={onClose}>
-            Done
+            {t.pos.done}
           </Button>
         </div>
       </div>

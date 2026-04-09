@@ -1,5 +1,8 @@
+"use client";
+
 import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
+import { useI18n } from "@/lib/i18n/context";
 
 interface PageHeaderProps {
   title: string;
@@ -15,9 +18,11 @@ interface PageHeaderProps {
 export function PageHeader({
   title,
   backHref,
-  backLabel = "Back",
+  backLabel,
   children,
 }: PageHeaderProps) {
+  const { t } = useI18n();
+  const resolvedLabel = backLabel ?? t.common.back;
   return (
     <div className="space-y-2">
       {backHref && (
@@ -26,7 +31,7 @@ export function PageHeader({
           className="inline-flex items-center gap-1 text-sm text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 transition-colors"
         >
           <ArrowLeft className="h-4 w-4" aria-hidden="true" />
-          {backLabel}
+          {resolvedLabel}
         </Link>
       )}
       <div className="flex items-center justify-between">

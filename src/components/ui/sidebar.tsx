@@ -5,6 +5,7 @@ import {
   ChevronDown,
   ClipboardList,
   CreditCard,
+  Globe,
   LayoutDashboard,
   LogOut,
   Megaphone,
@@ -29,6 +30,7 @@ import { usePathname } from "next/navigation";
 import { useState } from "react";
 import { useTheme } from "@/components/ui/theme-provider";
 import { logout } from "@/lib/actions/auth";
+import { useI18n } from "@/lib/i18n/context";
 import type { UserRole } from "@/lib/types";
 
 interface SidebarProps {
@@ -51,107 +53,6 @@ interface NavGroup {
   items: NavItem[];
 }
 
-const navGroups: NavGroup[] = [
-  {
-    label: "Overview",
-    roles: ["owner", "cashier"],
-    items: [
-      {
-        href: "/dashboard",
-        label: "Dashboard",
-        icon: LayoutDashboard,
-        roles: ["owner", "cashier"],
-      },
-    ],
-  },
-  {
-    label: "Transactions",
-    roles: ["owner", "cashier"],
-    items: [
-      {
-        href: "/pos",
-        label: "POS",
-        icon: ShoppingCart,
-        roles: ["owner", "cashier"],
-      },
-      {
-        href: "/sales",
-        label: "Sales",
-        icon: Receipt,
-        roles: ["owner", "cashier"],
-      },
-      {
-        href: "/purchases",
-        label: "Purchases",
-        icon: ClipboardList,
-        roles: ["owner"],
-      },
-      {
-        href: "/credit",
-        label: "Credit",
-        icon: CreditCard,
-        roles: ["owner"],
-      },
-    ],
-  },
-  {
-    label: "Catalog",
-    roles: ["owner"],
-    items: [
-      { href: "/products", label: "Products", icon: Package, roles: ["owner"] },
-      {
-        href: "/catalog/categories",
-        label: "Categories",
-        icon: Tag,
-        roles: ["owner"],
-      },
-      {
-        href: "/inventory",
-        label: "Inventory",
-        icon: Warehouse,
-        roles: ["owner"],
-      },
-      {
-        href: "/catalog/campaigns",
-        label: "Campaigns",
-        icon: Megaphone,
-        roles: ["owner"],
-      },
-      {
-        href: "/catalog/suppliers",
-        label: "Suppliers",
-        icon: Truck,
-        roles: ["owner"],
-      },
-      {
-        href: "/catalog/resellers",
-        label: "Resellers",
-        icon: Users,
-        roles: ["owner"],
-      },
-    ],
-  },
-  {
-    label: "Analytics",
-    roles: ["owner"],
-    items: [
-      { href: "/reports", label: "Reports", icon: BarChart3, roles: ["owner"] },
-    ],
-  },
-  {
-    label: "System",
-    roles: ["owner"],
-    items: [
-      {
-        href: "/settings",
-        label: "Settings",
-        icon: Settings,
-        roles: ["owner"],
-      },
-    ],
-  },
-];
-
 export function Sidebar({
   userRole,
   userName,
@@ -162,10 +63,123 @@ export function Sidebar({
   const [mobileOpen, setMobileOpen] = useState(false);
   const [minimized, setMinimized] = useState(false);
   const { theme, toggleTheme } = useTheme();
+  const { t, locale, setLocale } = useI18n();
   // All groups start expanded; track collapsed groups by label
   const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(
     new Set(),
   );
+
+  // Nav groups are built inside the component so labels react to locale changes.
+  const navGroups: NavGroup[] = [
+    {
+      label: t.nav.overview,
+      roles: ["owner", "cashier"],
+      items: [
+        {
+          href: "/dashboard",
+          label: t.nav.dashboard,
+          icon: LayoutDashboard,
+          roles: ["owner", "cashier"],
+        },
+      ],
+    },
+    {
+      label: t.nav.transactions,
+      roles: ["owner", "cashier"],
+      items: [
+        {
+          href: "/pos",
+          label: t.nav.pos,
+          icon: ShoppingCart,
+          roles: ["owner", "cashier"],
+        },
+        {
+          href: "/sales",
+          label: t.nav.sales,
+          icon: Receipt,
+          roles: ["owner", "cashier"],
+        },
+        {
+          href: "/purchases",
+          label: t.nav.purchases,
+          icon: ClipboardList,
+          roles: ["owner"],
+        },
+        {
+          href: "/credit",
+          label: t.nav.credit,
+          icon: CreditCard,
+          roles: ["owner"],
+        },
+      ],
+    },
+    {
+      label: t.nav.catalog,
+      roles: ["owner"],
+      items: [
+        {
+          href: "/products",
+          label: t.nav.products,
+          icon: Package,
+          roles: ["owner"],
+        },
+        {
+          href: "/catalog/categories",
+          label: t.nav.categories,
+          icon: Tag,
+          roles: ["owner"],
+        },
+        {
+          href: "/inventory",
+          label: t.nav.inventory,
+          icon: Warehouse,
+          roles: ["owner"],
+        },
+        {
+          href: "/catalog/campaigns",
+          label: t.nav.campaigns,
+          icon: Megaphone,
+          roles: ["owner"],
+        },
+        {
+          href: "/catalog/suppliers",
+          label: t.nav.suppliers,
+          icon: Truck,
+          roles: ["owner"],
+        },
+        {
+          href: "/catalog/resellers",
+          label: t.nav.resellers,
+          icon: Users,
+          roles: ["owner"],
+        },
+      ],
+    },
+    {
+      label: t.nav.analytics,
+      roles: ["owner"],
+      items: [
+        {
+          href: "/reports",
+          label: t.nav.reports,
+          icon: BarChart3,
+          roles: ["owner"],
+        },
+      ],
+    },
+    {
+      label: t.nav.system,
+      roles: ["owner"],
+      items: [
+        {
+          href: "/settings",
+          label: t.nav.settings,
+          icon: Settings,
+          roles: ["owner"],
+        },
+      ],
+    },
+  ];
 
   function toggleGroup(label: string) {
     setCollapsedGroups((prev) => {
@@ -216,7 +230,7 @@ export function Sidebar({
             type="button"
             onClick={() => setMinimized((v) => !v)}
             className="hidden lg:flex flex-shrink-0 p-1.5 rounded-md text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
-            aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+            aria-label={collapsed ? t.nav.expandSidebar : t.nav.collapseSidebar}
           >
             {collapsed ? (
               <PanelLeftOpen className="h-4 w-4" aria-hidden="true" />
@@ -312,20 +326,43 @@ export function Sidebar({
               {!collapsed && "Sign out"}
             </button>
           </form>
-          <button
-            type="button"
-            onClick={toggleTheme}
-            className="p-2 rounded-lg text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
-            aria-label={
-              theme === "light" ? "Switch to dark mode" : "Switch to light mode"
-            }
-          >
-            {theme === "light" ? (
-              <Moon className="h-4 w-4" aria-hidden="true" />
-            ) : (
-              <Sun className="h-4 w-4" aria-hidden="true" />
-            )}
-          </button>
+          <div className="flex items-center gap-1">
+            {/* Language toggle — shows current locale so the choice is always visible */}
+            <button
+              type="button"
+              onClick={() => setLocale(locale === "en" ? "id" : "en")}
+              className="inline-flex items-center gap-1 px-2 py-1.5 rounded-lg text-xs font-semibold text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+              aria-label={t.nav.language}
+              title={
+                locale === "en" ? "Switch to Indonesia" : "Switch to English"
+              }
+            >
+              <Globe className="h-3.5 w-3.5 flex-shrink-0" aria-hidden="true" />
+              {!collapsed && (
+                <span className="uppercase tracking-wide">{locale}</span>
+              )}
+              {collapsed && (
+                <span className="uppercase tracking-wide text-[10px]">
+                  {locale}
+                </span>
+              )}
+            </button>
+            {/* Theme toggle */}
+            <button
+              type="button"
+              onClick={toggleTheme}
+              className="p-2 rounded-lg text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+              aria-label={
+                theme === "light" ? t.login.switchToDark : t.login.switchToLight
+              }
+            >
+              {theme === "light" ? (
+                <Moon className="h-4 w-4" aria-hidden="true" />
+              ) : (
+                <Sun className="h-4 w-4" aria-hidden="true" />
+              )}
+            </button>
+          </div>
         </div>
       </div>
     </nav>

@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Modal } from "@/components/ui/modal";
 import { Toast } from "@/components/ui/toast";
 import { createSupplier } from "@/lib/actions/suppliers";
+import { useI18n } from "@/lib/i18n/context";
 import type { Supplier } from "@/lib/types";
 
 interface Props {
@@ -16,6 +17,7 @@ interface Props {
 
 export function SuppliersClient({ suppliers }: Props) {
   const router = useRouter();
+  const { t } = useI18n();
   const [modalOpen, setModalOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [toast, setToast] = useState<{
@@ -29,7 +31,7 @@ export function SuppliersClient({ suppliers }: Props) {
     if (result.error) {
       setToast({ message: result.error, type: "error" });
     } else {
-      setToast({ message: "Supplier created", type: "success" });
+      setToast({ message: t.settings.supplierCreated, type: "success" });
       setModalOpen(false);
       router.refresh();
     }
@@ -40,11 +42,11 @@ export function SuppliersClient({ suppliers }: Props) {
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
-          Suppliers
+          {t.settings.suppliers}
         </h2>
         <Button size="sm" onClick={() => setModalOpen(true)}>
           <Plus className="h-3 w-3" aria-hidden="true" />
-          Add Supplier
+          {t.settings.addSupplier}
         </Button>
       </div>
 
@@ -54,16 +56,16 @@ export function SuppliersClient({ suppliers }: Props) {
             <thead>
               <tr className="border-b border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-700/50">
                 <th className="text-left py-3 px-4 font-medium text-gray-500 dark:text-gray-400">
-                  Name
+                  {t.common.name}
                 </th>
                 <th className="text-left py-3 px-4 font-medium text-gray-500 dark:text-gray-400">
-                  Phone
+                  {t.common.phone}
                 </th>
                 <th className="text-left py-3 px-4 font-medium text-gray-500 dark:text-gray-400">
-                  Address
+                  {t.common.address}
                 </th>
                 <th className="text-center py-3 px-4 font-medium text-gray-500 dark:text-gray-400">
-                  Status
+                  {t.common.status}
                 </th>
               </tr>
             </thead>
@@ -90,7 +92,7 @@ export function SuppliersClient({ suppliers }: Props) {
                           : "bg-gray-100 text-gray-500"
                       }`}
                     >
-                      {supplier.is_active ? "Active" : "Inactive"}
+                      {supplier.is_active ? t.common.active : t.common.inactive}
                     </span>
                   </td>
                 </tr>
@@ -101,7 +103,7 @@ export function SuppliersClient({ suppliers }: Props) {
                     colSpan={4}
                     className="py-8 text-center text-gray-400 dark:text-gray-500"
                   >
-                    No suppliers yet
+                    {t.settings.noSuppliersYet}
                   </td>
                 </tr>
               )}
@@ -113,22 +115,22 @@ export function SuppliersClient({ suppliers }: Props) {
       <Modal
         open={modalOpen}
         onClose={() => setModalOpen(false)}
-        title="New Supplier"
+        title={t.settings.addSupplier}
       >
         <form action={handleSubmit} className="space-y-4">
-          <Input label="Name" name="name" required />
-          <Input label="Phone" name="phone" type="tel" />
-          <Input label="Address" name="address" />
+          <Input label={t.common.name} name="name" required />
+          <Input label={t.common.phone} name="phone" type="tel" />
+          <Input label={t.common.address} name="address" />
           <div className="flex justify-end gap-2 pt-2">
             <Button
               type="button"
               variant="secondary"
               onClick={() => setModalOpen(false)}
             >
-              Cancel
+              {t.common.cancel}
             </Button>
             <Button type="submit" disabled={loading}>
-              {loading ? "Creating..." : "Create"}
+              {loading ? t.common.creating : t.common.create}
             </Button>
           </div>
         </form>

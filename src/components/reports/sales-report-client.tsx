@@ -4,6 +4,7 @@ import { Download } from "lucide-react";
 import { useMemo, useState } from "react";
 import { Input } from "@/components/ui/input";
 import { exportPdf } from "@/lib/export";
+import { useI18n } from "@/lib/i18n/context";
 import type { SalesSummaryRow } from "@/lib/types";
 import { formatCurrency } from "@/lib/utils";
 
@@ -15,6 +16,7 @@ interface SalesReportClientProps {
  * Sales summary report with date range filtering.
  */
 export function SalesReportClient({ summary }: SalesReportClientProps) {
+  const { t } = useI18n();
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
 
@@ -46,7 +48,7 @@ export function SalesReportClient({ summary }: SalesReportClientProps) {
             htmlFor="sales-start"
             className="block text-xs font-medium text-gray-500 mb-1"
           >
-            From
+            {t.reports.from}
           </label>
           <Input
             id="sales-start"
@@ -61,7 +63,7 @@ export function SalesReportClient({ summary }: SalesReportClientProps) {
             htmlFor="sales-end"
             className="block text-xs font-medium text-gray-500 mb-1"
           >
-            To
+            {t.reports.to}
           </label>
           <Input
             id="sales-end"
@@ -80,7 +82,7 @@ export function SalesReportClient({ summary }: SalesReportClientProps) {
             }}
             className="text-sm text-blue-600 hover:text-blue-700"
           >
-            Clear
+            {t.reports.clear}
           </button>
         )}
         {filtered.length > 0 && (
@@ -120,10 +122,10 @@ export function SalesReportClient({ summary }: SalesReportClientProps) {
               )
             }
             className="ml-auto inline-flex items-center gap-1.5 rounded-lg border border-gray-200 dark:border-gray-700 px-3 py-1.5 text-xs font-medium text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
-            aria-label="Export sales report as PDF"
+            aria-label={t.reports.exportPdf}
           >
             <Download className="h-3.5 w-3.5" aria-hidden="true" />
-            Export PDF
+            {t.reports.exportPdf}
           </button>
         )}
       </div>
@@ -134,22 +136,22 @@ export function SalesReportClient({ summary }: SalesReportClientProps) {
             <thead>
               <tr className="border-b border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-700/50">
                 <th className="text-left py-3 px-4 font-medium text-gray-500">
-                  Date
+                  {t.reports.date}
                 </th>
                 <th className="text-right py-3 px-4 font-medium text-gray-500">
-                  Transactions
+                  {t.reports.transactions}
                 </th>
                 <th className="text-right py-3 px-4 font-medium text-gray-500">
-                  Revenue
+                  {t.reports.revenue}
                 </th>
                 <th className="text-right py-3 px-4 font-medium text-gray-500">
-                  COGS
+                  {t.reports.cogs}
                 </th>
                 <th className="text-right py-3 px-4 font-medium text-gray-500">
-                  Gross Profit
+                  {t.reports.grossProfit}
                 </th>
                 <th className="text-right py-3 px-4 font-medium text-gray-500">
-                  Margin
+                  {t.reports.margin}
                 </th>
               </tr>
             </thead>
@@ -188,7 +190,7 @@ export function SalesReportClient({ summary }: SalesReportClientProps) {
               {filtered.length === 0 && (
                 <tr>
                   <td colSpan={6} className="py-8 text-center text-gray-400">
-                    No sales data for this period
+                    {t.reports.noSalesData}
                   </td>
                 </tr>
               )}
@@ -197,7 +199,7 @@ export function SalesReportClient({ summary }: SalesReportClientProps) {
               <tfoot>
                 <tr className="bg-gray-50 dark:bg-gray-700/50 font-medium">
                   <td className="py-3 px-4 text-gray-900 dark:text-gray-100">
-                    Total
+                    {t.reports.total}
                   </td>
                   <td className="py-3 px-4 text-right text-gray-900 dark:text-gray-100">
                     {totals.transactions}

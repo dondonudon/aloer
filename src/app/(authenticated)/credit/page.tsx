@@ -4,12 +4,14 @@ import {
   getOutstandingCreditPOs,
   getOutstandingCreditSales,
 } from "@/lib/actions/credit";
+import { getServerTranslations } from "@/lib/i18n/server";
 import { formatCurrency, formatDateTime } from "@/lib/utils";
 
 export default async function CreditPage() {
-  const [creditSales, creditPOs] = await Promise.all([
+  const [creditSales, creditPOs, t] = await Promise.all([
     getOutstandingCreditSales(),
     getOutstandingCreditPOs(),
+    getServerTranslations(),
   ]);
 
   const totalAR = creditSales.reduce((sum, s) => sum + s.outstanding, 0);
@@ -17,13 +19,13 @@ export default async function CreditPage() {
 
   return (
     <div className="space-y-6">
-      <PageHeader title="Credit Overview" />
+      <PageHeader title={t.credit.title} />
 
       {/* Summary cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700/50 rounded-xl p-5">
           <p className="text-xs font-medium text-amber-700 dark:text-amber-400 uppercase tracking-wide">
-            Accounts Receivable
+            {t.credit.accountsReceivable}
           </p>
           <p className="text-2xl font-bold text-amber-800 dark:text-amber-300 mt-1">
             {formatCurrency(totalAR)}
@@ -39,7 +41,7 @@ export default async function CreditPage() {
 
         <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-700/50 rounded-xl p-5">
           <p className="text-xs font-medium text-red-700 dark:text-red-400 uppercase tracking-wide">
-            Accounts Payable
+            {t.credit.accountsPayable}
           </p>
           <p className="text-2xl font-bold text-red-800 dark:text-red-300 mt-1">
             {formatCurrency(totalAP)}
@@ -55,13 +57,13 @@ export default async function CreditPage() {
       <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl overflow-hidden">
         <div className="p-4 border-b border-gray-200 dark:border-gray-700">
           <h2 className="text-base font-semibold text-gray-900 dark:text-white">
-            Accounts Receivable — Customer Credit Sales
+            {t.credit.arSection}
           </h2>
         </div>
 
         {creditSales.length === 0 ? (
           <p className="p-4 text-sm text-gray-400 dark:text-gray-500">
-            No outstanding credit sales.
+            {t.credit.noOutstandingCredit}
           </p>
         ) : (
           <div className="overflow-x-auto">
@@ -69,22 +71,22 @@ export default async function CreditPage() {
               <thead>
                 <tr className="border-b border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-700/50">
                   <th className="text-left py-3 px-4 font-medium text-gray-500 dark:text-gray-400">
-                    Invoice
+                    {t.credit.invoice}
                   </th>
                   <th className="text-left py-3 px-4 font-medium text-gray-500 dark:text-gray-400">
-                    Reseller
+                    {t.credit.reseller}
                   </th>
                   <th className="text-left py-3 px-4 font-medium text-gray-500 dark:text-gray-400">
-                    Date
+                    {t.credit.date}
                   </th>
                   <th className="text-right py-3 px-4 font-medium text-gray-500 dark:text-gray-400">
-                    Total
+                    {t.credit.total}
                   </th>
                   <th className="text-right py-3 px-4 font-medium text-gray-500 dark:text-gray-400">
-                    Collected
+                    {t.credit.collected}
                   </th>
                   <th className="text-right py-3 px-4 font-medium text-gray-500 dark:text-gray-400">
-                    Outstanding
+                    {t.credit.outstanding}
                   </th>
                   <th className="py-3 px-4" />
                 </tr>
@@ -127,7 +129,7 @@ export default async function CreditPage() {
                         href={`/sales/${sale.id}`}
                         className="text-xs text-blue-600 dark:text-blue-400 hover:underline"
                       >
-                        View
+                        {t.credit.view}
                       </Link>
                     </td>
                   </tr>
@@ -142,13 +144,13 @@ export default async function CreditPage() {
       <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl overflow-hidden">
         <div className="p-4 border-b border-gray-200 dark:border-gray-700">
           <h2 className="text-base font-semibold text-gray-900 dark:text-white">
-            Accounts Payable — Supplier Credit POs
+            {t.credit.apSection}
           </h2>
         </div>
 
         {creditPOs.length === 0 ? (
           <p className="p-4 text-sm text-gray-400 dark:text-gray-500">
-            No outstanding credit purchase orders.
+            {t.credit.noOutstandingPO}
           </p>
         ) : (
           <div className="overflow-x-auto">
@@ -156,22 +158,22 @@ export default async function CreditPage() {
               <thead>
                 <tr className="border-b border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-700/50">
                   <th className="text-left py-3 px-4 font-medium text-gray-500 dark:text-gray-400">
-                    PO Number
+                    {t.credit.poNumber}
                   </th>
                   <th className="text-left py-3 px-4 font-medium text-gray-500 dark:text-gray-400">
-                    Supplier
+                    {t.credit.supplier}
                   </th>
                   <th className="text-left py-3 px-4 font-medium text-gray-500 dark:text-gray-400">
-                    Date
+                    {t.credit.date}
                   </th>
                   <th className="text-right py-3 px-4 font-medium text-gray-500 dark:text-gray-400">
-                    Total
+                    {t.credit.total}
                   </th>
                   <th className="text-right py-3 px-4 font-medium text-gray-500 dark:text-gray-400">
-                    Paid
+                    {t.credit.paid}
                   </th>
                   <th className="text-right py-3 px-4 font-medium text-gray-500 dark:text-gray-400">
-                    Outstanding
+                    {t.credit.outstanding}
                   </th>
                   <th className="py-3 px-4" />
                 </tr>
@@ -214,7 +216,7 @@ export default async function CreditPage() {
                         href={`/purchases/${po.id}`}
                         className="text-xs text-blue-600 dark:text-blue-400 hover:underline"
                       >
-                        View
+                        {t.credit.view}
                       </Link>
                     </td>
                   </tr>

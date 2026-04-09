@@ -7,18 +7,20 @@ import { Suspense, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { useTheme } from "@/components/ui/theme-provider";
 import { loginWithGoogle } from "@/lib/actions/auth";
+import { useI18n } from "@/lib/i18n/context";
 
 const LOGO_URL =
   "https://owptgwolyjbccarfkkfz.supabase.co/storage/v1/object/public/pos-assets/logo/aloer_logo.png";
 
 function LoginForm() {
+  const { t } = useI18n();
   const searchParams = useSearchParams();
   const oauthError = searchParams.get("error");
   const [loading, setLoading] = useState(false);
   const [actionError, setActionError] = useState<string | null>(null);
 
   const displayError =
-    actionError ?? (oauthError ? "Sign-in failed. Please try again." : null);
+    actionError ?? (oauthError ? t.login.signInFailed : null);
 
   async function handleGoogleSignIn() {
     setLoading(true);
@@ -43,10 +45,10 @@ function LoginForm() {
         />
         <div className="text-center space-y-1">
           <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
-            Sign in
+            {t.login.signIn}
           </h1>
           <p className="text-sm text-gray-500 dark:text-gray-400">
-            Use your Google account to continue
+            {t.login.useGoogle}
           </p>
         </div>
       </div>
@@ -90,13 +92,14 @@ function LoginForm() {
             />
           </svg>
         )}
-        {loading ? "Redirecting..." : "Continue with Google"}
+        {loading ? t.login.redirecting : t.login.continueWithGoogle}
       </Button>
     </div>
   );
 }
 
 export default function LoginPage() {
+  const { t } = useI18n();
   const { theme, toggleTheme } = useTheme();
 
   return (
@@ -106,7 +109,7 @@ export default function LoginPage() {
         onClick={toggleTheme}
         className="absolute top-4 right-4 p-2 rounded-lg text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
         aria-label={
-          theme === "light" ? "Switch to dark mode" : "Switch to light mode"
+          theme === "light" ? t.login.switchToDark : t.login.switchToLight
         }
       >
         {theme === "light" ? (

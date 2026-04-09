@@ -9,22 +9,23 @@ import { PageHeader } from "@/components/ui/page-header";
 import { Select } from "@/components/ui/select";
 import { Toast } from "@/components/ui/toast";
 import { createAdjustment } from "@/lib/actions/inventory";
+import { useI18n } from "@/lib/i18n/context";
 import type { AdjustmentItemInput, Product } from "@/lib/types";
 
 interface Props {
   products: Product[];
 }
 
-const reasonOptions = [
-  { value: "damaged", label: "Damaged" },
-  { value: "expired", label: "Expired" },
-  { value: "recount", label: "Recount" },
-  { value: "initial_stock", label: "Initial Stock" },
-  { value: "other", label: "Other" },
-];
-
 export function NewAdjustmentClient({ products }: Props) {
   const router = useRouter();
+  const { t } = useI18n();
+  const reasonOptions = [
+    { value: "damaged", label: t.inventory.damaged },
+    { value: "expired", label: t.inventory.expired },
+    { value: "recount", label: t.inventory.recount },
+    { value: "initial_stock", label: t.inventory.initialStock },
+    { value: "other", label: t.inventory.other },
+  ];
   const [reason, setReason] = useState("recount");
   const [notes, setNotes] = useState("");
   const [items, setItems] = useState<
@@ -69,7 +70,7 @@ export function NewAdjustmentClient({ products }: Props) {
 
   async function handleSubmit() {
     if (items.length === 0) {
-      setToast({ message: "Add at least one item", type: "error" });
+      setToast({ message: t.inventory.addAtLeastOne, type: "error" });
       return;
     }
 
@@ -91,14 +92,14 @@ export function NewAdjustmentClient({ products }: Props) {
     if (result.error) {
       setToast({ message: result.error, type: "error" });
     } else {
-      setToast({ message: "Adjustment created", type: "success" });
+      setToast({ message: t.inventory.adjustmentCreated, type: "success" });
       router.push("/inventory/adjustments");
     }
     setLoading(false);
   }
 
   const productOptions = [
-    { value: "", label: "Select product..." },
+    { value: "", label: t.inventory.selectProduct },
     ...products.map((p) => ({
       value: p.id,
       label: `${p.name} (${p.sku})`,
@@ -108,29 +109,29 @@ export function NewAdjustmentClient({ products }: Props) {
   return (
     <div className="max-w-3xl space-y-6">
       <PageHeader
-        title="New Inventory Adjustment"
+        title={t.inventory.newAdjustmentTitle}
         backHref="/inventory/adjustments"
-        backLabel="Adjustments"
+        backLabel={t.inventory.adjustments}
       />
 
       <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-6 space-y-4">
         <Select
-          label="Reason"
+          label={t.inventory.reason}
           options={reasonOptions}
           value={reason}
           onChange={(e) => setReason(e.target.value)}
         />
         <Input
-          label="Notes (optional)"
+          label={t.inventory.notesOptional}
           value={notes}
           onChange={(e) => setNotes(e.target.value)}
-          placeholder="Additional notes..."
+          placeholder={t.inventory.additionalNotes}
         />
 
         <div className="space-y-3">
           <div className="flex items-center justify-between">
             <h2 className="text-sm font-semibold text-gray-700 dark:text-gray-300">
-              Items
+              {t.inventory.items}
             </h2>
             <Button
               type="button"
@@ -139,7 +140,7 @@ export function NewAdjustmentClient({ products }: Props) {
               onClick={addItem}
             >
               <Plus className="h-3 w-3" aria-hidden="true" />
-              Add Item
+              {t.inventory.addItem}
             </Button>
           </div>
 
@@ -150,7 +151,7 @@ export function NewAdjustmentClient({ products }: Props) {
             >
               <div className="sm:col-span-2">
                 <Select
-                  label="Product"
+                  label={t.inventory.selectProduct}
                   options={productOptions}
                   value={item.productId}
                   onChange={(e) =>
@@ -159,16 +160,16 @@ export function NewAdjustmentClient({ products }: Props) {
                 />
               </div>
               <Input
-                label="Qty change (+/-)"
+                label={t.inventory.qtyChange}
                 type="number"
                 value={item.quantityChange}
                 onChange={(e) =>
                   updateItem(index, "quantityChange", e.target.value)
                 }
-                placeholder="e.g. -5 or 3"
+                placeholder={t.inventory.qtyPlaceholder}
               />
               <Input
-                label="Cost price"
+                label={t.inventory.costPrice}
                 type="number"
                 min="0"
                 step="100"
@@ -178,7 +179,7 @@ export function NewAdjustmentClient({ products }: Props) {
               <div className="flex items-end gap-2">
                 <div className="flex-1 min-w-0">
                   <Input
-                    label="Expiry"
+                    label={t.inventory.expiry}
                     type="date"
                     value={item.expiryDate}
                     onChange={(e) =>
@@ -190,7 +191,7 @@ export function NewAdjustmentClient({ products }: Props) {
                   type="button"
                   onClick={() => removeItem(item.id)}
                   className="p-2 rounded hover:bg-red-100 text-red-500 transition-colors mb-0.5 shrink-0"
-                  aria-label="Remove item"
+                  aria-label={t.inventory.removeItem}
                 >
                   <Trash2 className="h-4 w-4" aria-hidden="true" />
                 </button>
@@ -200,7 +201,7 @@ export function NewAdjustmentClient({ products }: Props) {
 
           {items.length === 0 && (
             <p className="text-sm text-gray-400 text-center py-4">
-              No items added. Click &quot;Add Item&quot; to start.
+              {t.inventory.noItemsAdded}
             </p>
           )}
         </div>
@@ -210,13 +211,13 @@ export function NewAdjustmentClient({ products }: Props) {
             variant="secondary"
             onClick={() => router.push("/inventory/adjustments")}
           >
-            Cancel
+            {t.common.cancel}
           </Button>
           <Button
             onClick={handleSubmit}
             disabled={loading || items.length === 0}
           >
-            {loading ? "Processing..." : "Create Adjustment"}
+            {loading ? t.common.processing : t.inventory.createAdjustment}
           </Button>
         </div>
       </div>

@@ -9,22 +9,23 @@ import { Modal } from "@/components/ui/modal";
 import { Select } from "@/components/ui/select";
 import { Toast } from "@/components/ui/toast";
 import { createReseller, updateReseller } from "@/lib/actions/resellers";
+import { useI18n } from "@/lib/i18n/context";
 import type { Reseller } from "@/lib/types";
 
 interface Props {
   resellers: Reseller[];
 }
 
-const statusOptions = [
-  { value: "true", label: "Active" },
-  { value: "false", label: "Inactive" },
-];
-
 /**
  * Reseller management UI — create and edit resellers.
  */
 export function ResellersClient({ resellers }: Props) {
   const router = useRouter();
+  const { t } = useI18n();
+  const statusOptions = [
+    { value: "true", label: t.common.active },
+    { value: "false", label: t.common.inactive },
+  ];
   const [modal, setModal] = useState<{
     open: boolean;
     reseller?: Reseller;
@@ -50,7 +51,9 @@ export function ResellersClient({ resellers }: Props) {
       setToast({ message: result.error, type: "error" });
     } else {
       setToast({
-        message: isEdit ? "Reseller updated" : "Reseller created",
+        message: isEdit
+          ? t.settings.resellerUpdated
+          : t.settings.resellerCreated,
         type: "success",
       });
       setModal({ open: false });
@@ -62,11 +65,11 @@ export function ResellersClient({ resellers }: Props) {
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
-          Resellers
+          {t.settings.resellers}
         </h2>
         <Button size="sm" onClick={() => setModal({ open: true })}>
           <Plus className="h-3 w-3" aria-hidden="true" />
-          Add Reseller
+          {t.settings.addReseller}
         </Button>
       </div>
 
@@ -76,16 +79,16 @@ export function ResellersClient({ resellers }: Props) {
             <thead>
               <tr className="border-b border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-700/50">
                 <th className="text-left py-3 px-4 font-medium text-gray-500 dark:text-gray-400">
-                  Name
+                  {t.common.name}
                 </th>
                 <th className="text-left py-3 px-4 font-medium text-gray-500 dark:text-gray-400">
-                  Phone
+                  {t.common.phone}
                 </th>
                 <th className="text-left py-3 px-4 font-medium text-gray-500 dark:text-gray-400">
-                  Address
+                  {t.common.address}
                 </th>
                 <th className="text-center py-3 px-4 font-medium text-gray-500 dark:text-gray-400">
-                  Status
+                  {t.common.status}
                 </th>
                 <th className="py-3 px-4" />
               </tr>
@@ -113,7 +116,7 @@ export function ResellersClient({ resellers }: Props) {
                           : "bg-gray-100 text-gray-500"
                       }`}
                     >
-                      {r.is_active ? "Active" : "Inactive"}
+                      {r.is_active ? t.common.active : t.common.inactive}
                     </span>
                   </td>
                   <td className="py-3 px-4 text-right">
@@ -137,7 +140,7 @@ export function ResellersClient({ resellers }: Props) {
                     colSpan={5}
                     className="py-8 text-center text-gray-400 dark:text-gray-500"
                   >
-                    No resellers yet
+                    {t.settings.noResellersYet}
                   </td>
                 </tr>
               )}
@@ -149,23 +152,23 @@ export function ResellersClient({ resellers }: Props) {
       <Modal
         open={modal.open}
         onClose={() => setModal({ open: false })}
-        title={isEdit ? "Edit Reseller" : "New Reseller"}
+        title={isEdit ? t.settings.editReseller : t.settings.newReseller}
       >
         <form onSubmit={handleSubmit} className="space-y-4">
           <Input
-            label="Name"
+            label={t.common.name}
             name="name"
             required
             defaultValue={modal.reseller?.name}
           />
           <Input
-            label="Phone"
+            label={t.common.phone}
             name="phone"
             type="tel"
             defaultValue={modal.reseller?.phone ?? ""}
           />
           <Input
-            label="Address"
+            label={t.common.address}
             name="address"
             defaultValue={modal.reseller?.address ?? ""}
           />
@@ -183,10 +186,14 @@ export function ResellersClient({ resellers }: Props) {
               variant="secondary"
               onClick={() => setModal({ open: false })}
             >
-              Cancel
+              {t.common.cancel}
             </Button>
             <Button type="submit" disabled={loading}>
-              {loading ? "Saving..." : isEdit ? "Save" : "Create"}
+              {loading
+                ? t.common.saving
+                : isEdit
+                  ? t.common.save
+                  : t.common.create}
             </Button>
           </div>
         </form>

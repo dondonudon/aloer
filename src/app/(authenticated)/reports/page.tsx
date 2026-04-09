@@ -1,32 +1,34 @@
 import { BarChart3, DollarSign, ShoppingCart } from "lucide-react";
 import Link from "next/link";
+import { getServerTranslations } from "@/lib/i18n/server";
 
-const reports = [
-  {
-    href: "/reports/balance-sheet",
-    label: "Balance Sheet",
-    description: "View assets, liabilities, and equity",
-    icon: BarChart3,
-  },
-  {
-    href: "/reports/profit-loss",
-    label: "Profit & Loss",
-    description: "Revenue and expenses over a period",
-    icon: DollarSign,
-  },
-  {
-    href: "/reports/sales",
-    label: "Sales Summary",
-    description: "Daily sales, COGS, and gross profit",
-    icon: ShoppingCart,
-  },
-];
+export default async function ReportsPage() {
+  const t = await getServerTranslations();
 
-export default function ReportsPage() {
+  const reports = [
+    {
+      href: "/reports/balance-sheet",
+      label: t.reports.balanceSheet,
+      description: t.reports.balanceSheetDesc,
+      icon: BarChart3,
+    },
+    {
+      href: "/reports/profit-loss",
+      label: t.reports.profitLoss,
+      description: t.reports.profitLossDesc,
+      icon: DollarSign,
+    },
+    {
+      href: "/reports/sales",
+      label: t.reports.salesSummary,
+      description: t.reports.salesSummaryDesc,
+      icon: ShoppingCart,
+    },
+  ];
   return (
     <div className="space-y-4">
       <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
-        Reports
+        {t.reports.title}
       </h1>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">

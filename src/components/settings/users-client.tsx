@@ -6,6 +6,7 @@ import { Select } from "@/components/ui/select";
 import { Toast } from "@/components/ui/toast";
 import type { ManagedUser } from "@/lib/actions/users";
 import { setUserRole } from "@/lib/actions/users";
+import { useI18n } from "@/lib/i18n/context";
 import type { UserRole } from "@/lib/types";
 import { formatDateTime } from "@/lib/utils";
 
@@ -14,18 +15,14 @@ interface UsersClientProps {
   currentUserId: string;
 }
 
-const roleOptions = [
-  { value: "", label: "— No Access —" },
-  { value: "owner", label: "Owner" },
-  { value: "cashier", label: "Cashier" },
-];
-
-/**
- * User management table for the Settings page.
- * Allows the owner to assign or revoke roles for any signed-in user.
- */
 export function UsersClient({ users, currentUserId }: UsersClientProps) {
   const router = useRouter();
+  const { t } = useI18n();
+  const roleOptions = [
+    { value: "", label: t.settings.noAccess },
+    { value: "owner", label: t.settings.ownerRole },
+    { value: "cashier", label: t.settings.cashierRole },
+  ];
   const [loading, setLoading] = useState<string | null>(null);
   const [toast, setToast] = useState<{
     message: string;
@@ -40,7 +37,9 @@ export function UsersClient({ users, currentUserId }: UsersClientProps) {
       setToast({ message: result.error, type: "error" });
     } else {
       setToast({
-        message: role ? `Role set to ${role}` : "Access revoked",
+        message: role
+          ? `${t.settings.roleSetTo} ${role}`
+          : t.settings.accessRevoked,
         type: "success",
       });
       router.refresh();
@@ -51,7 +50,7 @@ export function UsersClient({ users, currentUserId }: UsersClientProps) {
   return (
     <section className="space-y-4">
       <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
-        User Access
+        {t.settings.userAccess}
       </h2>
 
       <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl overflow-hidden">
@@ -59,13 +58,13 @@ export function UsersClient({ users, currentUserId }: UsersClientProps) {
           <thead>
             <tr className="border-b border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-700/50">
               <th className="text-left py-3 px-4 font-medium text-gray-500 dark:text-gray-400">
-                User
+                {t.settings.user}
               </th>
               <th className="text-left py-3 px-4 font-medium text-gray-500 dark:text-gray-400">
-                Signed up
+                {t.settings.signedUp}
               </th>
               <th className="text-left py-3 px-4 font-medium text-gray-500 dark:text-gray-400 w-44">
-                Role
+                {t.settings.role}
               </th>
             </tr>
           </thead>
@@ -82,7 +81,7 @@ export function UsersClient({ users, currentUserId }: UsersClientProps) {
                       {user.name}
                       {isMe && (
                         <span className="ml-2 text-xs text-blue-600 dark:text-blue-400 font-normal">
-                          (you)
+                          ({t.settings.you})
                         </span>
                       )}
                     </p>
@@ -119,7 +118,7 @@ export function UsersClient({ users, currentUserId }: UsersClientProps) {
                   colSpan={3}
                   className="py-8 text-center text-gray-400 dark:text-gray-500"
                 >
-                  No users found
+                  {t.settings.noUsersFound}
                 </td>
               </tr>
             )}
@@ -128,8 +127,7 @@ export function UsersClient({ users, currentUserId }: UsersClientProps) {
       </div>
 
       <p className="text-xs text-gray-400 dark:text-gray-500">
-        Only users who have signed in via Google appear here. Set a role to
-        grant access; remove it to revoke.
+        {t.settings.userAccessNote}
       </p>
 
       {toast && (

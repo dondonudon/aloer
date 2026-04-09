@@ -3,6 +3,7 @@ import { SupplierPaymentsClient } from "@/components/purchases/supplier-payments
 import { PageHeader } from "@/components/ui/page-header";
 import { getPurchaseOrderWithItems } from "@/lib/actions/purchases";
 import { getSupplierPayments } from "@/lib/actions/supplier-payments";
+import { getServerTranslations } from "@/lib/i18n/server";
 import { formatCurrency, formatDateTime } from "@/lib/utils";
 
 interface Props {
@@ -11,7 +12,10 @@ interface Props {
 
 export default async function PurchaseOrderDetailPage({ params }: Props) {
   const { id } = await params;
-  const { po, items } = await getPurchaseOrderWithItems(id);
+  const [{ po, items }, t] = await Promise.all([
+    getPurchaseOrderWithItems(id),
+    getServerTranslations(),
+  ]);
 
   const supplierPayments =
     po.payment_method === "credit" && po.status === "received"
@@ -28,36 +32,44 @@ export default async function PurchaseOrderDetailPage({ params }: Props) {
       <PageHeader
         title={po.po_number}
         backHref="/purchases"
-        backLabel="Purchase Orders"
+        backLabel={t.purchases.title}
       >
         <PODetailActions poId={po.id} status={po.status} />
       </PageHeader>
       <p className="text-sm text-gray-500 dark:text-gray-400">
-        Created {formatDateTime(po.created_at)}
+        {t.purchases.created} {formatDateTime(po.created_at)}
       </p>
 
       <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-6 space-y-4">
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
           <div>
-            <p className="text-xs text-gray-500 dark:text-gray-400">Status</p>
+            <p className="text-xs text-gray-500 dark:text-gray-400">
+              {t.purchases.status}
+            </p>
             <p className="text-sm font-medium capitalize dark:text-gray-100">
               {po.status}
             </p>
           </div>
           <div>
-            <p className="text-xs text-gray-500 dark:text-gray-400">Supplier</p>
+            <p className="text-xs text-gray-500 dark:text-gray-400">
+              {t.purchases.supplier}
+            </p>
             <p className="text-sm font-medium dark:text-gray-100">
               {(po.suppliers as { name: string } | null)?.name || "—"}
             </p>
           </div>
           <div>
-            <p className="text-xs text-gray-500 dark:text-gray-400">Payment</p>
+            <p className="text-xs text-gray-500 dark:text-gray-400">
+              {t.purchases.payment}
+            </p>
             <p className="text-sm font-medium capitalize dark:text-gray-100">
               {po.payment_method}
             </p>
           </div>
           <div>
-            <p className="text-xs text-gray-500 dark:text-gray-400">Total</p>
+            <p className="text-xs text-gray-500 dark:text-gray-400">
+              {t.purchases.total}
+            </p>
             <p className="text-sm font-medium dark:text-gray-100">
               {formatCurrency(total)}
             </p>
@@ -65,7 +77,9 @@ export default async function PurchaseOrderDetailPage({ params }: Props) {
         </div>
         {po.notes && (
           <div>
-            <p className="text-xs text-gray-500 dark:text-gray-400">Notes</p>
+            <p className="text-xs text-gray-500 dark:text-gray-400">
+              {t.purchases.notes}
+            </p>
             <p className="text-sm text-gray-700 dark:text-gray-300">
               {po.notes}
             </p>
@@ -76,7 +90,7 @@ export default async function PurchaseOrderDetailPage({ params }: Props) {
       <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl overflow-hidden">
         <div className="p-4 border-b border-gray-200 dark:border-gray-700">
           <h2 className="text-base font-semibold text-gray-900 dark:text-white">
-            Items
+            {t.purchases.items}
           </h2>
         </div>
         <div className="overflow-x-auto">
@@ -84,19 +98,19 @@ export default async function PurchaseOrderDetailPage({ params }: Props) {
             <thead>
               <tr className="border-b border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-700/50">
                 <th className="text-left py-3 px-4 font-medium text-gray-500 dark:text-gray-400">
-                  Product
+                  {t.purchases.product}
                 </th>
                 <th className="text-right py-3 px-4 font-medium text-gray-500 dark:text-gray-400">
-                  Quantity
+                  {t.purchases.quantity}
                 </th>
                 <th className="text-right py-3 px-4 font-medium text-gray-500 dark:text-gray-400">
-                  Cost Price
+                  {t.purchases.costPrice}
                 </th>
                 <th className="text-left py-3 px-4 font-medium text-gray-500 dark:text-gray-400">
-                  Expiry
+                  {t.purchases.expiry}
                 </th>
                 <th className="text-right py-3 px-4 font-medium text-gray-500 dark:text-gray-400">
-                  Subtotal
+                  {t.purchases.subtotal}
                 </th>
               </tr>
             </thead>

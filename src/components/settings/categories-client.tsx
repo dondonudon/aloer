@@ -9,6 +9,7 @@ import { Modal } from "@/components/ui/modal";
 import { Select } from "@/components/ui/select";
 import { Toast } from "@/components/ui/toast";
 import { createCategory, updateCategory } from "@/lib/actions/categories";
+import { useI18n } from "@/lib/i18n/context";
 import type { Category } from "@/lib/types";
 
 interface CategoriesClientProps {
@@ -20,6 +21,7 @@ interface CategoriesClientProps {
  */
 export function CategoriesClient({ categories }: CategoriesClientProps) {
   const router = useRouter();
+  const { t } = useI18n();
   const [modalOpen, setModalOpen] = useState(false);
   const [editing, setEditing] = useState<Category | null>(null);
   const [loading, setLoading] = useState(false);
@@ -51,7 +53,9 @@ export function CategoriesClient({ categories }: CategoriesClientProps) {
       setToast({ message: result.error, type: "error" });
     } else {
       setToast({
-        message: editing ? "Category updated" : "Category created",
+        message: editing
+          ? t.settings.categoryUpdated
+          : t.settings.categoryCreated,
         type: "success",
       });
       setModalOpen(false);
@@ -64,29 +68,29 @@ export function CategoriesClient({ categories }: CategoriesClientProps) {
     <section className="space-y-4">
       <div className="flex items-center justify-between">
         <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
-          Categories
+          {t.settings.categories}
         </h2>
         <Button size="sm" onClick={openCreate}>
           <Plus className="h-4 w-4" aria-hidden="true" />
-          New Category
+          {t.settings.newCategory}
         </Button>
       </div>
 
       {categories.length === 0 ? (
-        <p className="text-sm text-gray-400">No categories yet</p>
+        <p className="text-sm text-gray-400">{t.settings.noCategoriesYet}</p>
       ) : (
         <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl overflow-hidden">
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-700/50">
                 <th className="text-left py-3 px-4 font-medium text-gray-500 dark:text-gray-400">
-                  Name
+                  {t.common.name}
                 </th>
                 <th className="text-center py-3 px-4 font-medium text-gray-500 dark:text-gray-400">
-                  Status
+                  {t.common.status}
                 </th>
                 <th className="text-center py-3 px-4 font-medium text-gray-500 dark:text-gray-400">
-                  Actions
+                  {t.common.actions}
                 </th>
               </tr>
             </thead>
@@ -107,7 +111,7 @@ export function CategoriesClient({ categories }: CategoriesClientProps) {
                           : "bg-gray-100 text-gray-500"
                       }`}
                     >
-                      {cat.is_active ? "Active" : "Inactive"}
+                      {cat.is_active ? t.common.active : t.common.inactive}
                     </span>
                   </td>
                   <td className="py-3 px-4 text-center">
@@ -130,24 +134,24 @@ export function CategoriesClient({ categories }: CategoriesClientProps) {
       <Modal
         open={modalOpen}
         onClose={() => setModalOpen(false)}
-        title={editing ? "Edit Category" : "New Category"}
+        title={editing ? t.settings.editCategory : t.settings.newCategory}
       >
         <form action={handleSubmit} className="space-y-4">
           <Input
-            label="Category Name"
+            label={t.settings.categoryName}
             name="name"
             required
             maxLength={50}
             defaultValue={editing?.name ?? ""}
-            placeholder="e.g. Beverages"
+            placeholder={t.settings.categoryPlaceholder}
           />
           {editing && (
             <Select
-              label="Status"
+              label={t.common.status}
               name="is_active"
               options={[
-                { value: "true", label: "Active" },
-                { value: "false", label: "Inactive" },
+                { value: "true", label: t.common.active },
+                { value: "false", label: t.common.inactive },
               ]}
               defaultValue={String(editing.is_active)}
             />
@@ -158,10 +162,14 @@ export function CategoriesClient({ categories }: CategoriesClientProps) {
               variant="secondary"
               onClick={() => setModalOpen(false)}
             >
-              Cancel
+              {t.common.cancel}
             </Button>
             <Button type="submit" disabled={loading}>
-              {loading ? "Saving..." : editing ? "Update" : "Create"}
+              {loading
+                ? t.common.saving
+                : editing
+                  ? t.common.update
+                  : t.common.create}
             </Button>
           </div>
         </form>

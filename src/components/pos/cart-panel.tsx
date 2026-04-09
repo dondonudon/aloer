@@ -16,6 +16,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import type { CartItem } from "@/lib/hooks/use-cart";
+import { useI18n } from "@/lib/i18n/context";
 import type {
   CampaignWithProducts,
   Product,
@@ -77,6 +78,7 @@ export function CartPanel({
   selectedResellerId = "",
   onResellerChange,
 }: CartPanelProps) {
+  const { t } = useI18n();
   const [splitMode, setSplitMode] = useState(false);
   const [cashAmt, setCashAmt] = useState("");
   const [transferAmt, setTransferAmt] = useState("");
@@ -121,7 +123,7 @@ export function CartPanel({
             aria-hidden="true"
           />
           <h2 className="font-semibold text-gray-900 dark:text-white">
-            Cart ({cart.length})
+            {t.pos.cart} ({cart.length})
           </h2>
         </div>
       </div>
@@ -133,16 +135,16 @@ export function CartPanel({
             htmlFor="reseller-select"
             className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1"
           >
-            Customer (Reseller)
+            {t.pos.customer}
           </label>
           <select
             id="reseller-select"
             value={selectedResellerId}
             onChange={(e) => onResellerChange?.(e.target.value)}
             className="w-full text-sm rounded-md border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 px-2.5 py-1.5 focus:outline-none focus:ring-2 focus:ring-blue-500"
-            aria-label="Select reseller or customer"
+            aria-label={t.pos.customer}
           >
-            <option value="">— None —</option>
+            <option value="">{t.pos.none}</option>
             {resellers.map((r) => (
               <option key={r.id} value={r.id}>
                 {r.name}
@@ -155,7 +157,7 @@ export function CartPanel({
       <div className="flex-1 overflow-y-auto p-4 space-y-3">
         {cart.length === 0 && (
           <p className="text-center text-gray-400 py-8 text-sm">
-            Cart is empty
+            {t.pos.cartEmpty}
           </p>
         )}
         {cart.map((item) => {
@@ -178,12 +180,12 @@ export function CartPanel({
                   {item.product.name}
                   {isBulk && (
                     <span className="ml-1 inline-flex items-center rounded-full bg-blue-50 px-1.5 py-0.5 text-[10px] font-medium text-blue-700">
-                      BULK
+                      {t.pos.bulk}
                     </span>
                   )}
                   {campaign && (
                     <span className="ml-1 inline-flex items-center rounded-full bg-orange-50 px-1.5 py-0.5 text-[10px] font-medium text-orange-700">
-                      PROMO
+                      {t.pos.promo}
                     </span>
                   )}
                 </p>
@@ -241,7 +243,7 @@ export function CartPanel({
             className="flex items-center gap-1.5 text-xs font-medium text-gray-600 dark:text-gray-400 mb-1.5"
           >
             <Tag className="h-3.5 w-3.5" aria-hidden="true" />
-            Discount
+            {t.pos.discount}
           </label>
           <div className="flex gap-1.5">
             <div className="flex rounded-md border border-gray-200 dark:border-gray-600 overflow-hidden text-xs">
@@ -285,12 +287,12 @@ export function CartPanel({
                 min="0"
                 max={discountType === "percentage" ? "100" : String(subtotal)}
                 placeholder={
-                  discountType === "percentage" ? "0 – 100" : "Amount"
+                  discountType === "percentage" ? "0 – 100" : t.common.amount
                 }
                 value={discountValue}
                 onChange={(e) => onDiscountValueChange(e.target.value)}
                 className="flex-1 text-sm w-full"
-                aria-label="Discount value"
+                aria-label={t.pos.discount}
               />
             </div>
           </div>
@@ -302,7 +304,7 @@ export function CartPanel({
             <div className="flex justify-between text-sm text-green-600 dark:text-green-400">
               <span className="flex items-center gap-1">
                 <Tag className="h-3.5 w-3.5" aria-hidden="true" />
-                Campaign savings
+                {t.pos.campaignSavings}
               </span>
               <span>- {formatCurrency(campaignSavings)}</span>
             </div>
@@ -311,7 +313,7 @@ export function CartPanel({
             <div className="flex justify-between text-sm text-green-600 dark:text-green-400">
               <span className="flex items-center gap-1">
                 <Tag className="h-3.5 w-3.5" aria-hidden="true" />
-                Cart campaign
+                {t.pos.cartCampaign}
               </span>
               <span>- {formatCurrency(cartCampaignDiscount)}</span>
             </div>
@@ -319,12 +321,12 @@ export function CartPanel({
           {discountAmount > 0 && (
             <>
               <div className="flex justify-between text-sm text-gray-600 dark:text-gray-400">
-                <span>Subtotal</span>
+                <span>{t.pos.subtotal}</span>
                 <span>{formatCurrency(subtotal)}</span>
               </div>
               <div className="flex justify-between text-sm text-red-600">
                 <span>
-                  Discount (
+                  {t.pos.discount} (
                   {discountType === "percentage"
                     ? `${discountValue}%`
                     : "Fixed"}
@@ -336,7 +338,7 @@ export function CartPanel({
           )}
           <div className="flex justify-between items-center">
             <span className="text-lg font-bold text-gray-900 dark:text-white">
-              Total
+              {t.pos.total}
             </span>
             <span className="text-lg font-bold text-gray-900 dark:text-white">
               {formatCurrency(finalTotal)}
@@ -354,7 +356,7 @@ export function CartPanel({
                 className="flex items-center justify-center gap-2"
               >
                 <Banknote className="h-4 w-4" aria-hidden="true" />
-                Cash
+                {t.common.cash}
               </Button>
               <Button
                 onClick={() => handleQuickPay("transfer")}
@@ -363,7 +365,7 @@ export function CartPanel({
                 className="flex items-center justify-center gap-2"
               >
                 <CreditCard className="h-4 w-4" aria-hidden="true" />
-                Transfer
+                {t.common.transfer}
               </Button>
             </div>
             <div className="grid grid-cols-2 gap-2">
@@ -386,12 +388,12 @@ export function CartPanel({
                 className="flex items-center justify-center gap-2 text-xs text-amber-600 dark:text-amber-400 border-amber-300 dark:border-amber-600 hover:bg-amber-50 dark:hover:bg-amber-900/20 disabled:opacity-40"
                 title={
                   !selectedResellerId
-                    ? "Select a reseller to sell on credit"
+                    ? t.pos.selectResellerForCredit
                     : undefined
                 }
               >
                 <Clock className="h-3.5 w-3.5" aria-hidden="true" />
-                Credit
+                {t.common.credit}
               </Button>
             </div>
           </div>
@@ -399,7 +401,7 @@ export function CartPanel({
           <div className="space-y-2">
             <div className="grid grid-cols-2 gap-2">
               <Input
-                label="Cash"
+                label={t.common.cash}
                 id="split-cash"
                 type="number"
                 min="0"
@@ -407,10 +409,10 @@ export function CartPanel({
                 placeholder="0"
                 value={cashAmt}
                 onChange={(e) => setCashAmt(e.target.value)}
-                aria-label="Cash amount"
+                aria-label={t.common.cash}
               />
               <Input
-                label="Transfer"
+                label={t.common.transfer}
                 id="split-transfer"
                 type="number"
                 min="0"
@@ -418,7 +420,7 @@ export function CartPanel({
                 placeholder="0"
                 value={transferAmt}
                 onChange={(e) => setTransferAmt(e.target.value)}
-                aria-label="Transfer amount"
+                aria-label={t.common.transfer}
               />
             </div>
             <div
@@ -428,7 +430,7 @@ export function CartPanel({
                   : "text-red-500 dark:text-red-400"
               }`}
             >
-              <span>Remaining</span>
+              <span>{t.pos.remaining}</span>
               <span>
                 {formatCurrency(Math.abs(splitRemaining))}
                 {splitRemaining < 0 ? " over" : ""}
@@ -441,7 +443,7 @@ export function CartPanel({
                 onClick={resetSplit}
                 className="text-xs"
               >
-                Cancel
+                {t.common.cancel}
               </Button>
               <Button
                 type="button"
@@ -449,7 +451,7 @@ export function CartPanel({
                 disabled={!splitValid || loading}
                 className="text-xs"
               >
-                Confirm
+                {t.pos.confirm}
               </Button>
             </div>
           </div>

@@ -9,6 +9,7 @@ import { Modal } from "@/components/ui/modal";
 import { Select } from "@/components/ui/select";
 import { Toast } from "@/components/ui/toast";
 import { paySupplier } from "@/lib/actions/supplier-payments";
+import { useI18n } from "@/lib/i18n/context";
 import type { SupplierPayment } from "@/lib/types";
 import { formatCurrency, formatDateTime } from "@/lib/utils";
 
@@ -18,18 +19,13 @@ interface Props {
   payments: SupplierPayment[];
 }
 
-const paymentMethodOptions = [
-  { value: "cash", label: "Cash" },
-  { value: "transfer", label: "Transfer" },
-];
-
-/**
- * Displays AP payment history and a "Record Payment" button for credit POs.
- *
- * Security: server action `paySupplier` enforces owner-only access.
- */
 export function SupplierPaymentsClient({ poId, totalAmount, payments }: Props) {
   const router = useRouter();
+  const { t } = useI18n();
+  const paymentMethodOptions = [
+    { value: "cash", label: t.common.cash },
+    { value: "transfer", label: t.common.transfer },
+  ];
   const [showModal, setShowModal] = useState(false);
   const [loading, setLoading] = useState(false);
   const [toast, setToast] = useState<{
@@ -49,7 +45,7 @@ export function SupplierPaymentsClient({ poId, totalAmount, payments }: Props) {
     if (result.error) {
       setToast({ message: result.error, type: "error" });
     } else {
-      setToast({ message: "Payment recorded", type: "success" });
+      setToast({ message: t.credit.paymentRecorded, type: "success" });
       setShowModal(false);
       router.refresh();
     }
@@ -60,32 +56,36 @@ export function SupplierPaymentsClient({ poId, totalAmount, payments }: Props) {
       <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl overflow-hidden">
         <div className="p-4 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between">
           <h2 className="text-base font-semibold text-gray-900 dark:text-white">
-            Accounts Payable
+            {t.credit.accountsPayable}
           </h2>
           {outstanding > 0 && (
             <Button size="sm" onClick={() => setShowModal(true)}>
               <Plus className="h-3 w-3" aria-hidden="true" />
-              Record Payment
+              {t.credit.recordPayment}
             </Button>
           )}
         </div>
 
         <div className="p-4 grid grid-cols-3 gap-4 border-b border-gray-100 dark:border-gray-700">
           <div>
-            <p className="text-xs text-gray-500 dark:text-gray-400">Total</p>
+            <p className="text-xs text-gray-500 dark:text-gray-400">
+              {t.credit.total}
+            </p>
             <p className="text-sm font-semibold dark:text-gray-100">
               {formatCurrency(totalAmount)}
             </p>
           </div>
           <div>
-            <p className="text-xs text-gray-500 dark:text-gray-400">Paid</p>
+            <p className="text-xs text-gray-500 dark:text-gray-400">
+              {t.credit.paid}
+            </p>
             <p className="text-sm font-semibold text-green-600 dark:text-green-400">
               {formatCurrency(paidAmount)}
             </p>
           </div>
           <div>
             <p className="text-xs text-gray-500 dark:text-gray-400">
-              Outstanding
+              {t.credit.outstanding}
             </p>
             <p
               className={`text-sm font-semibold ${
@@ -101,7 +101,7 @@ export function SupplierPaymentsClient({ poId, totalAmount, payments }: Props) {
 
         {payments.length === 0 ? (
           <p className="p-4 text-sm text-gray-400 dark:text-gray-500">
-            No payments recorded yet.
+            {t.credit.noPOPayments}
           </p>
         ) : (
           <div className="overflow-x-auto">
@@ -109,16 +109,16 @@ export function SupplierPaymentsClient({ poId, totalAmount, payments }: Props) {
               <thead>
                 <tr className="border-b border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-700/50">
                   <th className="text-left py-2 px-4 font-medium text-gray-500 dark:text-gray-400">
-                    Date
+                    {t.credit.date}
                   </th>
                   <th className="text-left py-2 px-4 font-medium text-gray-500 dark:text-gray-400">
-                    Method
+                    {t.credit.method}
                   </th>
                   <th className="text-right py-2 px-4 font-medium text-gray-500 dark:text-gray-400">
-                    Amount
+                    {t.common.amount}
                   </th>
                   <th className="text-left py-2 px-4 font-medium text-gray-500 dark:text-gray-400">
-                    Notes
+                    {t.credit.notes}
                   </th>
                 </tr>
               </thead>
@@ -157,12 +157,12 @@ export function SupplierPaymentsClient({ poId, totalAmount, payments }: Props) {
       {showModal && (
         <Modal
           open={showModal}
-          title="Record Supplier Payment"
+          title={t.credit.recordSupplierPayment}
           onClose={() => setShowModal(false)}
         >
           <form onSubmit={handleSubmit} className="space-y-4">
             <Input
-              label="Amount"
+              label={t.common.amount}
               name="amount"
               type="number"
               min="0.01"
@@ -172,15 +172,15 @@ export function SupplierPaymentsClient({ poId, totalAmount, payments }: Props) {
               required
             />
             <Select
-              label="Payment Method"
+              label={t.credit.paymentMethod}
               name="payment_method"
               options={paymentMethodOptions}
               defaultValue="cash"
             />
             <Input
-              label="Notes (optional)"
+              label={t.credit.notesOptional}
               name="notes"
-              placeholder="Reference number, memo..."
+              placeholder={t.credit.referenceMemo}
             />
             <div className="flex justify-end gap-2 pt-2">
               <Button
@@ -188,10 +188,10 @@ export function SupplierPaymentsClient({ poId, totalAmount, payments }: Props) {
                 variant="secondary"
                 onClick={() => setShowModal(false)}
               >
-                Cancel
+                {t.common.cancel}
               </Button>
               <Button type="submit" disabled={loading}>
-                {loading ? "Saving..." : "Record Payment"}
+                {loading ? t.common.saving : t.credit.recordPayment}
               </Button>
             </div>
           </form>

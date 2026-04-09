@@ -7,14 +7,8 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { ListFilter } from "@/components/ui/list-filter";
 import { Pagination } from "@/components/ui/pagination";
 import { exportCsv, exportXlsx } from "@/lib/export";
+import { useI18n } from "@/lib/i18n/context";
 import { formatCurrency, formatDateTime } from "@/lib/utils";
-
-const PO_STATUS_OPTIONS = [
-  { value: "", label: "All Status" },
-  { value: "draft", label: "Draft" },
-  { value: "received", label: "Received" },
-  { value: "cancelled", label: "Cancelled" },
-];
 
 const statusColors: Record<string, string> = {
   draft: "bg-yellow-50 text-yellow-700",
@@ -57,6 +51,13 @@ export function PurchasesListClient({
   endDate: initialEndDate,
   status: initialStatus,
 }: PurchasesListClientProps) {
+  const { t } = useI18n();
+  const PO_STATUS_OPTIONS = [
+    { value: "", label: t.purchases.allStatus },
+    { value: "draft", label: t.purchases.draft },
+    { value: "received", label: t.purchases.received },
+    { value: "cancelled", label: t.purchases.cancelled },
+  ];
   const router = useRouter();
   const pathname = usePathname();
 
@@ -148,7 +149,7 @@ export function PurchasesListClient({
       <ListFilter
         search={search}
         onSearchChange={setSearch}
-        searchPlaceholder="Search PO number..."
+        searchPlaceholder={t.purchases.searchPO}
         startDate={startDate}
         onStartDateChange={(v) => {
           setStartDate(v);
@@ -177,19 +178,19 @@ export function PurchasesListClient({
             type="button"
             onClick={() => exportXlsx(toExportRows(orders), "purchase-orders")}
             className="inline-flex items-center gap-1.5 rounded-lg border border-gray-200 dark:border-gray-700 px-3 py-1.5 text-xs font-medium text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
-            aria-label="Export purchase orders as XLSX"
+            aria-label={t.common.exportXlsx}
           >
             <Download className="h-3.5 w-3.5" aria-hidden="true" />
-            XLSX
+            {t.common.exportXlsx}
           </button>
           <button
             type="button"
             onClick={() => exportCsv(toExportRows(orders), "purchase-orders")}
             className="inline-flex items-center gap-1.5 rounded-lg border border-gray-200 dark:border-gray-700 px-3 py-1.5 text-xs font-medium text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
-            aria-label="Export purchase orders as CSV"
+            aria-label={t.common.exportCsv}
           >
             <Download className="h-3.5 w-3.5" aria-hidden="true" />
-            CSV
+            {t.common.exportCsv}
           </button>
         </div>
       </div>
@@ -200,25 +201,25 @@ export function PurchasesListClient({
             <thead>
               <tr className="border-b border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-700/50">
                 <th className="text-left py-3 px-4 font-medium text-gray-500 dark:text-gray-400">
-                  PO Number
+                  {t.purchases.poNumber}
                 </th>
                 <th className="text-left py-3 px-4 font-medium text-gray-500 dark:text-gray-400">
-                  Supplier
+                  {t.purchases.supplier}
                 </th>
                 <th className="text-left py-3 px-4 font-medium text-gray-500 dark:text-gray-400">
-                  Payment
+                  {t.purchases.payment}
                 </th>
                 <th className="text-right py-3 px-4 font-medium text-gray-500 dark:text-gray-400">
-                  Total
+                  {t.purchases.total}
                 </th>
                 <th className="text-center py-3 px-4 font-medium text-gray-500 dark:text-gray-400">
-                  Status
+                  {t.purchases.status}
                 </th>
                 <th className="text-left py-3 px-4 font-medium text-gray-500 dark:text-gray-400">
-                  Date
+                  {t.purchases.date}
                 </th>
                 <th className="text-center py-3 px-4 font-medium text-gray-500 dark:text-gray-400">
-                  Actions
+                  {t.purchases.actions}
                 </th>
               </tr>
             </thead>
@@ -257,7 +258,7 @@ export function PurchasesListClient({
                       href={`/purchases/${po.id}`}
                       className="text-blue-600 hover:text-blue-700 text-sm font-medium"
                     >
-                      View
+                      {t.purchases.view}
                     </Link>
                   </td>
                 </tr>
@@ -265,7 +266,7 @@ export function PurchasesListClient({
               {orders.length === 0 && (
                 <tr>
                   <td colSpan={7} className="py-8 text-center text-gray-400">
-                    No purchase orders found
+                    {t.purchases.noPOFound}
                   </td>
                 </tr>
               )}

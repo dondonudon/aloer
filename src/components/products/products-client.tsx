@@ -12,6 +12,7 @@ import { Pagination } from "@/components/ui/pagination";
 import { Select } from "@/components/ui/select";
 import { Toast } from "@/components/ui/toast";
 import { createProduct, updateProduct } from "@/lib/actions/products";
+import { useI18n } from "@/lib/i18n/context";
 import type { Category, Product } from "@/lib/types";
 import { formatCurrency } from "@/lib/utils";
 
@@ -53,14 +54,6 @@ function MarginBadge({
   );
 }
 
-const unitOptions = [
-  { value: "pcs", label: "Pieces (pcs)" },
-  { value: "kg", label: "Kilogram (kg)" },
-  { value: "pack", label: "Pack" },
-  { value: "box", label: "Box" },
-  { value: "liter", label: "Liter" },
-];
-
 export function ProductsClient({
   products,
   categories,
@@ -69,6 +62,14 @@ export function ProductsClient({
   pageSize,
   search: initialSearch,
 }: ProductsClientProps) {
+  const { t } = useI18n();
+  const unitOptions = [
+    { value: "pcs", label: t.products.unitPcs },
+    { value: "kg", label: t.products.unitKg },
+    { value: "pack", label: t.products.unitPack },
+    { value: "box", label: t.products.unitBox },
+    { value: "liter", label: t.products.unitLiter },
+  ];
   const router = useRouter();
   const pathname = usePathname();
   const [search, setSearch] = useState(initialSearch);
@@ -132,7 +133,7 @@ export function ProductsClient({
       setToast({ message: result.error, type: "error" });
     } else {
       setToast({
-        message: editing ? "Product updated" : "Product created",
+        message: editing ? t.products.updated : t.products.created,
         type: "success",
       });
       setModalOpen(false);
@@ -145,11 +146,11 @@ export function ProductsClient({
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
-          Products
+          {t.products.title}
         </h1>
         <Button onClick={openCreate}>
           <Plus className="h-4 w-4" aria-hidden="true" />
-          Add Product
+          {t.products.addProduct}
         </Button>
       </div>
 
@@ -159,11 +160,11 @@ export function ProductsClient({
           aria-hidden="true"
         />
         <Input
-          placeholder="Search by name or SKU..."
+          placeholder={t.products.searchPlaceholder}
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           className="pl-10"
-          aria-label="Search products"
+          aria-label={t.products.searchPlaceholder}
         />
       </div>
 
@@ -173,31 +174,31 @@ export function ProductsClient({
             <thead>
               <tr className="border-b border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-700/50">
                 <th className="text-left py-3 px-4 font-medium text-gray-500">
-                  SKU
+                  {t.products.sku}
                 </th>
                 <th className="text-left py-3 px-4 font-medium text-gray-500">
-                  Name
+                  {t.products.name}
                 </th>
                 <th className="text-left py-3 px-4 font-medium text-gray-500">
-                  Category
+                  {t.products.category}
                 </th>
                 <th className="text-left py-3 px-4 font-medium text-gray-500">
-                  Unit
+                  {t.products.unit}
                 </th>
                 <th className="text-right py-3 px-4 font-medium text-gray-500">
-                  Price
+                  {t.products.price}
                 </th>
                 <th className="text-right py-3 px-4 font-medium text-gray-500">
-                  Bulk Price
+                  {t.products.bulkPrice}
                 </th>
                 <th className="text-right py-3 px-4 font-medium text-gray-500">
-                  Margin
+                  {t.products.margin}
                 </th>
                 <th className="text-center py-3 px-4 font-medium text-gray-500">
-                  Status
+                  {t.products.status}
                 </th>
                 <th className="text-center py-3 px-4 font-medium text-gray-500">
-                  Actions
+                  {t.products.actions}
                 </th>
               </tr>
             </thead>
@@ -235,7 +236,7 @@ export function ProductsClient({
                       />
                     ) : (
                       <span className="text-gray-400 text-xs">
-                        No cost data
+                        {t.products.noCostData}
                       </span>
                     )}
                   </td>
@@ -247,7 +248,9 @@ export function ProductsClient({
                           : "bg-gray-100 text-gray-500"
                       }`}
                     >
-                      {product.is_active ? "Active" : "Inactive"}
+                      {product.is_active
+                        ? t.products.active
+                        : t.products.inactive}
                     </span>
                   </td>
                   <td className="py-3 px-4 text-center">
@@ -271,7 +274,7 @@ export function ProductsClient({
                     colSpan={9}
                     className="py-8 text-center text-gray-400 dark:text-gray-500"
                   >
-                    No products found
+                    {t.products.noProductsFound}
                   </td>
                 </tr>
               )}
@@ -285,50 +288,55 @@ export function ProductsClient({
       <Modal
         open={modalOpen}
         onClose={() => setModalOpen(false)}
-        title={editing ? "Edit Product" : "New Product"}
+        title={editing ? t.products.editProduct : t.products.newProduct}
       >
         <form action={handleSubmit} className="space-y-4">
           <Input
-            label="Name"
+            label={t.products.name}
             name="name"
             required
             defaultValue={editing?.name}
           />
-          <Input label="SKU" name="sku" required defaultValue={editing?.sku} />
+          <Input
+            label={t.products.sku}
+            name="sku"
+            required
+            defaultValue={editing?.sku}
+          />
           <div className="space-y-1">
             <div className="flex items-center justify-between">
               <label
                 htmlFor="category"
                 className="block text-sm font-medium text-gray-700 dark:text-gray-300"
               >
-                Category
+                {t.products.categoryName}
               </label>
               <Link
                 href="/catalog/categories"
                 target="_blank"
                 className="text-xs text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300"
               >
-                Manage →
+                {t.products.manageCategories} →
               </Link>
             </div>
             <Select
               id="category"
               name="category"
               options={[
-                { value: "", label: "— No Category —" },
+                { value: "", label: `— ${t.products.categoryPlaceholder} —` },
                 ...categories.map((c) => ({ value: c.name, label: c.name })),
               ]}
               defaultValue={editing?.category ?? ""}
             />
           </div>
           <Select
-            label="Unit"
+            label={t.products.unit}
             name="unit"
             options={unitOptions}
             defaultValue={editing?.unit ?? "pcs"}
           />
           <Input
-            label="Selling Price"
+            label={t.products.sellingPrice}
             name="selling_price"
             type="number"
             min="0"
@@ -338,22 +346,22 @@ export function ProductsClient({
           />
           <div className="grid grid-cols-2 gap-3">
             <Input
-              label="Bulk Price (optional)"
+              label={t.products.bulkPriceOptional}
               name="bulk_price"
               type="number"
               min="0"
               step="100"
               defaultValue={editing?.bulk_price ?? ""}
-              placeholder="e.g. 18000"
+              placeholder={t.products.bulkPricePlaceholder}
             />
             <Input
-              label="Bulk Min Qty"
+              label={t.products.bulkMinQty}
               name="bulk_min_qty"
               type="number"
               min="2"
               step="1"
               defaultValue={editing?.bulk_min_qty ?? ""}
-              placeholder="e.g. 10"
+              placeholder={t.products.bulkMinQtyPlaceholder}
             />
           </div>
           {editing?.latest_cost_price != null && (
@@ -368,7 +376,7 @@ export function ProductsClient({
             </p>
           )}
           <ImageUpload
-            label="Product Image"
+            label={t.products.productImage}
             value={imageUrl}
             onChange={setImageUrl}
             folder="products"
@@ -376,11 +384,11 @@ export function ProductsClient({
           <input type="hidden" name="image_url" value={imageUrl} />
           {editing && (
             <Select
-              label="Status"
+              label={t.products.status}
               name="is_active"
               options={[
-                { value: "true", label: "Active" },
-                { value: "false", label: "Inactive" },
+                { value: "true", label: t.products.active },
+                { value: "false", label: t.products.inactive },
               ]}
               defaultValue={String(editing.is_active)}
             />
@@ -391,10 +399,14 @@ export function ProductsClient({
               variant="secondary"
               onClick={() => setModalOpen(false)}
             >
-              Cancel
+              {t.common.cancel}
             </Button>
             <Button type="submit" disabled={loading}>
-              {loading ? "Saving..." : editing ? "Update" : "Create"}
+              {loading
+                ? t.common.saving
+                : editing
+                  ? t.common.update
+                  : t.common.create}
             </Button>
           </div>
         </form>

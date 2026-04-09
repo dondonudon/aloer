@@ -4,6 +4,7 @@ import { Search } from "lucide-react";
 import Link from "next/link";
 import { useMemo, useState } from "react";
 import { Input } from "@/components/ui/input";
+import { useI18n } from "@/lib/i18n/context";
 import { formatCurrency } from "@/lib/utils";
 
 interface StockItem {
@@ -22,6 +23,7 @@ interface InventoryListClientProps {
  * Inventory list with search filtering.
  */
 export function InventoryListClient({ stock }: InventoryListClientProps) {
+  const { t } = useI18n();
   const [search, setSearch] = useState("");
 
   const filtered = useMemo(() => {
@@ -45,11 +47,11 @@ export function InventoryListClient({ stock }: InventoryListClientProps) {
           aria-hidden="true"
         />
         <Input
-          placeholder="Search by name or SKU..."
+          placeholder={t.inventory.searchPlaceholder}
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           className="pl-10"
-          aria-label="Search inventory"
+          aria-label={t.inventory.searchPlaceholder}
         />
       </div>
 
@@ -67,16 +69,16 @@ export function InventoryListClient({ stock }: InventoryListClientProps) {
                   SKU
                 </th>
                 <th className="text-left py-3 px-4 font-medium text-gray-500 dark:text-gray-400">
-                  Product
+                  {t.inventory.product}
                 </th>
                 <th className="text-right py-3 px-4 font-medium text-gray-500 dark:text-gray-400">
-                  Stock on Hand
+                  {t.inventory.stockOnHand}
                 </th>
                 <th className="text-right py-3 px-4 font-medium text-gray-500 dark:text-gray-400">
-                  Stock Value
+                  {t.inventory.stockValue}
                 </th>
                 <th className="text-center py-3 px-4 font-medium text-gray-500 dark:text-gray-400">
-                  Batches
+                  {t.inventory.batches}
                 </th>
               </tr>
             </thead>
@@ -112,7 +114,7 @@ export function InventoryListClient({ stock }: InventoryListClientProps) {
                         href={`/inventory/${item.id}`}
                         className="text-blue-600 hover:text-blue-700 text-sm font-medium"
                       >
-                        View
+                        {t.common.view}
                       </Link>
                     )}
                   </td>
@@ -124,7 +126,7 @@ export function InventoryListClient({ stock }: InventoryListClientProps) {
                     colSpan={5}
                     className="py-8 text-center text-gray-400 dark:text-gray-500"
                   >
-                    No inventory data found
+                    {t.inventory.noInventoryFound}
                   </td>
                 </tr>
               )}

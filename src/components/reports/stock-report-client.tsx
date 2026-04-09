@@ -4,6 +4,7 @@ import { Download, Search } from "lucide-react";
 import { useMemo, useState } from "react";
 import { Input } from "@/components/ui/input";
 import { exportPdf } from "@/lib/export";
+import { useI18n } from "@/lib/i18n/context";
 import { formatCurrency } from "@/lib/utils";
 
 interface StockRow {
@@ -27,6 +28,7 @@ export function StockReportClient({
   stock,
   categories,
 }: StockReportClientProps) {
+  const { t } = useI18n();
   const [search, setSearch] = useState("");
   const [category, setCategory] = useState("");
 
@@ -71,9 +73,9 @@ export function StockReportClient({
               value={category}
               onChange={(e) => setCategory(e.target.value)}
               className="rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 px-3 py-2 text-sm"
-              aria-label="Filter by category"
+              aria-label={t.reports.filterByCategory}
             >
-              <option value="">All Categories</option>
+              <option value="">{t.reports.allCategories}</option>
               {categories.map((cat) => (
                 <option key={cat} value={cat}>
                   {cat}
@@ -117,10 +119,10 @@ export function StockReportClient({
               )
             }
             className="inline-flex items-center gap-1.5 rounded-lg border border-gray-200 dark:border-gray-700 px-3 py-1.5 text-xs font-medium text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
-            aria-label="Export stock report as PDF"
+            aria-label={t.reports.exportPdf}
           >
             <Download className="h-3.5 w-3.5" aria-hidden="true" />
-            Export PDF
+            {t.reports.exportPdf}
           </button>
         )}
       </div>
@@ -134,18 +136,18 @@ export function StockReportClient({
                   SKU
                 </th>
                 <th className="text-left py-3 px-4 font-medium text-gray-500">
-                  Product
+                  {t.reports.product}
                 </th>
                 {categories.length > 0 && (
                   <th className="text-left py-3 px-4 font-medium text-gray-500">
-                    Category
+                    {t.reports.category}
                   </th>
                 )}
                 <th className="text-right py-3 px-4 font-medium text-gray-500">
-                  Stock on Hand
+                  {t.reports.stockOnHand}
                 </th>
                 <th className="text-right py-3 px-4 font-medium text-gray-500">
-                  Stock Value
+                  {t.reports.stockValue}
                 </th>
               </tr>
             </thead>
@@ -188,7 +190,7 @@ export function StockReportClient({
                     colSpan={categories.length > 0 ? 5 : 4}
                     className="py-8 text-center text-gray-400"
                   >
-                    No stock data found
+                    {t.reports.noStockData}
                   </td>
                 </tr>
               )}

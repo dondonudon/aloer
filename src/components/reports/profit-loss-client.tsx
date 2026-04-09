@@ -7,6 +7,8 @@ import { Input } from "@/components/ui/input";
 import { PageHeader } from "@/components/ui/page-header";
 import { getProfitLoss } from "@/lib/actions/reports";
 import { exportPdf } from "@/lib/export";
+import { useI18n } from "@/lib/i18n/context";
+import { getAccountName } from "@/lib/i18n/translations";
 import { formatCurrency } from "@/lib/utils";
 
 interface PnLRow {
@@ -17,6 +19,7 @@ interface PnLRow {
 }
 
 export function ProfitLossClient() {
+  const { t } = useI18n();
   const today = new Date().toISOString().slice(0, 10);
   const firstOfMonth = `${today.slice(0, 8)}01`;
 
@@ -43,26 +46,26 @@ export function ProfitLossClient() {
   return (
     <div className="max-w-2xl space-y-6">
       <PageHeader
-        title="Profit & Loss"
+        title={t.reports.profitLoss}
         backHref="/reports"
-        backLabel="Reports"
+        backLabel={t.reports.title}
       />
 
       <div className="flex items-end gap-4">
         <Input
-          label="Start Date"
+          label={t.reports.startDate}
           type="date"
           value={startDate}
           onChange={(e) => setStartDate(e.target.value)}
         />
         <Input
-          label="End Date"
+          label={t.reports.endDate}
           type="date"
           value={endDate}
           onChange={(e) => setEndDate(e.target.value)}
         />
         <Button onClick={handleGenerate} disabled={loading}>
-          {loading ? "Loading..." : "Generate"}
+          {loading ? t.reports.loading : t.reports.generate}
         </Button>
       </div>
 
@@ -70,12 +73,12 @@ export function ProfitLossClient() {
         <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-6 space-y-6">
           <div className="space-y-2">
             <h2 className="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">
-              Revenue
+              {t.reports.revenue}
             </h2>
             {revenue.map((r) => (
               <div key={r.code} className="flex justify-between py-1">
                 <span className="text-sm text-gray-700 dark:text-gray-300">
-                  {r.code} — {r.name}
+                  {r.code} — {getAccountName(r.code, r.name, t)}
                 </span>
                 <span className="text-sm font-medium text-green-700">
                   {formatCurrency(r.amount)}
@@ -83,7 +86,7 @@ export function ProfitLossClient() {
               </div>
             ))}
             <div className="flex justify-between py-1 border-t border-gray-200 dark:border-gray-700 font-semibold">
-              <span className="text-sm">Total Revenue</span>
+              <span className="text-sm">{t.reports.totalRevenue}</span>
               <span className="text-sm text-green-700">
                 {formatCurrency(totalRevenue)}
               </span>
@@ -92,12 +95,12 @@ export function ProfitLossClient() {
 
           <div className="space-y-2">
             <h2 className="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">
-              Expenses
+              {t.reports.expenses}
             </h2>
             {expenses.map((r) => (
               <div key={r.code} className="flex justify-between py-1">
                 <span className="text-sm text-gray-700 dark:text-gray-300">
-                  {r.code} — {r.name}
+                  {r.code} — {getAccountName(r.code, r.name, t)}
                 </span>
                 <span className="text-sm font-medium text-red-600">
                   {formatCurrency(r.amount)}
@@ -105,7 +108,7 @@ export function ProfitLossClient() {
               </div>
             ))}
             <div className="flex justify-between py-1 border-t border-gray-200 dark:border-gray-700 font-semibold">
-              <span className="text-sm">Total Expenses</span>
+              <span className="text-sm">{t.reports.totalExpenses}</span>
               <span className="text-sm text-red-600">
                 {formatCurrency(totalExpenses)}
               </span>
@@ -113,7 +116,7 @@ export function ProfitLossClient() {
           </div>
 
           <div className="flex justify-between py-2 border-t-2 border-gray-300 dark:border-gray-600 font-bold text-lg dark:text-white">
-            <span>Net Profit</span>
+            <span>{t.reports.netProfit}</span>
             <span
               className={netProfit >= 0 ? "text-green-700" : "text-red-600"}
             >
@@ -135,7 +138,7 @@ export function ProfitLossClient() {
                   ],
                   data.map((r) => ({
                     Code: r.code,
-                    Account: r.name,
+                    Account: getAccountName(r.code, r.name, t),
                     Type: r.type,
                     Amount: formatCurrency(r.amount),
                   })),
@@ -143,10 +146,10 @@ export function ProfitLossClient() {
                 )
               }
               className="inline-flex items-center gap-1.5 rounded-lg border border-gray-200 dark:border-gray-700 px-3 py-1.5 text-xs font-medium text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
-              aria-label="Export profit and loss as PDF"
+              aria-label={t.reports.exportPdf}
             >
               <Download className="h-3.5 w-3.5" aria-hidden="true" />
-              Export PDF
+              {t.reports.exportPdf}
             </button>
           </div>
         </div>

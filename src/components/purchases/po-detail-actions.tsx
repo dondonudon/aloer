@@ -9,6 +9,7 @@ import {
   cancelPurchaseOrder,
   receivePurchaseOrder,
 } from "@/lib/actions/purchases";
+import { useI18n } from "@/lib/i18n/context";
 
 interface Props {
   poId: string;
@@ -17,6 +18,7 @@ interface Props {
 
 export function PODetailActions({ poId, status }: Props) {
   const router = useRouter();
+  const { t } = useI18n();
   const [loading, setLoading] = useState(false);
   const [toast, setToast] = useState<{
     message: string;
@@ -31,7 +33,7 @@ export function PODetailActions({ poId, status }: Props) {
     if (result.error) {
       setToast({ message: result.error, type: "error" });
     } else {
-      setToast({ message: "Purchase order received", type: "success" });
+      setToast({ message: t.purchases.poReceived, type: "success" });
       router.refresh();
     }
     setLoading(false);
@@ -43,7 +45,7 @@ export function PODetailActions({ poId, status }: Props) {
     if (result.error) {
       setToast({ message: result.error, type: "error" });
     } else {
-      setToast({ message: "Purchase order cancelled", type: "success" });
+      setToast({ message: t.purchases.poCancelled, type: "success" });
       router.refresh();
     }
     setLoading(false);
@@ -54,11 +56,11 @@ export function PODetailActions({ poId, status }: Props) {
       <div className="flex gap-2">
         <Button onClick={handleReceive} disabled={loading}>
           <Check className="h-4 w-4" aria-hidden="true" />
-          Receive
+          {t.purchases.receive}
         </Button>
         <Button variant="danger" onClick={handleCancel} disabled={loading}>
           <XCircle className="h-4 w-4" aria-hidden="true" />
-          Cancel PO
+          {t.purchases.cancelPO}
         </Button>
       </div>
       {toast && (

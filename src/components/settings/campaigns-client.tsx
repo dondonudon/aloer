@@ -13,6 +13,7 @@ import {
   toggleCampaign,
   updateCampaign,
 } from "@/lib/actions/campaigns";
+import { useI18n } from "@/lib/i18n/context";
 import type {
   CampaignTriggerType,
   CampaignWithProducts,
@@ -62,6 +63,12 @@ function toDatetimeLocal(iso: string): string {
  */
 export function CampaignsClient({ campaigns, products }: CampaignsClientProps) {
   const router = useRouter();
+  const { t } = useI18n();
+  const triggerLabel: Record<CampaignTriggerType, string> = {
+    always: t.settings.always,
+    min_cart_total: t.settings.minCartTotal,
+    min_product_qty: t.settings.minProductQty,
+  };
   const [modal, setModal] = useState<{
     mode: "create" | "edit";
     campaign?: CampaignWithProducts;
@@ -152,7 +159,9 @@ export function CampaignsClient({ campaigns, products }: CampaignsClientProps) {
     } else {
       setToast({
         message:
-          modal?.mode === "edit" ? "Campaign updated" : "Campaign created",
+          modal?.mode === "edit"
+            ? t.settings.campaignUpdated
+            : t.settings.campaignCreated,
         type: "success",
       });
       setModal(null);
@@ -174,7 +183,7 @@ export function CampaignsClient({ campaigns, products }: CampaignsClientProps) {
     if (result.error) {
       setToast({ message: result.error, type: "error" });
     } else {
-      setToast({ message: "Campaign deleted", type: "success" });
+      setToast({ message: t.settings.campaignCreated, type: "success" });
       router.refresh();
     }
   }
@@ -188,28 +197,22 @@ export function CampaignsClient({ campaigns, products }: CampaignsClientProps) {
     );
   }
 
-  const triggerLabel: Record<CampaignTriggerType, string> = {
-    always: "Always",
-    min_cart_total: "Min cart total",
-    min_product_qty: "Min product qty",
-  };
-
   const showProductSelection = form.triggerType !== "min_cart_total";
 
   return (
     <section className="space-y-4">
       <div className="flex items-center justify-between">
         <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
-          Campaigns
+          {t.settings.campaigns}
         </h2>
         <Button size="sm" onClick={openCreate}>
           <Plus className="h-4 w-4" aria-hidden="true" />
-          New Campaign
+          {t.settings.newCampaign}
         </Button>
       </div>
 
       {campaigns.length === 0 ? (
-        <p className="text-sm text-gray-400">No campaigns yet</p>
+        <p className="text-sm text-gray-400">{t.settings.noCampaignsYet}</p>
       ) : (
         <div className="space-y-3">
           {campaigns.map((c) => {
@@ -230,15 +233,15 @@ export function CampaignsClient({ campaigns, products }: CampaignsClientProps) {
                     </p>
                     {active ? (
                       <span className="inline-flex items-center rounded-full bg-green-50 px-2 py-0.5 text-xs font-medium text-green-700">
-                        Live
+                        {t.settings.live}
                       </span>
                     ) : c.is_active ? (
                       <span className="inline-flex items-center rounded-full bg-yellow-50 px-2 py-0.5 text-xs font-medium text-yellow-700">
-                        Scheduled
+                        {t.settings.scheduled}
                       </span>
                     ) : (
                       <span className="inline-flex items-center rounded-full bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-500">
-                        Disabled
+                        {t.settings.disabled}
                       </span>
                     )}
                     <span className="inline-flex items-center rounded-full bg-blue-50 dark:bg-blue-900/30 px-2 py-0.5 text-xs font-medium text-blue-600 dark:text-blue-400">
@@ -322,7 +325,11 @@ export function CampaignsClient({ campaigns, products }: CampaignsClientProps) {
       <Modal
         open={modal !== null}
         onClose={() => setModal(null)}
-        title={modal?.mode === "edit" ? "Edit Campaign" : "New Campaign"}
+        title={
+          modal?.mode === "edit"
+            ? t.settings.editCampaign
+            : t.settings.newCampaign
+        }
       >
         <form onSubmit={handleSubmit} className="space-y-4">
           {/* Name */}
@@ -331,14 +338,14 @@ export function CampaignsClient({ campaigns, products }: CampaignsClientProps) {
               htmlFor="campaign-name"
               className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
             >
-              Campaign Name
+              {t.settings.campaignName}
             </label>
             <Input
               id="campaign-name"
               value={form.name}
               onChange={(e) => setF("name", e.target.value)}
               required
-              placeholder="Weekend Sale"
+              placeholder={t.settings.campaignNamePlaceholder}
             />
           </div>
 
@@ -349,7 +356,7 @@ export function CampaignsClient({ campaigns, products }: CampaignsClientProps) {
                 htmlFor="campaign-discount-type"
                 className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
               >
-                Discount Type
+                {t.settings.discountType}
               </label>
               <select
                 id="campaign-discount-type"
@@ -360,8 +367,8 @@ export function CampaignsClient({ campaigns, products }: CampaignsClientProps) {
                 required
                 className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 px-3 py-2 text-sm"
               >
-                <option value="percentage">Percentage (%)</option>
-                <option value="fixed">Fixed Amount (IDR)</option>
+                <option value="percentage">{t.settings.percentage}</option>
+                <option value="fixed">{t.settings.fixedAmount}</option>
               </select>
             </div>
             <div>
@@ -369,7 +376,7 @@ export function CampaignsClient({ campaigns, products }: CampaignsClientProps) {
                 htmlFor="campaign-discount-value"
                 className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
               >
-                Discount Value
+                {t.settings.discountValue}
               </label>
               <Input
                 id="campaign-discount-value"
@@ -391,7 +398,7 @@ export function CampaignsClient({ campaigns, products }: CampaignsClientProps) {
                 htmlFor="campaign-start"
                 className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
               >
-                Start Date
+                {t.settings.startDate}
               </label>
               <Input
                 id="campaign-start"
@@ -406,7 +413,7 @@ export function CampaignsClient({ campaigns, products }: CampaignsClientProps) {
                 htmlFor="campaign-end"
                 className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
               >
-                End Date
+                {t.settings.endDate}
               </label>
               <Input
                 id="campaign-end"
@@ -424,7 +431,7 @@ export function CampaignsClient({ campaigns, products }: CampaignsClientProps) {
               htmlFor="campaign-trigger"
               className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
             >
-              Trigger Rule
+              {t.settings.triggerRule}
             </label>
             <select
               id="campaign-trigger"
@@ -434,14 +441,12 @@ export function CampaignsClient({ campaigns, products }: CampaignsClientProps) {
               }
               className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 px-3 py-2 text-sm"
             >
-              <option value="always">
-                Always — applies whenever product is in cart
-              </option>
+              <option value="always">{t.settings.triggerAlways}</option>
               <option value="min_cart_total">
-                Min cart total — order discount when subtotal ≥ threshold
+                {t.settings.triggerMinCart}
               </option>
               <option value="min_product_qty">
-                Min product qty — per-product discount when qty ≥ threshold
+                {t.settings.triggerMinQty}
               </option>
             </select>
           </div>
@@ -453,7 +458,7 @@ export function CampaignsClient({ campaigns, products }: CampaignsClientProps) {
                 htmlFor="campaign-trigger-value"
                 className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
               >
-                Minimum Cart Total (IDR)
+                {t.settings.minimumCartTotal}
               </label>
               <Input
                 id="campaign-trigger-value"
@@ -472,8 +477,8 @@ export function CampaignsClient({ campaigns, products }: CampaignsClientProps) {
             <div>
               <p className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 {form.triggerType === "min_product_qty"
-                  ? "Products &amp; minimum quantities"
-                  : "Products (leave empty for all products)"}
+                  ? t.settings.productsMinQty
+                  : t.settings.productsOptional}
               </p>
               <div className="max-h-48 overflow-y-auto border border-gray-200 dark:border-gray-600 rounded-lg p-2 space-y-1">
                 {products
@@ -525,16 +530,16 @@ export function CampaignsClient({ campaigns, products }: CampaignsClientProps) {
               variant="ghost"
               onClick={() => setModal(null)}
             >
-              Cancel
+              {t.common.cancel}
             </Button>
             <Button type="submit" disabled={loading}>
               {loading
                 ? modal?.mode === "edit"
-                  ? "Saving..."
-                  : "Creating..."
+                  ? t.common.saving
+                  : t.common.creating
                 : modal?.mode === "edit"
-                  ? "Save Changes"
-                  : "Create Campaign"}
+                  ? t.common.save
+                  : t.settings.campaignCreated}
             </Button>
           </div>
         </form>

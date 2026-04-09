@@ -7,14 +7,9 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { ListFilter } from "@/components/ui/list-filter";
 import { Pagination } from "@/components/ui/pagination";
 import { exportCsv, exportXlsx } from "@/lib/export";
+import { useI18n } from "@/lib/i18n/context";
 import type { Sale } from "@/lib/types";
 import { formatCurrency, formatDateTime } from "@/lib/utils";
-
-const SALES_STATUS_OPTIONS = [
-  { value: "", label: "All Status" },
-  { value: "completed", label: "Completed" },
-  { value: "voided", label: "Voided" },
-];
 
 const statusColors: Record<string, string> = {
   completed: "bg-green-50 text-green-700",
@@ -46,6 +41,12 @@ export function SalesListClient({
   endDate: initialEndDate,
   status: initialStatus,
 }: SalesListClientProps) {
+  const { t } = useI18n();
+  const SALES_STATUS_OPTIONS = [
+    { value: "", label: t.sales.allStatus },
+    { value: "completed", label: t.sales.completed },
+    { value: "voided", label: t.sales.voided },
+  ];
   const router = useRouter();
   const pathname = usePathname();
 
@@ -143,7 +144,7 @@ export function SalesListClient({
       <ListFilter
         search={search}
         onSearchChange={setSearch}
-        searchPlaceholder="Search invoice..."
+        searchPlaceholder={t.sales.searchInvoice}
         startDate={startDate}
         onStartDateChange={(v) => {
           setStartDate(v);
@@ -172,19 +173,19 @@ export function SalesListClient({
             type="button"
             onClick={() => exportXlsx(toExportRows(sales), "sales")}
             className="inline-flex items-center gap-1.5 rounded-lg border border-gray-200 dark:border-gray-700 px-3 py-1.5 text-xs font-medium text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
-            aria-label="Export sales as XLSX"
+            aria-label={t.common.exportXlsx}
           >
             <Download className="h-3.5 w-3.5" aria-hidden="true" />
-            XLSX
+            {t.common.exportXlsx}
           </button>
           <button
             type="button"
             onClick={() => exportCsv(toExportRows(sales), "sales")}
             className="inline-flex items-center gap-1.5 rounded-lg border border-gray-200 dark:border-gray-700 px-3 py-1.5 text-xs font-medium text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
-            aria-label="Export sales as CSV"
+            aria-label={t.common.exportCsv}
           >
             <Download className="h-3.5 w-3.5" aria-hidden="true" />
-            CSV
+            {t.common.exportCsv}
           </button>
         </div>
       </div>
@@ -195,28 +196,28 @@ export function SalesListClient({
             <thead>
               <tr className="border-b border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-700/50">
                 <th className="text-left py-3 px-4 font-medium text-gray-500 dark:text-gray-400">
-                  Invoice
+                  {t.sales.invoice}
                 </th>
                 <th className="text-left py-3 px-4 font-medium text-gray-500 dark:text-gray-400">
-                  Payment
+                  {t.sales.payment}
                 </th>
                 <th className="text-right py-3 px-4 font-medium text-gray-500 dark:text-gray-400">
-                  Total
+                  {t.sales.total}
                 </th>
                 <th className="text-right py-3 px-4 font-medium text-gray-500 dark:text-gray-400">
-                  COGS
+                  {t.sales.cogs}
                 </th>
                 <th className="text-right py-3 px-4 font-medium text-gray-500 dark:text-gray-400">
-                  Profit
+                  {t.sales.profit}
                 </th>
                 <th className="text-center py-3 px-4 font-medium text-gray-500 dark:text-gray-400">
-                  Status
+                  {t.sales.status}
                 </th>
                 <th className="text-left py-3 px-4 font-medium text-gray-500 dark:text-gray-400">
-                  Date
+                  {t.sales.date}
                 </th>
                 <th className="text-center py-3 px-4 font-medium text-gray-500 dark:text-gray-400">
-                  Actions
+                  {t.sales.actions}
                 </th>
               </tr>
             </thead>
@@ -260,7 +261,7 @@ export function SalesListClient({
                       href={`/sales/${sale.id}`}
                       className="text-blue-600 hover:text-blue-700 text-sm font-medium"
                     >
-                      View
+                      {t.sales.view}
                     </Link>
                   </td>
                 </tr>
@@ -271,7 +272,7 @@ export function SalesListClient({
                     colSpan={8}
                     className="py-8 text-center text-gray-400 dark:text-gray-500"
                   >
-                    No sales found
+                    {t.sales.noSalesFound}
                   </td>
                 </tr>
               )}

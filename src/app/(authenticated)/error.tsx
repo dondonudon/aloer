@@ -5,6 +5,7 @@
 import { AlertTriangle } from "lucide-react";
 import { useEffect } from "react";
 import { Button } from "@/components/ui/button";
+import { useI18n } from "@/lib/i18n/context";
 
 interface ErrorProps {
   error: Error & { digest?: string };
@@ -22,6 +23,7 @@ interface ErrorProps {
  * message to screen readers.
  */
 export default function AuthenticatedError({ error, reset }: ErrorProps) {
+  const { t } = useI18n();
   useEffect(() => {
     console.error("[page error]", error);
   }, [error]);
@@ -34,14 +36,14 @@ export default function AuthenticatedError({ error, reset }: ErrorProps) {
       <AlertTriangle className="h-12 w-12 text-red-500" aria-hidden="true" />
       <div className="space-y-1">
         <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
-          Something went wrong
+          {t.error.somethingWentWrong}
         </h2>
         <p className="text-sm text-gray-500 dark:text-gray-400 max-w-xs">
-          {error.message || "An unexpected error occurred. Please try again."}
+          {error.message || t.error.unexpectedError}
         </p>
       </div>
       <Button onClick={reset} variant="secondary">
-        Try again
+        {t.error.tryAgain}
       </Button>
     </div>
   );

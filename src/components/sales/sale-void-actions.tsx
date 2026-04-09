@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Modal } from "@/components/ui/modal";
 import { Toast } from "@/components/ui/toast";
 import { voidSale } from "@/lib/actions/sales";
+import { useI18n } from "@/lib/i18n/context";
 
 interface Props {
   saleId: string;
@@ -20,6 +21,7 @@ interface Props {
  */
 export function SaleVoidActions({ saleId, status }: Props) {
   const router = useRouter();
+  const { t } = useI18n();
   const [modalOpen, setModalOpen] = useState(false);
   const [reason, setReason] = useState("");
   const [loading, setLoading] = useState(false);
@@ -37,7 +39,7 @@ export function SaleVoidActions({ saleId, status }: Props) {
     if (result.error) {
       setToast({ message: result.error, type: "error" });
     } else {
-      setToast({ message: "Sale voided successfully", type: "success" });
+      setToast({ message: t.sales.saleVoidedSuccess, type: "success" });
       router.refresh();
     }
     setModalOpen(false);
@@ -49,7 +51,7 @@ export function SaleVoidActions({ saleId, status }: Props) {
     <>
       <Button variant="danger" onClick={() => setModalOpen(true)}>
         <XCircle className="h-4 w-4" aria-hidden="true" />
-        Void Sale
+        {t.sales.voidSale}
       </Button>
 
       <Modal
@@ -58,19 +60,18 @@ export function SaleVoidActions({ saleId, status }: Props) {
           setModalOpen(false);
           setReason("");
         }}
-        title="Void Sale"
+        title={t.sales.voidSale}
       >
         <div className="space-y-4">
           <p className="text-sm text-gray-600 dark:text-gray-400">
-            This will reverse the sale and restore inventory. This action cannot
-            be undone.
+            {t.sales.voidConfirm}
           </p>
           <Input
-            label="Reason for voiding"
+            label={t.sales.reasonForVoiding}
             value={reason}
             onChange={(e) => setReason(e.target.value)}
             required
-            placeholder="e.g. Customer cancelled, wrong items"
+            placeholder={t.sales.voidPlaceholder}
             autoFocus
           />
           <div className="flex justify-end gap-2">
@@ -81,14 +82,14 @@ export function SaleVoidActions({ saleId, status }: Props) {
                 setReason("");
               }}
             >
-              Cancel
+              {t.common.cancel}
             </Button>
             <Button
               variant="danger"
               onClick={handleVoid}
               disabled={loading || !reason.trim()}
             >
-              {loading ? "Voiding..." : "Confirm Void"}
+              {loading ? t.common.processing : t.sales.confirmVoid}
             </Button>
           </div>
         </div>

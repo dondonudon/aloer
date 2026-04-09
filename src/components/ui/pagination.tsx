@@ -2,6 +2,7 @@
 
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import Link from "next/link";
+import { useI18n } from "@/lib/i18n/context";
 
 interface PaginationProps {
   /** Current 1-based page number */
@@ -17,6 +18,7 @@ interface PaginationProps {
  * previous / page numbers / next links.
  */
 export function Pagination({ page, totalPages, buildHref }: PaginationProps) {
+  const { t } = useI18n();
   if (totalPages <= 1) return null;
 
   // Compute the window of page numbers to show (max 5 visible)
@@ -43,14 +45,14 @@ export function Pagination({ page, totalPages, buildHref }: PaginationProps) {
 
   return (
     <nav
-      aria-label="Pagination"
+      aria-label={t.pagination.label}
       className="flex items-center justify-center gap-1 py-4"
     >
       {page > 1 ? (
         <Link
           href={buildHref(page - 1)}
           className={inactiveLink}
-          aria-label="Previous page"
+          aria-label={t.pagination.previousPage}
         >
           <ChevronLeft className="h-4 w-4" aria-hidden="true" />
         </Link>
@@ -59,7 +61,7 @@ export function Pagination({ page, totalPages, buildHref }: PaginationProps) {
           type="button"
           disabled
           className={disabledLink}
-          aria-label="Previous page (disabled)"
+          aria-label={t.pagination.previousPageDisabled}
         >
           <ChevronLeft className="h-4 w-4" aria-hidden="true" />
         </button>
@@ -79,7 +81,7 @@ export function Pagination({ page, totalPages, buildHref }: PaginationProps) {
             key={p}
             href={buildHref(p)}
             className={p === page ? activeLink : inactiveLink}
-            aria-label={`Page ${p}`}
+            aria-label={`${t.pagination.page} ${p}`}
             aria-current={p === page ? "page" : undefined}
           >
             {p}
@@ -91,7 +93,7 @@ export function Pagination({ page, totalPages, buildHref }: PaginationProps) {
         <Link
           href={buildHref(page + 1)}
           className={inactiveLink}
-          aria-label="Next page"
+          aria-label={t.pagination.nextPage}
         >
           <ChevronRight className="h-4 w-4" aria-hidden="true" />
         </Link>
@@ -100,7 +102,7 @@ export function Pagination({ page, totalPages, buildHref }: PaginationProps) {
           type="button"
           disabled
           className={disabledLink}
-          aria-label="Next page (disabled)"
+          aria-label={t.pagination.nextPageDisabled}
         >
           <ChevronRight className="h-4 w-4" aria-hidden="true" />
         </button>

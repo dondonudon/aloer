@@ -20,6 +20,20 @@ export async function saveTheme(theme: "light" | "dark"): Promise<void> {
   await supabase.from("user_roles").update({ theme }).eq("user_id", user.id);
 }
 
+/**
+ * Persists the calling user's locale preference to their user_roles row.
+ * Any authenticated user can update their own locale — no role restriction.
+ */
+export async function saveLocale(locale: "en" | "id"): Promise<void> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return;
+
+  await supabase.from("user_roles").update({ locale }).eq("user_id", user.id);
+}
+
 export interface ManagedUser {
   id: string;
   email: string;

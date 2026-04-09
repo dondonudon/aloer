@@ -9,6 +9,7 @@ import { PageHeader } from "@/components/ui/page-header";
 import { Select } from "@/components/ui/select";
 import { Toast } from "@/components/ui/toast";
 import { createPurchaseOrder } from "@/lib/actions/purchases";
+import { useI18n } from "@/lib/i18n/context";
 import type { Product, Supplier } from "@/lib/types";
 
 interface Props {
@@ -28,6 +29,7 @@ let nextItemId = 1;
 
 export function NewPurchaseOrderClient({ products, suppliers }: Props) {
   const router = useRouter();
+  const { t } = useI18n();
   const [supplierId, setSupplierId] = useState("");
   const [paymentMethod, setPaymentMethod] = useState("cash");
   const [notes, setNotes] = useState("");
@@ -63,7 +65,7 @@ export function NewPurchaseOrderClient({ products, suppliers }: Props) {
 
   async function handleSubmit() {
     if (items.length === 0) {
-      setToast({ message: "Add at least one item", type: "error" });
+      setToast({ message: t.purchases.addAtLeastOne, type: "error" });
       return;
     }
 
@@ -90,14 +92,14 @@ export function NewPurchaseOrderClient({ products, suppliers }: Props) {
     if (result.error) {
       setToast({ message: result.error, type: "error" });
     } else {
-      setToast({ message: "Purchase order created", type: "success" });
+      setToast({ message: t.purchases.poCreated, type: "success" });
       router.push("/purchases");
     }
     setLoading(false);
   }
 
   const productOptions = [
-    { value: "", label: "Select product..." },
+    { value: "", label: t.purchases.selectProduct },
     ...products.map((p) => ({
       value: p.id,
       label: `${p.name} (${p.sku})`,
@@ -105,52 +107,52 @@ export function NewPurchaseOrderClient({ products, suppliers }: Props) {
   ];
 
   const supplierOptions = [
-    { value: "", label: "No supplier" },
+    { value: "", label: t.purchases.noSupplier },
     ...suppliers
       .filter((s) => s.is_active)
       .map((s) => ({ value: s.id, label: s.name })),
   ];
 
   const paymentOptions = [
-    { value: "cash", label: "Cash" },
-    { value: "transfer", label: "Transfer" },
-    { value: "credit", label: "Credit (Tempo)" },
+    { value: "cash", label: t.common.cash },
+    { value: "transfer", label: t.common.transfer },
+    { value: "credit", label: t.purchases.creditTempo },
   ];
 
   return (
     <div className="max-w-3xl space-y-6">
       <PageHeader
-        title="New Purchase Order"
+        title={t.purchases.newPOTitle}
         backHref="/purchases"
-        backLabel="Purchase Orders"
+        backLabel={t.purchases.title}
       />
 
       <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-6 space-y-4">
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <Select
-            label="Supplier"
+            label={t.purchases.supplier}
             options={supplierOptions}
             value={supplierId}
             onChange={(e) => setSupplierId(e.target.value)}
           />
           <Select
-            label="Payment Method"
+            label={t.purchases.paymentMethod}
             options={paymentOptions}
             value={paymentMethod}
             onChange={(e) => setPaymentMethod(e.target.value)}
           />
         </div>
         <Input
-          label="Notes (optional)"
+          label={t.purchases.notesOptional}
           value={notes}
           onChange={(e) => setNotes(e.target.value)}
-          placeholder="Additional notes..."
+          placeholder={t.purchases.additionalNotes}
         />
 
         <div className="space-y-3">
           <div className="flex items-center justify-between">
             <h2 className="text-sm font-semibold text-gray-700 dark:text-gray-300">
-              Items
+              {t.purchases.items}
             </h2>
             <Button
               type="button"
@@ -159,7 +161,7 @@ export function NewPurchaseOrderClient({ products, suppliers }: Props) {
               onClick={addItem}
             >
               <Plus className="h-3 w-3" aria-hidden="true" />
-              Add Item
+              {t.purchases.addItem}
             </Button>
           </div>
 
@@ -170,7 +172,7 @@ export function NewPurchaseOrderClient({ products, suppliers }: Props) {
             >
               <div className="sm:col-span-2">
                 <Select
-                  label="Product"
+                  label={t.purchases.product}
                   options={productOptions}
                   value={item.product_id}
                   onChange={(e) =>
@@ -179,14 +181,14 @@ export function NewPurchaseOrderClient({ products, suppliers }: Props) {
                 />
               </div>
               <Input
-                label="Quantity"
+                label={t.purchases.quantity}
                 type="number"
                 min="1"
                 value={item.quantity}
                 onChange={(e) => updateItem(index, "quantity", e.target.value)}
               />
               <Input
-                label="Cost Price"
+                label={t.purchases.costPrice}
                 type="number"
                 min="0"
                 step="100"
@@ -198,7 +200,7 @@ export function NewPurchaseOrderClient({ products, suppliers }: Props) {
               <div className="flex items-end gap-2">
                 <div className="flex-1 min-w-0">
                   <Input
-                    label="Expiry"
+                    label={t.purchases.expiry}
                     type="date"
                     value={item.expiry_date}
                     onChange={(e) =>
@@ -210,7 +212,7 @@ export function NewPurchaseOrderClient({ products, suppliers }: Props) {
                   type="button"
                   onClick={() => removeItem(index)}
                   className="p-2 rounded hover:bg-red-100 text-red-500 transition-colors mb-0.5 shrink-0"
-                  aria-label="Remove item"
+                  aria-label={t.purchases.removeItem}
                 >
                   <Trash2 className="h-4 w-4" aria-hidden="true" />
                 </button>
@@ -220,7 +222,7 @@ export function NewPurchaseOrderClient({ products, suppliers }: Props) {
 
           {items.length === 0 && (
             <p className="text-sm text-gray-400 text-center py-4">
-              No items added. Click &quot;Add Item&quot; to start.
+              {t.purchases.noItemsAdded}
             </p>
           )}
         </div>

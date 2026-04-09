@@ -9,6 +9,7 @@ import { Modal } from "@/components/ui/modal";
 import { Select } from "@/components/ui/select";
 import { Toast } from "@/components/ui/toast";
 import { collectSalePayment } from "@/lib/actions/credit";
+import { useI18n } from "@/lib/i18n/context";
 import type { SaleCreditPayment } from "@/lib/types";
 import { formatCurrency, formatDateTime } from "@/lib/utils";
 
@@ -17,11 +18,6 @@ interface Props {
   totalAmount: number;
   payments: SaleCreditPayment[];
 }
-
-const paymentMethodOptions = [
-  { value: "cash", label: "Cash" },
-  { value: "transfer", label: "Transfer" },
-];
 
 /**
  * Displays AR collection history and a "Collect Payment" button for credit sales.
@@ -34,6 +30,11 @@ export function SaleCreditPaymentsClient({
   payments,
 }: Props) {
   const router = useRouter();
+  const { t } = useI18n();
+  const paymentMethodOptions = [
+    { value: "cash", label: t.common.cash },
+    { value: "transfer", label: t.common.transfer },
+  ];
   const [showModal, setShowModal] = useState(false);
   const [loading, setLoading] = useState(false);
   const [toast, setToast] = useState<{
@@ -53,7 +54,7 @@ export function SaleCreditPaymentsClient({
     if (result.error) {
       setToast({ message: result.error, type: "error" });
     } else {
-      setToast({ message: "Payment collected", type: "success" });
+      setToast({ message: t.credit.paymentCollected, type: "success" });
       setShowModal(false);
       router.refresh();
     }
@@ -64,26 +65,28 @@ export function SaleCreditPaymentsClient({
       <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl overflow-hidden">
         <div className="p-4 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between">
           <h2 className="text-base font-semibold text-gray-900 dark:text-white">
-            Accounts Receivable
+            {t.credit.accountsReceivable}
           </h2>
           {outstanding > 0 && (
             <Button size="sm" onClick={() => setShowModal(true)}>
               <Plus className="h-3 w-3" aria-hidden="true" />
-              Collect Payment
+              {t.credit.collectPayment}
             </Button>
           )}
         </div>
 
         <div className="p-4 grid grid-cols-3 gap-4 border-b border-gray-100 dark:border-gray-700">
           <div>
-            <p className="text-xs text-gray-500 dark:text-gray-400">Total</p>
+            <p className="text-xs text-gray-500 dark:text-gray-400">
+              {t.credit.total}
+            </p>
             <p className="text-sm font-semibold dark:text-gray-100">
               {formatCurrency(totalAmount)}
             </p>
           </div>
           <div>
             <p className="text-xs text-gray-500 dark:text-gray-400">
-              Collected
+              {t.credit.collected}
             </p>
             <p className="text-sm font-semibold text-green-600 dark:text-green-400">
               {formatCurrency(collected)}
@@ -91,7 +94,7 @@ export function SaleCreditPaymentsClient({
           </div>
           <div>
             <p className="text-xs text-gray-500 dark:text-gray-400">
-              Outstanding
+              {t.credit.outstanding}
             </p>
             <p
               className={`text-sm font-semibold ${
@@ -107,7 +110,7 @@ export function SaleCreditPaymentsClient({
 
         {payments.length === 0 ? (
           <p className="p-4 text-sm text-gray-400 dark:text-gray-500">
-            No collections recorded yet.
+            {t.credit.noCollections}
           </p>
         ) : (
           <div className="overflow-x-auto">
@@ -115,16 +118,16 @@ export function SaleCreditPaymentsClient({
               <thead>
                 <tr className="border-b border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-700/50">
                   <th className="text-left py-2 px-4 font-medium text-gray-500 dark:text-gray-400">
-                    Date
+                    {t.credit.date}
                   </th>
                   <th className="text-left py-2 px-4 font-medium text-gray-500 dark:text-gray-400">
-                    Method
+                    {t.credit.method}
                   </th>
                   <th className="text-right py-2 px-4 font-medium text-gray-500 dark:text-gray-400">
-                    Amount
+                    {t.common.amount}
                   </th>
                   <th className="text-left py-2 px-4 font-medium text-gray-500 dark:text-gray-400">
-                    Notes
+                    {t.credit.notes}
                   </th>
                 </tr>
               </thead>
@@ -163,12 +166,12 @@ export function SaleCreditPaymentsClient({
       {showModal && (
         <Modal
           open={showModal}
-          title="Collect Customer Payment"
+          title={t.credit.collectCustomerPayment}
           onClose={() => setShowModal(false)}
         >
           <form onSubmit={handleSubmit} className="space-y-4">
             <Input
-              label="Amount"
+              label={t.common.amount}
               name="amount"
               type="number"
               min="0.01"
@@ -178,15 +181,15 @@ export function SaleCreditPaymentsClient({
               required
             />
             <Select
-              label="Payment Method"
+              label={t.credit.paymentMethod}
               name="payment_method"
               options={paymentMethodOptions}
               defaultValue="cash"
             />
             <Input
-              label="Notes (optional)"
+              label={t.credit.notesOptional}
               name="notes"
-              placeholder="Reference number, memo..."
+              placeholder={t.credit.referenceMemo}
             />
             <div className="flex justify-end gap-2 pt-2">
               <Button
@@ -194,10 +197,10 @@ export function SaleCreditPaymentsClient({
                 variant="secondary"
                 onClick={() => setShowModal(false)}
               >
-                Cancel
+                {t.common.cancel}
               </Button>
               <Button type="submit" disabled={loading}>
-                {loading ? "Saving..." : "Collect Payment"}
+                {loading ? t.common.saving : t.credit.collectPayment}
               </Button>
             </div>
           </form>

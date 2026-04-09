@@ -3,22 +3,26 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { PageHeader } from "@/components/ui/page-header";
 import { getAdjustments } from "@/lib/actions/inventory";
+import { getServerTranslations } from "@/lib/i18n/server";
 import { formatDateTime } from "@/lib/utils";
 
 export default async function AdjustmentsPage() {
-  const adjustments = await getAdjustments();
+  const [adjustments, t] = await Promise.all([
+    getAdjustments(),
+    getServerTranslations(),
+  ]);
 
   return (
     <div className="space-y-4">
       <PageHeader
-        title="Inventory Adjustments"
+        title={t.inventory.adjustmentHistory}
         backHref="/inventory"
-        backLabel="Inventory"
+        backLabel={t.inventory.title}
       >
         <Link href="/inventory/adjustments/new">
           <Button>
             <Plus className="h-4 w-4" aria-hidden="true" />
-            New Adjustment
+            {t.inventory.newAdjustment}
           </Button>
         </Link>
       </PageHeader>
@@ -29,16 +33,16 @@ export default async function AdjustmentsPage() {
             <thead>
               <tr className="border-b border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-700/50">
                 <th className="text-left py-3 px-4 font-medium text-gray-500 dark:text-gray-400">
-                  Number
+                  {t.inventory.number}
                 </th>
                 <th className="text-left py-3 px-4 font-medium text-gray-500 dark:text-gray-400">
-                  Reason
+                  {t.inventory.reason}
                 </th>
                 <th className="text-left py-3 px-4 font-medium text-gray-500 dark:text-gray-400">
-                  Notes
+                  {t.inventory.notes}
                 </th>
                 <th className="text-left py-3 px-4 font-medium text-gray-500 dark:text-gray-400">
-                  Date
+                  {t.common.date}
                 </th>
               </tr>
             </thead>
@@ -68,7 +72,7 @@ export default async function AdjustmentsPage() {
                     colSpan={4}
                     className="py-8 text-center text-gray-400 dark:text-gray-500"
                   >
-                    No adjustments yet
+                    {t.inventory.noAdjustmentsYet}
                   </td>
                 </tr>
               )}

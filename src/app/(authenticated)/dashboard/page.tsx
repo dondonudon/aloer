@@ -7,12 +7,14 @@ import {
 import { getStockReport } from "@/lib/actions/inventory";
 import { getSalesSummary, getTodaySales } from "@/lib/actions/reports";
 import { getCurrentUser } from "@/lib/auth";
+import { getServerTranslations } from "@/lib/i18n/server";
 import { formatCurrency } from "@/lib/utils";
 
 export default async function DashboardPage() {
   const user = await getCurrentUser();
-  const [todaySales, salesSummary, stockReport, creditSales, creditPOs] =
+  const [t, todaySales, salesSummary, stockReport, creditSales, creditPOs] =
     await Promise.all([
+      getServerTranslations(),
       getTodaySales(),
       getSalesSummary(undefined, undefined, 7),
       getStockReport(),
@@ -32,25 +34,25 @@ export default async function DashboardPage() {
 
   const stats = [
     {
-      label: "Today's Sales",
+      label: t.dashboard.todaySales,
       value: formatCurrency(todaySales.total_revenue),
       icon: DollarSign,
       color: "bg-blue-50 text-blue-700",
     },
     {
-      label: "Transactions Today",
+      label: t.dashboard.transactionsToday,
       value: todaySales.total_transactions,
       icon: ShoppingCart,
       color: "bg-green-50 text-green-700",
     },
     {
-      label: "Gross Profit Today",
+      label: t.dashboard.grossProfitToday,
       value: formatCurrency(todaySales.gross_profit),
       icon: TrendingUp,
       color: "bg-purple-50 text-purple-700",
     },
     {
-      label: "Total Stock Items",
+      label: t.dashboard.totalStockItems,
       value: totalStock,
       icon: Package,
       color: "bg-orange-50 text-orange-700",
@@ -62,10 +64,10 @@ export default async function DashboardPage() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
-            Dashboard
+            {t.dashboard.title}
           </h1>
           <p className="text-sm text-gray-500 dark:text-gray-400">
-            Welcome back, {user?.name}
+            {t.dashboard.welcomeBack} {user?.name}
           </p>
         </div>
         <Link
@@ -73,7 +75,7 @@ export default async function DashboardPage() {
           className="inline-flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors"
         >
           <ShoppingCart className="h-4 w-4" aria-hidden="true" />
-          Open POS
+          {t.dashboard.openPos}
         </Link>
       </div>
 
@@ -105,7 +107,7 @@ export default async function DashboardPage() {
       <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700">
         <div className="p-5 border-b border-gray-200 dark:border-gray-700">
           <h2 className="text-base font-semibold text-gray-900 dark:text-white">
-            Last 7 Days Sales Summary
+            {t.dashboard.last7Days}
           </h2>
         </div>
         <div className="overflow-x-auto">
@@ -113,19 +115,19 @@ export default async function DashboardPage() {
             <thead>
               <tr className="border-b border-gray-100 dark:border-gray-700">
                 <th className="text-left py-3 px-5 font-medium text-gray-500 dark:text-gray-400">
-                  Date
+                  {t.dashboard.date}
                 </th>
                 <th className="text-right py-3 px-5 font-medium text-gray-500 dark:text-gray-400">
-                  Transactions
+                  {t.dashboard.transactions}
                 </th>
                 <th className="text-right py-3 px-5 font-medium text-gray-500 dark:text-gray-400">
-                  Revenue
+                  {t.dashboard.revenue}
                 </th>
                 <th className="text-right py-3 px-5 font-medium text-gray-500 dark:text-gray-400">
-                  COGS
+                  {t.dashboard.cogs}
                 </th>
                 <th className="text-right py-3 px-5 font-medium text-gray-500 dark:text-gray-400">
-                  Gross Profit
+                  {t.dashboard.grossProfit}
                 </th>
               </tr>
             </thead>
@@ -158,7 +160,7 @@ export default async function DashboardPage() {
                     colSpan={5}
                     className="py-8 text-center text-gray-400 dark:text-gray-500"
                   >
-                    No sales data yet
+                    {t.dashboard.noSalesData}
                   </td>
                 </tr>
               )}
@@ -175,16 +177,16 @@ export default async function DashboardPage() {
         >
           <div className="flex items-center justify-between mb-3">
             <h2 className="text-base font-semibold text-orange-800 dark:text-orange-300">
-              Outstanding Credit
+              {t.dashboard.outstandingCredit}
             </h2>
             <span className="text-xs text-orange-600 dark:text-orange-400 underline">
-              View all →
+              {t.dashboard.viewAll}
             </span>
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div>
               <p className="text-xs text-orange-600 dark:text-orange-400">
-                AR — Customers owe you
+                {t.dashboard.arCustomers}
               </p>
               <p className="text-lg font-bold text-amber-700 dark:text-amber-300">
                 {formatCurrency(totalAR)}
@@ -192,7 +194,7 @@ export default async function DashboardPage() {
             </div>
             <div>
               <p className="text-xs text-orange-600 dark:text-orange-400">
-                AP — You owe suppliers
+                {t.dashboard.apSuppliers}
               </p>
               <p className="text-lg font-bold text-red-700 dark:text-red-300">
                 {formatCurrency(totalAP)}
@@ -206,7 +208,7 @@ export default async function DashboardPage() {
       {lowStockItems.length > 0 && (
         <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700/50 rounded-xl p-5">
           <h2 className="text-base font-semibold text-amber-800 dark:text-amber-400 mb-2">
-            Low Stock Alert
+            {t.dashboard.lowStockAlert}
           </h2>
           <ul className="space-y-1">
             {lowStockItems.map((item) => (
@@ -214,7 +216,8 @@ export default async function DashboardPage() {
                 key={item.sku}
                 className="text-sm text-amber-700 dark:text-amber-300"
               >
-                {item.name} ({item.sku}) — {item.stock_on_hand} remaining
+                {item.name} ({item.sku}) — {item.stock_on_hand}{" "}
+                {t.dashboard.remaining}
               </li>
             ))}
           </ul>

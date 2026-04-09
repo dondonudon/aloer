@@ -1,5 +1,6 @@
 import { PageHeader } from "@/components/ui/page-header";
 import { getInventoryBatches } from "@/lib/actions/inventory";
+import { getServerTranslations } from "@/lib/i18n/server";
 import { formatCurrency, formatDate } from "@/lib/utils";
 
 interface InventoryDetailPageProps {
@@ -13,7 +14,10 @@ export default async function InventoryDetailPage({
   params,
 }: InventoryDetailPageProps) {
   const { id } = await params;
-  const batches = await getInventoryBatches(id);
+  const [batches, t] = await Promise.all([
+    getInventoryBatches(id),
+    getServerTranslations(),
+  ]);
 
   const productName =
     (batches[0]?.products as { name: string; sku: string } | undefined)?.name ??
@@ -36,7 +40,7 @@ export default async function InventoryDetailPage({
       <PageHeader
         title={productName}
         backHref="/inventory"
-        backLabel="Inventory"
+        backLabel={t.inventory.title}
       >
         <p className="text-sm text-gray-500">
           {productSku} · {totalQty} units · {formatCurrency(totalValue)} value
@@ -49,28 +53,28 @@ export default async function InventoryDetailPage({
             <thead>
               <tr className="border-b border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-700/50">
                 <th className="text-left py-3 px-4 font-medium text-gray-500">
-                  Batch
+                  {t.inventory.batch}
                 </th>
                 <th className="text-left py-3 px-4 font-medium text-gray-500">
-                  Source
+                  {t.inventory.source}
                 </th>
                 <th className="text-right py-3 px-4 font-medium text-gray-500">
-                  Qty In
+                  {t.inventory.qtyIn}
                 </th>
                 <th className="text-right py-3 px-4 font-medium text-gray-500">
-                  Remaining
+                  {t.inventory.remaining}
                 </th>
                 <th className="text-right py-3 px-4 font-medium text-gray-500">
-                  Cost Price
+                  {t.purchases.costPrice}
                 </th>
                 <th className="text-right py-3 px-4 font-medium text-gray-500">
-                  Value
+                  {t.inventory.value}
                 </th>
                 <th className="text-left py-3 px-4 font-medium text-gray-500">
-                  Expiry
+                  {t.inventory.expiry}
                 </th>
                 <th className="text-left py-3 px-4 font-medium text-gray-500">
-                  Added
+                  {t.inventory.added}
                 </th>
               </tr>
             </thead>
@@ -126,7 +130,7 @@ export default async function InventoryDetailPage({
                           }
                         >
                           {formatDate(batch.expiry_date)}
-                          {isExpired && " (expired)"}
+                          {isExpired && ` (${t.inventory.expiredLabel})`}
                         </span>
                       ) : (
                         <span className="text-gray-400">—</span>
@@ -141,7 +145,7 @@ export default async function InventoryDetailPage({
               {batches.length === 0 && (
                 <tr>
                   <td colSpan={8} className="py-8 text-center text-gray-400">
-                    No inventory batches for this product
+                    {t.inventory.noBatches}
                   </td>
                 </tr>
               )}

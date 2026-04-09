@@ -33,7 +33,8 @@
 | **XLSX / CSV export** | Sales and Purchases list pages — SheetJS (`xlsx`) export buttons for both formats |
 | **PDF export (reports)** | Sales Summary, Profit & Loss, Stock Report, and Balance Sheet pages — jsPDF + autoTable "Export PDF" button |
 | **`getProfitLoss` SQL function** | Moved from app-level aggregation to `get_profit_loss(p_start_date, p_end_date)` Postgres RPC. Merged into `supabase/migrations/00001_schema.sql` |
-| **Tests** | Vitest (unit) + Testing Library (component) + Playwright (E2E) scaffolded. 36 passing tests. See §18 |
+| **Tests** | Vitest (unit) + Testing Library (component) + Playwright (E2E) scaffolded. 87 passing tests. See [§18](#18-testing) |
+| **Internationalisation (i18n)** | Full EN / ID translation system. User locale preference persisted in `user_roles.locale` (DB column added via `00002_add_locale.sql`). `I18nProvider` + `useI18n()` context mirrors the theme-provider pattern. Server Components use `getServerTranslations()` (cached). Language switcher in sidebar footer shows active locale code (EN / ID). System-seeded chart-of-account names translated via `getAccountName()` helper keyed by account code — no schema duplication needed. |
 
 ### ⏳ Future Work
 
@@ -54,6 +55,8 @@ See [§17. Future Work](#17-future-work) for the full list.
 | **Split / credit payments** | `sale_payments` holds multiple tender rows per sale; `payment_method` on `sales` is `cash \| transfer \| mixed \| credit` |
 | **Resellers** | Optional reseller/customer accounts linked to credit sales; required for POS credit checkout |
 | **Migrations squashed** | 15 iterative migration files merged into one clean `00001_schema.sql` |
+| **i18n without a library** | No `next-intl` / `react-i18next` dependency. Custom `I18nProvider` + `useI18n()` modelled after the existing theme-provider pattern (`useSyncExternalStore` + localStorage). Typed `Translations` interface prevents missing keys at compile time. |
+| **DB-level translations via code map** | System accounts (`accounts` table) are English in the DB. Translated at display-time via `getAccountName(code, dbName, t)` using a `t.accountNames` record keyed by account code. Avoids schema duplication while keeping translations co-located with other strings. |
 
 ---
 
