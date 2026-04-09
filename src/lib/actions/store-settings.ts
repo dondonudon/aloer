@@ -40,6 +40,15 @@ export async function updateStoreSettings(formData: FormData) {
   const storeIconUrl = (formData.get("storeIconUrl") as string) || null;
 
   return ownerAction(async (supabase) => {
+    // store_settings is a single-row table; fetch the id before updating
+    const { data: existing, error: fetchError } = await supabase
+      .from("store_settings")
+      .select("id")
+      .limit(1)
+      .single();
+
+    if (fetchError || !existing) return { error: "Store settings not found" };
+
     const { error } = await supabase
       .from("store_settings")
       .update({
@@ -47,7 +56,7 @@ export async function updateStoreSettings(formData: FormData) {
         store_icon_url: storeIconUrl?.trim() || null,
         updated_at: new Date().toISOString(),
       })
-      .limit(1);
+      .eq("id", existing.id);
     if (error) return { error: error.message };
     revalidatePath("/", "layout");
     return {};

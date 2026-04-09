@@ -101,6 +101,7 @@ export function ImageUpload({
             alt="Uploaded image preview"
             width={120}
             height={120}
+            unoptimized
             className="rounded-lg object-cover border border-gray-200 dark:border-gray-600"
             style={{ width: 120, height: 120 }}
           />
