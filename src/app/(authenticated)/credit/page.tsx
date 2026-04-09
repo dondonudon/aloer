@@ -99,7 +99,8 @@ export default async function CreditPage() {
                       {sale.invoice_number}
                     </td>
                     <td className="py-3 px-4 text-gray-600 dark:text-gray-400">
-                      {(sale.resellers as { name: string } | null)?.name || "—"}
+                      {(sale.resellers as { name: string }[] | null)?.[0]
+                        ?.name || "—"}
                     </td>
                     <td className="py-3 px-4 text-gray-600 dark:text-gray-400">
                       {formatDateTime(sale.created_at)}
@@ -185,7 +186,8 @@ export default async function CreditPage() {
                       {po.po_number}
                     </td>
                     <td className="py-3 px-4 text-gray-600 dark:text-gray-400">
-                      {(po.suppliers as { name: string } | null)?.name || "—"}
+                      {(po.suppliers as { name: string }[] | null)?.[0]?.name ||
+                        "—"}
                     </td>
                     <td className="py-3 px-4 text-gray-600 dark:text-gray-400">
                       {formatDateTime(po.created_at)}
