@@ -1,6 +1,6 @@
 "use client";
 
-import { Pencil, Plus, Search } from "lucide-react";
+import { Pencil, Plus, Search, Share2 } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
@@ -332,17 +332,30 @@ export function ProductsClient({
                     </span>
                   </td>
                   <td className="py-3 px-4 text-center">
-                    <button
-                      type="button"
-                      onClick={() => openEdit(product)}
-                      className="p-1 rounded hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
-                      aria-label={`Edit ${product.name}`}
-                    >
-                      <Pencil
-                        className="h-4 w-4 text-gray-500"
-                        aria-hidden="true"
-                      />
-                    </button>
+                    <div className="flex items-center justify-center gap-1">
+                      <button
+                        type="button"
+                        onClick={() => openEdit(product)}
+                        className="p-1 rounded hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                        aria-label={`Edit ${product.name}`}
+                      >
+                        <Pencil
+                          className="h-4 w-4 text-gray-500"
+                          aria-hidden="true"
+                        />
+                      </button>
+                      <a
+                        href={`/api/products/${product.id}/share`}
+                        download={`${product.name}.png`}
+                        className="p-1 rounded hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                        aria-label={`Share ${product.name}`}
+                      >
+                        <Share2
+                          className="h-4 w-4 text-gray-500"
+                          aria-hidden="true"
+                        />
+                      </a>
+                    </div>
                   </td>
                 </tr>
               ))}

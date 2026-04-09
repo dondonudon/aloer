@@ -216,6 +216,7 @@ export function Sidebar({
                 width={32}
                 height={32}
                 unoptimized
+                priority
                 className="h-8 w-8 rounded-lg object-cover flex-shrink-0"
               />
             )}
@@ -395,6 +396,7 @@ export function Sidebar({
             width={28}
             height={28}
             unoptimized
+            priority
             className="h-7 w-7 rounded-md object-cover flex-shrink-0"
           />
         )}
