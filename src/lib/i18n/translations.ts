@@ -378,6 +378,10 @@ export interface Translations {
     liabilities: string;
     equity: string;
     liabilitiesEquity: string;
+    month: string;
+    year: string;
+    monthly: string;
+    yearly: string;
   };
 
   settings: {
@@ -878,6 +882,10 @@ export const en: Translations = {
     liabilities: "Liabilities",
     equity: "Equity",
     liabilitiesEquity: "Liabilities + Equity",
+    month: "Month",
+    year: "Year",
+    monthly: "Monthly",
+    yearly: "Yearly",
   },
 
   settings: {
@@ -1387,6 +1395,10 @@ export const id: Translations = {
     liabilities: "Liabilitas",
     equity: "Ekuitas",
     liabilitiesEquity: "Liabilitas + Ekuitas",
+    month: "Bulan",
+    year: "Tahun",
+    monthly: "Bulanan",
+    yearly: "Tahunan",
   },
 
   settings: {

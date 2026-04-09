@@ -2,8 +2,13 @@ import { BalanceSheetClient } from "@/components/reports/balance-sheet-client";
 import { PageHeader } from "@/components/ui/page-header";
 import { getBalanceSheet } from "@/lib/actions/reports";
 
-export default async function BalanceSheetPage() {
-  const result = await getBalanceSheet();
+export default async function BalanceSheetPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ period?: string }>;
+}) {
+  const { period } = await searchParams;
+  const result = await getBalanceSheet(period);
 
   if ("error" in result) {
     return <p className="text-red-600">{result.error}</p>;
@@ -17,6 +22,8 @@ export default async function BalanceSheetPage() {
   const totalAssets = assets.reduce((sum, a) => sum + a.balance, 0);
   const totalLiabilities = liabilities.reduce((sum, a) => sum + a.balance, 0);
   const totalEquity = equity.reduce((sum, a) => sum + a.balance, 0);
+
+  const currentPeriod = period ?? new Date().toISOString().slice(0, 7);
 
   return (
     <div className="max-w-2xl space-y-6">
@@ -32,6 +39,7 @@ export default async function BalanceSheetPage() {
         totalAssets={totalAssets}
         totalLiabilities={totalLiabilities}
         totalEquity={totalEquity}
+        period={currentPeriod}
       />
     </div>
   );

@@ -3,16 +3,38 @@
 import { getCurrentUser, isOwner } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 
-export async function getBalanceSheet() {
+export async function getBalanceSheet(period?: string) {
   const user = await getCurrentUser();
   if (!user || !isOwner(user.role)) {
     return { error: "Unauthorized" };
   }
 
+  // period can be "YYYY" (whole year) or "YYYY-MM" (single month).
+  // Default to current month.
+  const target = period ?? new Date().toISOString().slice(0, 7);
+  let start: Date;
+  let end: Date;
+
+  if (/^\d{4}$/.test(target)) {
+    // Whole year
+    const year = Number(target);
+    start = new Date(year, 0, 1);
+    end = new Date(year + 1, 0, 1);
+  } else {
+    // Single month "YYYY-MM"
+    const [year, mon] = target.split("-").map(Number);
+    start = new Date(year, mon - 1, 1);
+    end = new Date(year, mon, 1);
+  }
+
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("journal_lines")
-    .select("debit, credit, accounts(id, code, name, type)")
+    .select(
+      "debit, credit, accounts(id, code, name, type), journal_entries!inner(created_at)",
+    )
+    .gte("journal_entries.created_at", start.toISOString())
+    .lt("journal_entries.created_at", end.toISOString())
     .order("accounts(code)");
 
   if (error) throw new Error(error.message);
