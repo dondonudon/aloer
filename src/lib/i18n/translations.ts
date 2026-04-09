@@ -194,6 +194,19 @@ export interface Translations {
     campaignSavings: string;
     cartCampaign: string;
     discount: string;
+    /** Partial-return translations */
+    processReturn: string;
+    returnConfirmNote: string;
+    returnHistory: string;
+    refundMethod: string;
+    totalRefund: string;
+    refundAmount: string;
+    returnQty: string;
+    maxReturn: string;
+    returnNotes: string;
+    returnNotesPlaceholder: string;
+    confirmReturn: string;
+    returnCreatedSuccess: string;
   };
 
   products: {
@@ -699,6 +712,19 @@ export const en: Translations = {
     campaignSavings: "Campaign savings",
     cartCampaign: "Cart campaign",
     discount: "Discount",
+    processReturn: "Process Return",
+    returnConfirmNote:
+      "Enter the quantity to return for each item. Inventory will be restored and a refund will be issued.",
+    returnHistory: "Return History",
+    refundMethod: "Refund Method",
+    totalRefund: "Total Refund",
+    refundAmount: "Refund",
+    returnQty: "Return Qty",
+    maxReturn: "Returnable",
+    returnNotes: "Notes (optional)",
+    returnNotesPlaceholder: "e.g. Customer changed their mind",
+    confirmReturn: "Confirm Return",
+    returnCreatedSuccess: "Return processed successfully",
   },
 
   products: {
@@ -1212,6 +1238,19 @@ export const id: Translations = {
     campaignSavings: "Hemat kampanye",
     cartCampaign: "Kampanye keranjang",
     discount: "Diskon",
+    processReturn: "Proses Retur",
+    returnConfirmNote:
+      "Masukkan jumlah yang ingin diretur untuk setiap item. Stok akan dipulihkan dan pengembalian dana akan diproses.",
+    returnHistory: "Riwayat Retur",
+    refundMethod: "Metode Pengembalian",
+    totalRefund: "Total Pengembalian",
+    refundAmount: "Pengembalian",
+    returnQty: "Qty Retur",
+    maxReturn: "Bisa Diretur",
+    returnNotes: "Catatan (opsional)",
+    returnNotesPlaceholder: "mis. Pelanggan berubah pikiran",
+    confirmReturn: "Konfirmasi Retur",
+    returnCreatedSuccess: "Retur berhasil diproses",
   },
 
   products: {
