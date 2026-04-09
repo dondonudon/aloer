@@ -5,6 +5,7 @@ import { CartPanel } from "@/components/pos/cart-panel";
 import { ProductGrid } from "@/components/pos/product-grid";
 import { ReceiptModal } from "@/components/pos/receipt-modal";
 import { Toast } from "@/components/ui/toast";
+import { useStore } from "@/components/ui/store-context";
 import { createSale } from "@/lib/actions/sales";
 import { type ReceiptData, useCart } from "@/lib/hooks/use-cart";
 import { useToast } from "@/lib/hooks/use-toast";
@@ -35,6 +36,7 @@ export function POSClient({
   campaigns = [],
   resellers = [],
 }: POSClientProps) {
+  const { storeIconUrl } = useStore();
   const [loading, setLoading] = useState(false);
   const [receipt, setReceipt] = useState<ReceiptData | null>(null);
   const [selectedResellerId, setSelectedResellerId] = useState("");
@@ -125,6 +127,7 @@ export function POSClient({
         <ReceiptModal
           receipt={receipt}
           storeName={storeName}
+          storeLogoUrl={storeIconUrl ?? undefined}
           onClose={() => setReceipt(null)}
         />
       )}

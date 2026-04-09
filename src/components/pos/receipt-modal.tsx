@@ -1,6 +1,7 @@
 "use client";
 
 import { Printer, X } from "lucide-react";
+import Image from "next/image";
 import { useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { useI18n } from "@/lib/i18n/context";
@@ -31,6 +32,7 @@ interface ReceiptData {
 interface ReceiptModalProps {
   receipt: ReceiptData;
   storeName: string;
+  storeLogoUrl?: string;
   onClose: () => void;
 }
 
@@ -41,6 +43,7 @@ interface ReceiptModalProps {
 export function ReceiptModal({
   receipt,
   storeName,
+  storeLogoUrl,
   onClose,
 }: ReceiptModalProps) {
   const { t } = useI18n();
@@ -114,7 +117,10 @@ export function ReceiptModal({
           </style>
         </head>
         <body>
-          <div class="center bold" style="font-size:15px;margin-bottom:2px;">${storeName}</div>
+          <div style="display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:4px;">
+            ${storeLogoUrl ? `<img src="${storeLogoUrl}" alt="" style="height:36px;width:36px;object-fit:contain;" />` : ""}
+            <div class="bold" style="font-size:15px;">${storeName}</div>
+          </div>
           <div class="center" style="font-size:11px;">${formatDateTime(receipt.createdAt)}</div>
           <div class="center">${receipt.invoiceNumber}</div>
           <div class="sep">${SEP_DOUBLE}</div>
@@ -179,8 +185,17 @@ export function ReceiptModal({
             className="bg-white text-black font-mono text-xs leading-snug mx-auto p-3"
             style={{ width: "100%", maxWidth: "288px" }}
           >
-            <div className="text-center font-bold text-sm mb-0.5">
-              {storeName}
+            <div className="flex items-center justify-center gap-2 mb-0.5">
+              {storeLogoUrl && (
+                <Image
+                  src={storeLogoUrl}
+                  alt=""
+                  width={36}
+                  height={36}
+                  className="object-contain"
+                />
+              )}
+              <div className="font-bold text-sm">{storeName}</div>
             </div>
             <div className="text-center text-[11px] text-gray-600">
               {formatDateTime(receipt.createdAt)}
