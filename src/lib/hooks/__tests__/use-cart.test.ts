@@ -394,7 +394,9 @@ describe("useCart — product-specific campaign", () => {
     const campaign = makeActiveCampaign({
       discount_type: "percentage",
       discount_value: 50,
-      campaign_products: [{ product_id: "targeted", min_quantity: null } as never],
+      campaign_products: [
+        { product_id: "targeted", min_quantity: null } as never,
+      ],
     });
 
     const { result } = renderHook(() => useCart([campaign]));
@@ -416,9 +418,7 @@ describe("useCart — product-specific campaign", () => {
       trigger_type: "min_product_qty",
       discount_type: "percentage",
       discount_value: 30,
-      campaign_products: [
-        { product_id: "prod", min_quantity: 3 } as never,
-      ],
+      campaign_products: [{ product_id: "prod", min_quantity: 3 } as never],
     });
 
     const { result } = renderHook(() => useCart([campaign]));
