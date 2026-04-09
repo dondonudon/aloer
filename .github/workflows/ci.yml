@@ -30,7 +30,10 @@ jobs:
           cache: npm
 
       - name: Install dependencies
-        run: npm ci
+        # npm ci requires the lock file to include Linux-specific optional
+        # packages that aren't resolved on macOS. npm install is used instead
+        # and the lock file still pins all direct/transitive versions.
+        run: npm install
 
       # -----------------------------------------------------------------------
       # Lint (Biome)
