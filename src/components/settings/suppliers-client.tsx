@@ -1,13 +1,14 @@
 "use client";
 
-import { Plus } from "lucide-react";
+import { Pencil, Plus } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Modal } from "@/components/ui/modal";
+import { Select } from "@/components/ui/select";
 import { Toast } from "@/components/ui/toast";
-import { createSupplier } from "@/lib/actions/suppliers";
+import { createSupplier, updateSupplier } from "@/lib/actions/suppliers";
 import { useI18n } from "@/lib/i18n/context";
 import type { Supplier } from "@/lib/types";
 
@@ -19,19 +20,37 @@ export function SuppliersClient({ suppliers }: Props) {
   const router = useRouter();
   const { t } = useI18n();
   const [modalOpen, setModalOpen] = useState(false);
+  const [editing, setEditing] = useState<Supplier | null>(null);
   const [loading, setLoading] = useState(false);
   const [toast, setToast] = useState<{
     message: string;
     type: "success" | "error";
   } | null>(null);
 
+  function openCreate() {
+    setEditing(null);
+    setModalOpen(true);
+  }
+
+  function openEdit(supplier: Supplier) {
+    setEditing(supplier);
+    setModalOpen(true);
+  }
+
   async function handleSubmit(formData: FormData) {
     setLoading(true);
-    const result = await createSupplier(formData);
+    const result = editing
+      ? await updateSupplier(editing.id, formData)
+      : await createSupplier(formData);
     if (result.error) {
       setToast({ message: result.error, type: "error" });
     } else {
-      setToast({ message: t.settings.supplierCreated, type: "success" });
+      setToast({
+        message: editing
+          ? t.settings.supplierUpdated
+          : t.settings.supplierCreated,
+        type: "success",
+      });
       setModalOpen(false);
       router.refresh();
     }
@@ -44,7 +63,7 @@ export function SuppliersClient({ suppliers }: Props) {
         <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
           {t.settings.suppliers}
         </h2>
-        <Button size="sm" onClick={() => setModalOpen(true)}>
+        <Button size="sm" onClick={openCreate}>
           <Plus className="h-3 w-3" aria-hidden="true" />
           {t.settings.addSupplier}
         </Button>
@@ -66,6 +85,9 @@ export function SuppliersClient({ suppliers }: Props) {
                 </th>
                 <th className="text-center py-3 px-4 font-medium text-gray-500 dark:text-gray-400">
                   {t.common.status}
+                </th>
+                <th className="text-center py-3 px-4 font-medium text-gray-500 dark:text-gray-400">
+                  {t.common.actions}
                 </th>
               </tr>
             </thead>
@@ -95,12 +117,22 @@ export function SuppliersClient({ suppliers }: Props) {
                       {supplier.is_active ? t.common.active : t.common.inactive}
                     </span>
                   </td>
+                  <td className="py-3 px-4 text-center">
+                    <button
+                      type="button"
+                      onClick={() => openEdit(supplier)}
+                      className="text-blue-600 hover:text-blue-700"
+                      aria-label={`Edit ${supplier.name}`}
+                    >
+                      <Pencil className="h-4 w-4" aria-hidden="true" />
+                    </button>
+                  </td>
                 </tr>
               ))}
               {suppliers.length === 0 && (
                 <tr>
                   <td
-                    colSpan={4}
+                    colSpan={5}
                     className="py-8 text-center text-gray-400 dark:text-gray-500"
                   >
                     {t.settings.noSuppliersYet}
@@ -115,12 +147,37 @@ export function SuppliersClient({ suppliers }: Props) {
       <Modal
         open={modalOpen}
         onClose={() => setModalOpen(false)}
-        title={t.settings.addSupplier}
+        title={editing ? t.settings.editSupplier : t.settings.addSupplier}
       >
         <form action={handleSubmit} className="space-y-4">
-          <Input label={t.common.name} name="name" required />
-          <Input label={t.common.phone} name="phone" type="tel" />
-          <Input label={t.common.address} name="address" />
+          <Input
+            label={t.common.name}
+            name="name"
+            required
+            defaultValue={editing?.name ?? ""}
+          />
+          <Input
+            label={t.common.phone}
+            name="phone"
+            type="tel"
+            defaultValue={editing?.phone ?? ""}
+          />
+          <Input
+            label={t.common.address}
+            name="address"
+            defaultValue={editing?.address ?? ""}
+          />
+          {editing && (
+            <Select
+              label={t.common.status}
+              name="is_active"
+              options={[
+                { value: "true", label: t.common.active },
+                { value: "false", label: t.common.inactive },
+              ]}
+              defaultValue={String(editing.is_active)}
+            />
+          )}
           <div className="flex justify-end gap-2 pt-2">
             <Button
               type="button"
@@ -130,7 +187,11 @@ export function SuppliersClient({ suppliers }: Props) {
               {t.common.cancel}
             </Button>
             <Button type="submit" disabled={loading}>
-              {loading ? t.common.creating : t.common.create}
+              {loading
+                ? t.common.saving
+                : editing
+                  ? t.common.update
+                  : t.common.create}
             </Button>
           </div>
         </form>

@@ -384,8 +384,10 @@ export interface Translations {
     categoryCreated: string;
     suppliers: string;
     addSupplier: string;
+    editSupplier: string;
     noSuppliersYet: string;
     supplierCreated: string;
+    supplierUpdated: string;
     resellers: string;
     addReseller: string;
     noResellersYet: string;
@@ -868,8 +870,10 @@ export const en: Translations = {
     categoryCreated: "Category created",
     suppliers: "Suppliers",
     addSupplier: "Add Supplier",
+    editSupplier: "Edit Supplier",
     noSuppliersYet: "No suppliers yet",
     supplierCreated: "Supplier created",
+    supplierUpdated: "Supplier updated",
     resellers: "Resellers",
     addReseller: "Add Reseller",
     noResellersYet: "No resellers yet",
@@ -1361,8 +1365,10 @@ export const id: Translations = {
     categoryCreated: "Kategori dibuat",
     suppliers: "Pemasok",
     addSupplier: "Tambah Pemasok",
+    editSupplier: "Edit Pemasok",
     noSuppliersYet: "Belum ada pemasok",
     supplierCreated: "Pemasok dibuat",
+    supplierUpdated: "Pemasok diperbarui",
     resellers: "Reseller",
     addReseller: "Tambah Reseller",
     noResellersYet: "Belum ada reseller",
