@@ -275,6 +275,7 @@ export interface CreateSaleInput {
   discountAmount?: number;
   campaignSavings?: number;
   cartCampaignDiscount?: number;
+  idempotencyKey?: string;
 }
 
 export interface AdjustmentItemInput {

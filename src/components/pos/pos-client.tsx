@@ -40,6 +40,9 @@ export function POSClient({
   const [loading, setLoading] = useState(false);
   const [receipt, setReceipt] = useState<ReceiptData | null>(null);
   const [selectedResellerId, setSelectedResellerId] = useState("");
+  const [idempotencyKey, setIdempotencyKey] = useState(() =>
+    crypto.randomUUID(),
+  );
   const { toast, showToast, clearToast } = useToast();
 
   const {
@@ -78,6 +81,7 @@ export function POSClient({
       campaignSavings: campaignSavings > 0 ? campaignSavings : undefined,
       cartCampaignDiscount:
         cartCampaignDiscount > 0 ? cartCampaignDiscount : undefined,
+      idempotencyKey,
     });
     if (result.error) {
       showToast(result.error, "error");
@@ -91,6 +95,7 @@ export function POSClient({
       );
       clearCart();
       setSelectedResellerId("");
+      setIdempotencyKey(crypto.randomUUID());
     }
     setLoading(false);
   }
