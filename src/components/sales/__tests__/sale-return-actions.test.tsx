@@ -113,7 +113,7 @@ describe("SaleReturnActions", () => {
   });
 
   it("renders nothing when all sale items are fully returned", () => {
-    const { container } = render(
+    render(
       <SaleReturnActions
         {...baseProps}
         existingReturns={[

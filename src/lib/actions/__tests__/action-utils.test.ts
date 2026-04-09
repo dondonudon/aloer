@@ -79,9 +79,13 @@ describe("ownerAction", () => {
       theme: null,
       locale: null,
     });
-    vi.mocked(createClient).mockResolvedValueOnce({} as Awaited<ReturnType<typeof createClient>>);
+    vi.mocked(createClient).mockResolvedValueOnce(
+      {} as Awaited<ReturnType<typeof createClient>>,
+    );
 
-    const result = await ownerAction(async () => ({ error: "something broke" }));
+    const result = await ownerAction(async () => ({
+      error: "something broke",
+    }));
 
     expect(result).toEqual({ error: "something broke" });
   });
@@ -94,7 +98,13 @@ describe("ownerAction", () => {
 function makeSupabaseMock(insertResult: unknown = {}) {
   const insertFn = vi.fn().mockResolvedValue(insertResult);
   const fromFn = vi.fn().mockReturnValue({ insert: insertFn });
-  return { client: { from: fromFn } as unknown as import("@supabase/supabase-js").SupabaseClient, insertFn, fromFn };
+  return {
+    client: {
+      from: fromFn,
+    } as unknown as import("@supabase/supabase-js").SupabaseClient,
+    insertFn,
+    fromFn,
+  };
 }
 
 describe("insertAuditLog", () => {
@@ -130,7 +140,10 @@ describe("insertAuditLog", () => {
   });
 
   it("swallows errors silently and does not throw", async () => {
-    const insertFn = vi.fn().mockResolvedValue({ data: null, error: { message: "constraint violation" } });
+    const insertFn = vi.fn().mockResolvedValue({
+      data: null,
+      error: { message: "constraint violation" },
+    });
     const client = {
       from: vi.fn().mockReturnValue({ insert: insertFn }),
     } as unknown as import("@supabase/supabase-js").SupabaseClient;
