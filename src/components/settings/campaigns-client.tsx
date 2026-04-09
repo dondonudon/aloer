@@ -1,6 +1,6 @@
 "use client";
 
-import { Pencil, Plus, Power, Trash2 } from "lucide-react";
+import { Loader2, Pencil, Plus, Power, Trash2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
@@ -75,6 +75,7 @@ export function CampaignsClient({ campaigns, products }: CampaignsClientProps) {
   } | null>(null);
   const [form, setForm] = useState<CampaignFormState>(defaultForm);
   const [loading, setLoading] = useState(false);
+  const [togglingId, setTogglingId] = useState<string | null>(null);
   const [toast, setToast] = useState<{
     message: string;
     type: "success" | "error";
@@ -170,7 +171,9 @@ export function CampaignsClient({ campaigns, products }: CampaignsClientProps) {
   }
 
   async function handleToggle(id: string, current: boolean) {
+    setTogglingId(id);
     const result = await toggleCampaign(id, !current);
+    setTogglingId(null);
     if (result.error) {
       setToast({ message: result.error, type: "error" });
     } else {
@@ -296,16 +299,26 @@ export function CampaignsClient({ campaigns, products }: CampaignsClientProps) {
                   <button
                     type="button"
                     onClick={() => handleToggle(c.id, c.is_active)}
+                    disabled={togglingId === c.id}
                     className={`p-2 rounded transition-colors ${
-                      c.is_active
-                        ? "text-green-600 hover:bg-green-50"
-                        : "text-gray-400 hover:bg-gray-100"
+                      togglingId === c.id
+                        ? "opacity-50 cursor-not-allowed"
+                        : c.is_active
+                          ? "text-green-600 hover:bg-green-50"
+                          : "text-gray-400 hover:bg-gray-100"
                     }`}
                     aria-label={
                       c.is_active ? "Disable campaign" : "Enable campaign"
                     }
                   >
-                    <Power className="h-4 w-4" aria-hidden="true" />
+                    {togglingId === c.id ? (
+                      <Loader2
+                        className="h-4 w-4 animate-spin"
+                        aria-hidden="true"
+                      />
+                    ) : (
+                      <Power className="h-4 w-4" aria-hidden="true" />
+                    )}
                   </button>
                   <button
                     type="button"
