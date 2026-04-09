@@ -19,6 +19,8 @@ export interface SaleCreditPayment {
   notes: string | null;
   created_by: string | null;
   created_at: string;
+  /** Resolved display name of the user who recorded this payment. */
+  created_by_name?: string | null;
 }
 
 /** A persisted sale payment row from sale_payments. */
@@ -38,6 +40,8 @@ export interface SupplierPayment {
   notes: string | null;
   created_by: string | null;
   created_at: string;
+  /** Resolved display name of the user who recorded this payment. */
+  created_by_name?: string | null;
 }
 export type SaleStatus = "completed" | "voided";
 export type PurchaseOrderStatus = "draft" | "received" | "cancelled";

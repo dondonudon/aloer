@@ -49,5 +49,28 @@ export async function getAdjustments() {
     .order("created_at", { ascending: false });
 
   if (error) throw new Error(error.message);
-  return data;
+
+  const adjustments = data ?? [];
+  const userIds = [
+    ...new Set(
+      adjustments
+        .map((a) => a.created_by)
+        .filter((id): id is string => Boolean(id)),
+    ),
+  ];
+  const userNames: Record<string, string> = {};
+  if (userIds.length > 0) {
+    const { data: profiles } = await supabase
+      .from("profiles")
+      .select("id, full_name")
+      .in("id", userIds);
+    for (const p of profiles ?? []) {
+      userNames[p.id] = p.full_name;
+    }
+  }
+
+  return adjustments.map((a) => ({
+    ...a,
+    created_by_name: a.created_by ? (userNames[a.created_by] ?? null) : null,
+  }));
 }

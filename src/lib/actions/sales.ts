@@ -81,7 +81,33 @@ export async function getSaleWithItems(saleId: string) {
   if (saleResult.error) throw new Error(saleResult.error.message);
   if (itemsResult.error) throw new Error(itemsResult.error.message);
 
-  return { sale: saleResult.data, items: itemsResult.data };
+  const sale = saleResult.data;
+  const userIds = [sale.created_by, sale.voided_by].filter((id): id is string =>
+    Boolean(id),
+  );
+  const userNames: Record<string, string> = {};
+  if (userIds.length > 0) {
+    const { data: profiles } = await supabase
+      .from("profiles")
+      .select("id, full_name")
+      .in("id", userIds);
+    for (const p of profiles ?? []) {
+      userNames[p.id] = p.full_name;
+    }
+  }
+
+  return {
+    sale: {
+      ...sale,
+      created_by_name: sale.created_by
+        ? (userNames[sale.created_by] ?? null)
+        : null,
+      voided_by_name: sale.voided_by
+        ? (userNames[sale.voided_by] ?? null)
+        : null,
+    },
+    items: itemsResult.data,
+  };
 }
 
 export async function voidSale(saleId: string, reason: string) {

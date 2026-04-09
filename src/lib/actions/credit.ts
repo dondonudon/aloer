@@ -6,7 +6,7 @@ import { ownerAction } from "./action-utils";
 
 /**
  * Fetches all credit payment collections for a given sale.
- * Returns payments ordered oldest-first.
+ * Returns payments ordered oldest-first, with resolved creator names.
  */
 export async function getSaleCreditPayments(saleId: string) {
   const supabase = await createClient();
@@ -17,7 +17,30 @@ export async function getSaleCreditPayments(saleId: string) {
     .order("created_at", { ascending: true });
 
   if (error) throw new Error(error.message);
-  return data;
+
+  const payments = data ?? [];
+  const userIds = [
+    ...new Set(
+      payments
+        .map((p) => p.created_by)
+        .filter((id): id is string => Boolean(id)),
+    ),
+  ];
+  const userNames: Record<string, string> = {};
+  if (userIds.length > 0) {
+    const { data: profiles } = await supabase
+      .from("profiles")
+      .select("id, full_name")
+      .in("id", userIds);
+    for (const p of profiles ?? []) {
+      userNames[p.id] = p.full_name;
+    }
+  }
+
+  return payments.map((p) => ({
+    ...p,
+    created_by_name: p.created_by ? (userNames[p.created_by] ?? null) : null,
+  }));
 }
 
 /**

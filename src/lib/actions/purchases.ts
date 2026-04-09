@@ -62,7 +62,18 @@ export async function getPurchaseOrderWithItems(poId: string) {
   if (poResult.error) throw new Error(poResult.error.message);
   if (itemsResult.error) throw new Error(itemsResult.error.message);
 
-  return { po: poResult.data, items: itemsResult.data };
+  const po = poResult.data;
+  let created_by_name: string | null = null;
+  if (po.created_by) {
+    const { data: profiles } = await supabase
+      .from("profiles")
+      .select("id, full_name")
+      .eq("id", po.created_by)
+      .limit(1);
+    created_by_name = profiles?.[0]?.full_name ?? null;
+  }
+
+  return { po: { ...po, created_by_name }, items: itemsResult.data };
 }
 
 export async function createPurchaseOrder(formData: FormData) {

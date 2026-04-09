@@ -42,6 +42,9 @@ export default async function AdjustmentsPage() {
                   {t.inventory.notes}
                 </th>
                 <th className="text-left py-3 px-4 font-medium text-gray-500 dark:text-gray-400">
+                  {t.common.createdBy}
+                </th>
+                <th className="text-left py-3 px-4 font-medium text-gray-500 dark:text-gray-400">
                   {t.common.date}
                 </th>
               </tr>
@@ -62,6 +65,9 @@ export default async function AdjustmentsPage() {
                     {adj.notes || "—"}
                   </td>
                   <td className="py-3 px-4 text-gray-600 dark:text-gray-400">
+                    {adj.created_by_name || "—"}
+                  </td>
+                  <td className="py-3 px-4 text-gray-600 dark:text-gray-400">
                     {formatDateTime(adj.created_at)}
                   </td>
                 </tr>
@@ -69,7 +75,7 @@ export default async function AdjustmentsPage() {
               {adjustments.length === 0 && (
                 <tr>
                   <td
-                    colSpan={4}
+                    colSpan={5}
                     className="py-8 text-center text-gray-400 dark:text-gray-500"
                   >
                     {t.inventory.noAdjustmentsYet}

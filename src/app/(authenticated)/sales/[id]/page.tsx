@@ -90,6 +90,17 @@ export default async function SaleDetailPage({ params }: Props) {
           </div>
         </div>
 
+        {sale.created_by_name && (
+          <div className="border-t border-gray-200 dark:border-gray-700 pt-3">
+            <p className="text-xs text-gray-500 dark:text-gray-400">
+              {t.common.createdBy}
+            </p>
+            <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
+              {sale.created_by_name}
+            </p>
+          </div>
+        )}
+
         {(sale.resellers as { name: string } | null)?.name && (
           <div className="border-t border-gray-200 dark:border-gray-700 pt-3">
             <p className="text-xs text-gray-500 dark:text-gray-400">
@@ -139,7 +150,12 @@ export default async function SaleDetailPage({ params }: Props) {
             <p className="text-sm text-red-600">{sale.void_reason}</p>
             {sale.voided_at && (
               <p className="text-xs text-gray-400 mt-1">
-                Voided at {formatDateTime(sale.voided_at)}
+                {formatDateTime(sale.voided_at)}
+                {sale.voided_by_name && (
+                  <span className="ml-1">
+                    · {t.common.voidedBy} {sale.voided_by_name}
+                  </span>
+                )}
               </p>
             )}
           </div>

@@ -129,6 +129,9 @@ export function SaleCreditPaymentsClient({
                   <th className="text-left py-2 px-4 font-medium text-gray-500 dark:text-gray-400">
                     {t.credit.notes}
                   </th>
+                  <th className="text-left py-2 px-4 font-medium text-gray-500 dark:text-gray-400">
+                    {t.common.createdBy}
+                  </th>
                 </tr>
               </thead>
               <tbody>
@@ -154,6 +157,9 @@ export function SaleCreditPaymentsClient({
                     </td>
                     <td className="py-2 px-4 text-gray-500 dark:text-gray-400">
                       {p.notes || "—"}
+                    </td>
+                    <td className="py-2 px-4 text-gray-500 dark:text-gray-400">
+                      {p.created_by_name || "—"}
                     </td>
                   </tr>
                 ))}
