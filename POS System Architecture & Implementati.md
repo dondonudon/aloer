@@ -41,6 +41,7 @@
 | **Audit logging** | `audit_logs` table records all owner mutations (action, entity, entity_id, payload, user_id). `insertAuditLog()` helper in `action-utils.ts` — failures swallowed silently so they never block the primary operation. `ownerAction()` now surfaces `userId` to every handler. |
 | **Partial sale return** | Owner can select individual line items and quantities to return from a completed sale (`sale_returns` + `sale_return_items` tables). Return restores FIFO batch stock, inserts RETURN inventory movements, creates reversal journal entries, and records a `partial_return` status on the sale. UI: `SaleReturnActions` component on `/sales/[id]`. Migration: `00007_sale_returns.sql`. |
 | **User profiles** | `00003_user_profiles.sql` migration adds a `user_profiles` view/table so `created_by` fields are enriched with display names throughout the app. |
+| **Shareable product image** | Share button (🔗) on each `/products` row downloads a 540×700 PNG product card on-demand. Generated server-side via `GET /api/products/[id]/share` using `next/og` (`ImageResponse` / Satori) — zero storage cost, streamed directly to the browser. Card includes: store logo + name (header), product photo, name, selling price, bulk price (if set), active campaign badge with date range + "Syarat & ketentuan berlaku" disclaimer (if applicable), generated timestamp, and footer disclaimer (footer). Filename format: `{product-slug}-{YYYYMMDD}-{HHmm}.png`. Uses `createAdminClient()` to bypass RLS. |
 
 ### ⏳ Future Work
 
@@ -58,6 +59,7 @@ See [§17. Future Work](#17-future-work) for the full list.
 | **Void on detail page only** | Void action placed on `/sales/[id]` only — requires navigating to the record first to prevent accidental clicks |
 | **Partial return on detail page only** | `SaleReturnActions` component on `/sales/[id]`; same reasoning as void — intentional navigation required |
 | **`pos-assets` Storage bucket** | Single public bucket for all images, organized under `products/` and `store/` folder prefixes |
+| **On-demand PNG generation** | `GET /api/products/[id]/share` uses `next/og` (`ImageResponse`) with `runtime = "nodejs"` — server fetches product images and store icon as base64 data URLs to avoid CORS canvas tainting. PNG is generated in-memory and streamed; never persisted to storage. Biome and ESLint `no-img-element` rules overridden for this route because Satori requires plain `<img>`. |
 | **Stock Report in Inventory** | Stock Report removed from `/reports` — Inventory page covers stock-on-hand, value, and batch detail |
 | **User management inline** | Settings page lists all signed-in users; owner assigns roles inline, no Supabase dashboard needed |
 | **Split / credit payments** | `sale_payments` holds multiple tender rows per sale; `payment_method` on `sales` is `cash \| transfer \| mixed \| credit` |
