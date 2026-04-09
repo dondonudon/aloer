@@ -98,6 +98,15 @@ export interface Product {
   updated_at: string;
 }
 
+export interface ProductUnit {
+  id: string;
+  product_id: string;
+  unit_name: string;
+  conversion_to_base: number;
+  is_base: boolean;
+  created_at: string;
+}
+
 export interface Supplier {
   id: string;
   name: string;

@@ -13,11 +13,14 @@ import { Select } from "@/components/ui/select";
 import { Toast } from "@/components/ui/toast";
 import {
   createProduct,
+  deleteProductUnit,
   getProductPriceHistory,
+  getProductUnits,
   updateProduct,
+  upsertProductUnit,
 } from "@/lib/actions/products";
 import { useI18n } from "@/lib/i18n/context";
-import type { Category, Product, ProductPrice } from "@/lib/types";
+import type { Category, Product, ProductPrice, ProductUnit } from "@/lib/types";
 import { formatCurrency } from "@/lib/utils";
 
 interface ProductsClientProps {
@@ -82,6 +85,13 @@ export function ProductsClient({
   const [imageUrl, setImageUrl] = useState("");
   const [loading, setLoading] = useState(false);
   const [priceHistory, setPriceHistory] = useState<ProductPrice[]>([]);
+  const [productUnits, setProductUnits] = useState<ProductUnit[]>([]);
+  const [newUnit, setNewUnit] = useState({
+    unit_name: "",
+    conversion_to_base: "",
+    is_base: false,
+  });
+  const [unitLoading, setUnitLoading] = useState(false);
   const [toast, setToast] = useState<{
     message: string;
     type: "success" | "error";
@@ -117,6 +127,8 @@ export function ProductsClient({
     setEditing(null);
     setImageUrl("");
     setPriceHistory([]);
+    setProductUnits([]);
+    setNewUnit({ unit_name: "", conversion_to_base: "", is_base: false });
     setModalOpen(true);
   }
 
@@ -124,9 +136,56 @@ export function ProductsClient({
     setEditing(product);
     setImageUrl(product.image_url ?? "");
     setPriceHistory([]);
+    setProductUnits([]);
+    setNewUnit({ unit_name: "", conversion_to_base: "", is_base: false });
     setModalOpen(true);
-    const history = await getProductPriceHistory(product.id);
+    const [history, units] = await Promise.all([
+      getProductPriceHistory(product.id),
+      getProductUnits(product.id),
+    ]);
     setPriceHistory(history);
+    setProductUnits(units);
+  }
+
+  async function handleAddUnit() {
+    if (!editing) return;
+    const convNum = parseFloat(newUnit.conversion_to_base);
+    if (!newUnit.unit_name.trim() || Number.isNaN(convNum) || convNum <= 0) {
+      setToast({
+        message: "Unit name and a positive conversion value are required",
+        type: "error",
+      });
+      return;
+    }
+    setUnitLoading(true);
+    const result = await upsertProductUnit(editing.id, {
+      unit_name: newUnit.unit_name.trim(),
+      conversion_to_base: convNum,
+      is_base: newUnit.is_base,
+    });
+    if (result.error) {
+      setToast({ message: result.error, type: "error" });
+    } else {
+      setToast({ message: t.products.unitAdded, type: "success" });
+      setNewUnit({ unit_name: "", conversion_to_base: "", is_base: false });
+      const units = await getProductUnits(editing.id);
+      setProductUnits(units);
+    }
+    setUnitLoading(false);
+  }
+
+  async function handleDeleteUnit(unitId: string) {
+    if (!editing) return;
+    setUnitLoading(true);
+    const result = await deleteProductUnit(unitId);
+    if (result.error) {
+      setToast({ message: result.error, type: "error" });
+    } else {
+      setToast({ message: t.products.unitDeleted, type: "success" });
+      const units = await getProductUnits(editing.id);
+      setProductUnits(units);
+    }
+    setUnitLoading(false);
   }
 
   async function handleSubmit(formData: FormData) {
@@ -431,6 +490,153 @@ export function ProductsClient({
                     </tbody>
                   </table>
                 )}
+              </div>
+            </details>
+          )}
+          {editing && (
+            <details className="text-xs">
+              <summary className="cursor-pointer font-medium text-gray-600 dark:text-gray-400 select-none">
+                {t.products.unitsConversions}
+              </summary>
+              <div className="mt-2 space-y-2">
+                {/* Existing units table */}
+                <div className="rounded-lg border border-gray-100 dark:border-gray-700 overflow-hidden">
+                  {productUnits.length === 0 ? (
+                    <p className="py-3 px-4 text-gray-400">
+                      {t.products.noUnitsYet}
+                    </p>
+                  ) : (
+                    <table className="w-full">
+                      <thead>
+                        <tr className="bg-gray-50 dark:bg-gray-700/50 text-gray-500">
+                          <th className="text-left py-2 px-3 font-medium">
+                            {t.products.unitName}
+                          </th>
+                          <th className="text-right py-2 px-3 font-medium">
+                            {t.products.conversionToBase}
+                          </th>
+                          <th className="text-center py-2 px-3 font-medium">
+                            {t.products.isBaseUnit}
+                          </th>
+                          <th
+                            className="py-2 px-3"
+                            aria-label={t.common.actions}
+                          />
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {productUnits.map((u) => (
+                          <tr
+                            key={u.id}
+                            className="border-t border-gray-50 dark:border-gray-700/50"
+                          >
+                            <td className="py-2 px-3 text-gray-900 dark:text-gray-100 font-medium">
+                              {u.unit_name}
+                            </td>
+                            <td className="py-2 px-3 text-right text-gray-600 dark:text-gray-400">
+                              {u.is_base ? "1" : `${u.conversion_to_base}`}
+                            </td>
+                            <td className="py-2 px-3 text-center">
+                              {u.is_base && (
+                                <span className="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300">
+                                  {t.products.baseLabel}
+                                </span>
+                              )}
+                            </td>
+                            <td className="py-2 px-3 text-right">
+                              <button
+                                type="button"
+                                onClick={() => handleDeleteUnit(u.id)}
+                                disabled={unitLoading}
+                                className="text-red-500 hover:text-red-700 disabled:opacity-40"
+                                aria-label={t.products.deleteUnit}
+                              >
+                                ✕
+                              </button>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  )}
+                </div>
+                {/* Add new unit */}
+                <div className="flex items-end gap-2 flex-wrap">
+                  <div className="flex-1 min-w-[100px]">
+                    <label
+                      htmlFor="new-unit-name"
+                      className="block text-gray-500 dark:text-gray-400 mb-1"
+                    >
+                      {t.products.unitName}
+                    </label>
+                    <input
+                      id="new-unit-name"
+                      type="text"
+                      className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 px-2 py-1 text-xs text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      placeholder={t.products.unitNamePlaceholder}
+                      value={newUnit.unit_name}
+                      onChange={(e) =>
+                        setNewUnit((prev) => ({
+                          ...prev,
+                          unit_name: e.target.value,
+                        }))
+                      }
+                      aria-label={t.products.unitName}
+                    />
+                  </div>
+                  <div className="flex-1 min-w-[80px]">
+                    <label
+                      htmlFor="new-unit-conversion"
+                      className="block text-gray-500 dark:text-gray-400 mb-1"
+                    >
+                      {t.products.conversionToBase}
+                    </label>
+                    <input
+                      id="new-unit-conversion"
+                      type="number"
+                      min="0.001"
+                      step="any"
+                      className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 px-2 py-1 text-xs text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      placeholder={t.products.conversionPlaceholder}
+                      value={newUnit.conversion_to_base}
+                      onChange={(e) =>
+                        setNewUnit((prev) => ({
+                          ...prev,
+                          conversion_to_base: e.target.value,
+                        }))
+                      }
+                      aria-label={t.products.conversionToBase}
+                    />
+                  </div>
+                  <div className="flex items-center gap-1 pb-1">
+                    <input
+                      id="new-unit-is-base"
+                      type="checkbox"
+                      checked={newUnit.is_base}
+                      onChange={(e) =>
+                        setNewUnit((prev) => ({
+                          ...prev,
+                          is_base: e.target.checked,
+                        }))
+                      }
+                      className="h-3 w-3 rounded"
+                    />
+                    <label
+                      htmlFor="new-unit-is-base"
+                      className="text-gray-500 dark:text-gray-400 select-none"
+                    >
+                      {t.products.isBaseUnit}
+                    </label>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={handleAddUnit}
+                    disabled={unitLoading}
+                    className="rounded-lg bg-blue-600 px-3 py-1 text-xs font-medium text-white hover:bg-blue-700 disabled:opacity-50 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  >
+                    {t.products.addUnit}
+                  </button>
+                </div>
               </div>
             </details>
           )}

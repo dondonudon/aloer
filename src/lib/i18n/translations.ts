@@ -233,6 +233,18 @@ export interface Translations {
     noCostData: string;
     priceHistory: string;
     noPriceHistory: string;
+    unitsConversions: string;
+    unitName: string;
+    unitNamePlaceholder: string;
+    conversionToBase: string;
+    conversionPlaceholder: string;
+    isBaseUnit: string;
+    addUnit: string;
+    deleteUnit: string;
+    unitAdded: string;
+    unitDeleted: string;
+    noUnitsYet: string;
+    baseLabel: string;
   };
 
   inventory: {
@@ -722,6 +734,18 @@ export const en: Translations = {
     noCostData: "No cost data",
     priceHistory: "Price History",
     noPriceHistory: "No price history yet",
+    unitsConversions: "Units & Conversions",
+    unitName: "Unit Name",
+    unitNamePlaceholder: "e.g. carton, pack",
+    conversionToBase: "Qty per base unit",
+    conversionPlaceholder: "e.g. 20",
+    isBaseUnit: "Base unit",
+    addUnit: "Add Unit",
+    deleteUnit: "Delete unit",
+    unitAdded: "Unit added",
+    unitDeleted: "Unit deleted",
+    noUnitsYet: "No units defined yet",
+    baseLabel: "Base",
   },
 
   inventory: {
@@ -1219,6 +1243,18 @@ export const id: Translations = {
     noCostData: "Tidak ada data biaya",
     priceHistory: "Riwayat Harga",
     noPriceHistory: "Belum ada riwayat harga",
+    unitsConversions: "Satuan & Konversi",
+    unitName: "Nama Satuan",
+    unitNamePlaceholder: "mis. karton, pak",
+    conversionToBase: "Qty per satuan dasar",
+    conversionPlaceholder: "mis. 20",
+    isBaseUnit: "Satuan dasar",
+    addUnit: "Tambah Satuan",
+    deleteUnit: "Hapus satuan",
+    unitAdded: "Satuan ditambahkan",
+    unitDeleted: "Satuan dihapus",
+    noUnitsYet: "Belum ada satuan",
+    baseLabel: "Dasar",
   },
 
   inventory: {

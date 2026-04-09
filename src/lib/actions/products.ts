@@ -133,3 +133,69 @@ export async function getProductPriceHistory(productId: string) {
   if (error) throw new Error(error.message);
   return data ?? [];
 }
+
+// ============================================================
+// PRODUCT UNITS
+// ============================================================
+
+export async function getProductUnits(productId: string) {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("product_units")
+    .select("*")
+    .eq("product_id", productId)
+    .order("is_base", { ascending: false });
+  if (error) throw new Error(error.message);
+  return data ?? [];
+}
+
+export async function upsertProductUnit(
+  productId: string,
+  unit: {
+    id?: string;
+    unit_name: string;
+    conversion_to_base: number;
+    is_base: boolean;
+  },
+) {
+  const unitName = unit.unit_name.trim();
+  if (!unitName) return { error: "Unit name is required" };
+  if (unitName.length > 50) return { error: "Unit name must be 50 characters or less" };
+  if (unit.conversion_to_base <= 0) return { error: "Conversion must be greater than 0" };
+
+  return ownerAction(async (supabase) => {
+    if (unit.id) {
+      const { error } = await supabase
+        .from("product_units")
+        .update({
+          unit_name: unitName,
+          conversion_to_base: unit.conversion_to_base,
+          is_base: unit.is_base,
+        })
+        .eq("id", unit.id);
+      if (error) return { error: error.message };
+    } else {
+      const { error } = await supabase.from("product_units").insert({
+        product_id: productId,
+        unit_name: unitName,
+        conversion_to_base: unit.conversion_to_base,
+        is_base: unit.is_base,
+      });
+      if (error) return { error: error.message };
+    }
+    revalidatePath("/products");
+    return {};
+  });
+}
+
+export async function deleteProductUnit(id: string) {
+  return ownerAction(async (supabase) => {
+    const { error } = await supabase
+      .from("product_units")
+      .delete()
+      .eq("id", id);
+    if (error) return { error: error.message };
+    revalidatePath("/products");
+    return {};
+  });
+}
