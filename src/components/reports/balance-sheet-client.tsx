@@ -89,7 +89,12 @@ export function BalanceSheetClient({
 
     exportPdf(
       "Balance Sheet",
-      ["Section", "Code", "Account", "Balance"],
+      [
+        { header: "Section", key: "Section" },
+        { header: "Code", key: "Code" },
+        { header: "Account", key: "Account" },
+        { header: "Balance", key: "Balance", align: "right" },
+      ],
       rows,
       "balance-sheet",
     );

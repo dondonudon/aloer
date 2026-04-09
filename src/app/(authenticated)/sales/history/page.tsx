@@ -9,7 +9,7 @@ export default async function SalesHistoryPage() {
       <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
         Sales History
       </h1>
-      <SalesHistoryClient sales={sales} />
+      <SalesHistoryClient sales={sales.data} />
     </div>
   );
 }
