@@ -1,7 +1,8 @@
 "use client";
 
-import { Download } from "lucide-react";
+import { Download, Loader2 } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { useTransition } from "react";
 import { exportPdf } from "@/lib/export";
 import { useI18n } from "@/lib/i18n/context";
 import { getAccountName } from "@/lib/i18n/translations";
@@ -38,15 +39,42 @@ export function BalanceSheetClient({
   totalEquity,
   period,
 }: BalanceSheetClientProps) {
-  const { t } = useI18n();
+  const { t, locale } = useI18n();
   const router = useRouter();
+
+  const [isPending, startTransition] = useTransition();
+
+  function navigate(href: string) {
+    startTransition(() => {
+      router.push(href);
+    });
+  }
 
   const isYearly = /^\d{4}$/.test(period);
   const currentYear = new Date().getFullYear();
+  const currentMonth = new Date().getMonth() + 1;
+
   // Build a list of selectable years (current year going back 5 years)
   const yearOptions = Array.from({ length: 6 }, (_, i) =>
     String(currentYear - i),
   );
+
+  // For the monthly picker: parse period parts
+  const periodYear = isYearly ? period : period.slice(0, 4);
+  const periodMonth = isYearly ? "01" : period.slice(5, 7);
+
+  // Month options using Intl for browser-compatible, localized month names
+  const monthOptions = Array.from({ length: 12 }, (_, i) => {
+    const num = i + 1;
+    return {
+      value: String(num).padStart(2, "0"),
+      label: new Intl.DateTimeFormat(locale, { month: "long" }).format(
+        new Date(2000, i, 1),
+      ),
+      // Disable future months if the selected year is the current year
+      disabled: periodYear === String(currentYear) && num > currentMonth,
+    };
+  });
   function handleExportPdf() {
     const rows: Record<string, unknown>[] = [];
 
@@ -123,13 +151,14 @@ export function BalanceSheetClient({
           <div className="flex rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden text-xs font-medium">
             <button
               type="button"
+              disabled={isPending}
               onClick={() => {
                 if (isYearly) {
                   // Switch to monthly: use January of that year
-                  router.push(`/reports/balance-sheet?period=${period}-01`);
+                  navigate(`/reports/balance-sheet?period=${period}-01`);
                 }
               }}
-              className={`px-3 py-1.5 transition-colors ${
+              className={`px-3 py-1.5 transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
                 !isYearly
                   ? "bg-blue-600 text-white"
                   : "text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700"
@@ -139,15 +168,16 @@ export function BalanceSheetClient({
             </button>
             <button
               type="button"
+              disabled={isPending}
               onClick={() => {
                 if (!isYearly) {
                   // Switch to yearly: use the year part of current period
-                  router.push(
+                  navigate(
                     `/reports/balance-sheet?period=${period.slice(0, 4)}`,
                   );
                 }
               }}
-              className={`px-3 py-1.5 transition-colors ${
+              className={`px-3 py-1.5 transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
                 isYearly
                   ? "bg-blue-600 text-white"
                   : "text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700"
@@ -169,10 +199,11 @@ export function BalanceSheetClient({
               <select
                 id="bs-year"
                 value={period}
+                disabled={isPending}
                 onChange={(e) =>
-                  router.push(`/reports/balance-sheet?period=${e.target.value}`)
+                  navigate(`/reports/balance-sheet?period=${e.target.value}`)
                 }
-                className="rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 px-2 py-1 text-sm text-gray-700 dark:text-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 px-2 py-1 text-sm text-gray-700 dark:text-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {yearOptions.map((y) => (
                   <option key={y} value={y}>
@@ -189,21 +220,58 @@ export function BalanceSheetClient({
               >
                 {t.reports.month}
               </label>
-              <input
+              {/* Two selects instead of type="month" for Firefox compatibility */}
+              <select
                 id="bs-month"
-                type="month"
-                value={period}
-                max={new Date().toISOString().slice(0, 7)}
+                value={periodMonth}
+                disabled={isPending}
+                onChange={(e) =>
+                  navigate(
+                    `/reports/balance-sheet?period=${periodYear}-${e.target.value}`,
+                  )
+                }
+                className="rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 px-2 py-1 text-sm text-gray-700 dark:text-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {monthOptions.map((m) => (
+                  <option key={m.value} value={m.value} disabled={m.disabled}>
+                    {m.label}
+                  </option>
+                ))}
+              </select>
+              <select
+                id="bs-month-year"
+                value={periodYear}
+                disabled={isPending}
                 onChange={(e) => {
-                  if (e.target.value) {
-                    router.push(
-                      `/reports/balance-sheet?period=${e.target.value}`,
-                    );
-                  }
+                  // When switching to a past year, keep the month; when switching
+                  // to the current year, clamp the month to today.
+                  const newYear = e.target.value;
+                  const clampedMonth =
+                    newYear === String(currentYear) &&
+                    Number(periodMonth) > currentMonth
+                      ? String(currentMonth).padStart(2, "0")
+                      : periodMonth;
+                  navigate(
+                    `/reports/balance-sheet?period=${newYear}-${clampedMonth}`,
+                  );
                 }}
-                className="rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 px-2 py-1 text-sm text-gray-700 dark:text-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
+                className="rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 px-2 py-1 text-sm text-gray-700 dark:text-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {yearOptions.map((y) => (
+                  <option key={y} value={y}>
+                    {y}
+                  </option>
+                ))}
+              </select>
             </div>
+          )}
+
+          {/* Loading indicator */}
+          {isPending && (
+            <Loader2
+              className="h-4 w-4 animate-spin text-blue-500"
+              aria-label="Loading"
+            />
           )}
         </div>
 

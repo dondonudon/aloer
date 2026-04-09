@@ -11,7 +11,8 @@
 | Area | Detail |
 |---|---|
 | **Tech stack** | Next.js 16.2.2 (App Router, TypeScript 5), React 19, Supabase (PostgreSQL + Auth + Storage), Tailwind CSS v4, Biome |
-| **Database** | All 23 tables + 8 RPC functions implemented. Base schema in `supabase/migrations/00001_schema.sql`; incremental migrations `00002` – `00007` extend it |
+| **Database** | All 23 tables + 8 RPC functions implemented. Base schema in `supabase/migrations/00001_schema.sql`; incremental migrations `00002` – `00008` extend it |
+| **Idempotency (POS)** | `sales.idempotency_key` column + unique partial index. `create_sale_transaction` short-circuits and returns the existing sale when the same key is replayed. Frontend generates a UUID per checkout attempt and rotates it after a successful sale. Migration: `00008_idempotency_key.sql`. |
 | **Auth** | Google OAuth only. Whitelist-based: users must exist in `user_roles` to access the app |
 | **RBAC** | Owner and Cashier roles enforced at Server Action level (`ownerAction()` wrapper) and via RLS |
 | **POS screen** | `/pos` — product grid, cart, FIFO sale, cash/transfer/split/credit payment, discount (% or fixed), campaign discounts, reseller picker, receipt modal |
@@ -64,6 +65,7 @@ See [§17. Future Work](#17-future-work) for the full list.
 | **Migrations squashed** | 15 iterative migration files merged into one clean `00001_schema.sql` |
 | **i18n without a library** | No `next-intl` / `react-i18next` dependency. Custom `I18nProvider` + `useI18n()` modelled after the existing theme-provider pattern (`useSyncExternalStore` + localStorage). Typed `Translations` interface prevents missing keys at compile time. |
 | **DB-level translations via code map** | System accounts (`accounts` table) are English in the DB. Translated at display-time via `getAccountName(code, dbName, t)` using a `t.accountNames` record keyed by account code. Avoids schema duplication while keeping translations co-located with other strings. |
+| **Idempotency via client-generated UUID** | POS client holds a `idempotencyKey` state (`crypto.randomUUID()` on mount). Sent with every `createSale` call. DB function returns the existing sale on replay without re-processing inventory or journals. Key is rotated only after a confirmed success, so a network timeout replaying the same key is safe. |
 
 ---
 
@@ -242,6 +244,15 @@ On partial return: restores `inventory_batches.quantity_remaining`, inserts `inv
 
 ---
 
+### 4.13 Sale Idempotency (`00008_idempotency_key.sql`)
+
+`sales.idempotency_key` (text, nullable) — unique partial index (where not null).  
+Generated client-side as a `crypto.randomUUID()` per checkout attempt.  
+`create_sale_transaction` checks for an existing sale with the same key before doing any work; if found, returns the existing sale's data with `idempotent: true` — no duplicate inventory or journal entries are created.  
+The key is rotated after a confirmed successful sale response so accidental replays from network retries are safe.
+
+---
+
 ### 4.9 Invoice Number Sequences
 
 PostgreSQL sequences (`invoice_number_seq`, `po_number_seq`, `adj_number_seq`) generate zero-padded numbers formatted as:
@@ -375,7 +386,7 @@ All critical operations run as atomic PostgreSQL functions. Implementations live
 
 | Function | Purpose |
 |---|---|
-| `create_sale_transaction(payload)` | Atomic: inserts sale + items, FIFO consumes batches, creates inventory movements, journal entries. Validates product existence and stock. |
+| `create_sale_transaction(payload)` | Atomic: inserts sale + items, FIFO consumes batches, creates inventory movements, journal entries. Validates product existence and stock. Supports idempotency via `payload.idempotencyKey` — replays return the existing sale without re-processing. |
 | `void_sale(sale_id, reason)` | Reverses a completed sale: restores batch quantities, inserts RETURN movements, creates reversal journal entry. |
 | `receive_purchase_order(po_id)` | Marks PO received, creates inventory batches + IN movements, creates journal entry. Credit PO creates AP entry. |
 | `create_inventory_adjustment(payload)` | Positive adj: new batch + journal debit Inventory. Negative: FIFO consume + journal debit Expense. |
