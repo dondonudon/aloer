@@ -15,6 +15,7 @@ import {
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Modal } from "@/components/ui/modal";
 import type { CartItem } from "@/lib/hooks/use-cart";
 import { useI18n } from "@/lib/i18n/context";
 import type {
@@ -82,6 +83,11 @@ export function CartPanel({
   const [splitMode, setSplitMode] = useState(false);
   const [cashAmt, setCashAmt] = useState("");
   const [transferAmt, setTransferAmt] = useState("");
+  const [pendingCheckout, setPendingCheckout] = useState<{
+    payments: SalePaymentInput[];
+    isCredit?: boolean;
+    methodLabel: string;
+  } | null>(null);
 
   function resetSplit() {
     setSplitMode(false);
@@ -91,12 +97,19 @@ export function CartPanel({
 
   function handleQuickPay(method: "cash" | "transfer") {
     resetSplit();
-    onCheckout([{ method, amount: finalTotal }]);
+    setPendingCheckout({
+      payments: [{ method, amount: finalTotal }],
+      methodLabel: method === "cash" ? t.common.cash : t.common.transfer,
+    });
   }
 
   function handleCreditSale() {
     resetSplit();
-    onCheckout([], true);
+    setPendingCheckout({
+      payments: [],
+      isCredit: true,
+      methodLabel: t.common.credit,
+    });
   }
 
   function handleSplitPay() {
@@ -105,7 +118,18 @@ export function CartPanel({
     const payments: SalePaymentInput[] = [];
     if (cash > 0) payments.push({ method: "cash", amount: cash });
     if (transfer > 0) payments.push({ method: "transfer", amount: transfer });
-    onCheckout(payments);
+    setPendingCheckout({ payments, methodLabel: "Split" });
+  }
+
+  function confirmCheckout() {
+    if (!pendingCheckout) return;
+    onCheckout(pendingCheckout.payments, pendingCheckout.isCredit);
+    setPendingCheckout(null);
+    resetSplit();
+  }
+
+  function cancelCheckout() {
+    setPendingCheckout(null);
   }
 
   const splitCash = parseFloat(cashAmt) || 0;
@@ -457,6 +481,39 @@ export function CartPanel({
           </div>
         )}
       </div>
+
+      <Modal
+        open={pendingCheckout !== null}
+        onClose={cancelCheckout}
+        title={t.pos.checkoutConfirmTitle}
+      >
+        <div className="space-y-4">
+          <div className="flex justify-between text-sm">
+            <span className="text-gray-600 dark:text-gray-400">
+              {t.pos.payment}
+            </span>
+            <span className="font-medium text-gray-900 dark:text-gray-100">
+              {pendingCheckout?.methodLabel}
+            </span>
+          </div>
+          <div className="flex justify-between items-center border-t border-gray-100 dark:border-gray-700 pt-3">
+            <span className="text-lg font-bold text-gray-900 dark:text-white">
+              {t.pos.total}
+            </span>
+            <span className="text-lg font-bold text-gray-900 dark:text-white">
+              {formatCurrency(finalTotal)}
+            </span>
+          </div>
+          <div className="flex gap-2 justify-end pt-1">
+            <Button variant="secondary" onClick={cancelCheckout}>
+              {t.common.cancel}
+            </Button>
+            <Button onClick={confirmCheckout} disabled={loading}>
+              {t.pos.confirm}
+            </Button>
+          </div>
+        </div>
+      </Modal>
     </div>
   );
 }

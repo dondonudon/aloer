@@ -157,6 +157,7 @@ export interface Translations {
     print: string;
     done: string;
     payment: string;
+    checkoutConfirmTitle: string;
   };
 
   sales: {
@@ -677,6 +678,7 @@ export const en: Translations = {
     print: "Print",
     done: "Done",
     payment: "Payment",
+    checkoutConfirmTitle: "Confirm Checkout",
   },
 
   sales: {
@@ -1204,6 +1206,7 @@ export const id: Translations = {
     print: "Cetak",
     done: "Selesai",
     payment: "Pembayaran",
+    checkoutConfirmTitle: "Konfirmasi Pembayaran",
   },
 
   sales: {
