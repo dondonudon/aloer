@@ -291,7 +291,8 @@ export function CampaignsClient({ campaigns, products }: CampaignsClientProps) {
                   <button
                     type="button"
                     onClick={() => openEdit(c)}
-                    className="p-2 rounded text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                    disabled={togglingId === c.id}
+                    className="p-2 rounded text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                     aria-label={`Edit campaign ${c.name}`}
                   >
                     <Pencil className="h-4 w-4" aria-hidden="true" />
@@ -300,9 +301,9 @@ export function CampaignsClient({ campaigns, products }: CampaignsClientProps) {
                     type="button"
                     onClick={() => handleToggle(c.id, c.is_active)}
                     disabled={togglingId === c.id}
-                    className={`p-2 rounded transition-colors ${
+                    className={`p-2 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
                       togglingId === c.id
-                        ? "opacity-50 cursor-not-allowed"
+                        ? ""
                         : c.is_active
                           ? "text-green-600 hover:bg-green-50"
                           : "text-gray-400 hover:bg-gray-100"
@@ -323,7 +324,8 @@ export function CampaignsClient({ campaigns, products }: CampaignsClientProps) {
                   <button
                     type="button"
                     onClick={() => handleDelete(c.id)}
-                    className="p-2 rounded text-red-500 hover:bg-red-50 transition-colors"
+                    disabled={togglingId === c.id}
+                    className="p-2 rounded text-red-500 hover:bg-red-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                     aria-label={`Delete campaign ${c.name}`}
                   >
                     <Trash2 className="h-4 w-4" aria-hidden="true" />
