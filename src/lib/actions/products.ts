@@ -121,3 +121,15 @@ export async function updateProduct(id: string, formData: FormData) {
     return {};
   });
 }
+
+export async function getProductPriceHistory(productId: string) {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("product_prices")
+    .select("*")
+    .eq("product_id", productId)
+    .order("effective_from", { ascending: false })
+    .limit(20);
+  if (error) throw new Error(error.message);
+  return data ?? [];
+}

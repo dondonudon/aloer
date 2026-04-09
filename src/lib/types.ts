@@ -72,6 +72,16 @@ export interface Category {
   created_at: string;
 }
 
+export interface ProductPrice {
+  id: string;
+  product_id: string;
+  price: number;
+  bulk_price: number | null;
+  bulk_min_qty: number | null;
+  effective_from: string;
+  created_by: string | null;
+}
+
 export interface Product {
   id: string;
   name: string;

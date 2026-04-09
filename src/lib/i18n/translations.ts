@@ -231,6 +231,8 @@ export interface Translations {
     created: string;
     updated: string;
     noCostData: string;
+    priceHistory: string;
+    noPriceHistory: string;
   };
 
   inventory: {
@@ -718,6 +720,8 @@ export const en: Translations = {
     created: "Product created",
     updated: "Product updated",
     noCostData: "No cost data",
+    priceHistory: "Price History",
+    noPriceHistory: "No price history yet",
   },
 
   inventory: {
@@ -1213,6 +1217,8 @@ export const id: Translations = {
     created: "Produk dibuat",
     updated: "Produk diperbarui",
     noCostData: "Tidak ada data biaya",
+    priceHistory: "Riwayat Harga",
+    noPriceHistory: "Belum ada riwayat harga",
   },
 
   inventory: {

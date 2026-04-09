@@ -11,9 +11,13 @@ import { Modal } from "@/components/ui/modal";
 import { Pagination } from "@/components/ui/pagination";
 import { Select } from "@/components/ui/select";
 import { Toast } from "@/components/ui/toast";
-import { createProduct, updateProduct } from "@/lib/actions/products";
+import {
+  createProduct,
+  getProductPriceHistory,
+  updateProduct,
+} from "@/lib/actions/products";
 import { useI18n } from "@/lib/i18n/context";
-import type { Category, Product } from "@/lib/types";
+import type { Category, Product, ProductPrice } from "@/lib/types";
 import { formatCurrency } from "@/lib/utils";
 
 interface ProductsClientProps {
@@ -77,6 +81,7 @@ export function ProductsClient({
   const [editing, setEditing] = useState<Product | null>(null);
   const [imageUrl, setImageUrl] = useState("");
   const [loading, setLoading] = useState(false);
+  const [priceHistory, setPriceHistory] = useState<ProductPrice[]>([]);
   const [toast, setToast] = useState<{
     message: string;
     type: "success" | "error";
@@ -111,13 +116,17 @@ export function ProductsClient({
   function openCreate() {
     setEditing(null);
     setImageUrl("");
+    setPriceHistory([]);
     setModalOpen(true);
   }
 
-  function openEdit(product: Product) {
+  async function openEdit(product: Product) {
     setEditing(product);
     setImageUrl(product.image_url ?? "");
+    setPriceHistory([]);
     setModalOpen(true);
+    const history = await getProductPriceHistory(product.id);
+    setPriceHistory(history);
   }
 
   async function handleSubmit(formData: FormData) {
@@ -374,6 +383,56 @@ export function ProductsClient({
               ).toFixed(1)}
               %
             </p>
+          )}
+          {editing && (
+            <details className="text-xs">
+              <summary className="cursor-pointer font-medium text-gray-600 dark:text-gray-400 select-none">
+                {t.products.priceHistory}
+              </summary>
+              <div className="mt-2 rounded-lg border border-gray-100 dark:border-gray-700 overflow-hidden">
+                {priceHistory.length === 0 ? (
+                  <p className="py-3 px-4 text-gray-400">
+                    {t.products.noPriceHistory}
+                  </p>
+                ) : (
+                  <table className="w-full">
+                    <thead>
+                      <tr className="bg-gray-50 dark:bg-gray-700/50 text-gray-500">
+                        <th className="text-left py-2 px-3 font-medium">
+                          Date
+                        </th>
+                        <th className="text-right py-2 px-3 font-medium">
+                          {t.products.price}
+                        </th>
+                        <th className="text-right py-2 px-3 font-medium">
+                          {t.products.bulkPrice}
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {priceHistory.map((row) => (
+                        <tr
+                          key={row.id}
+                          className="border-t border-gray-50 dark:border-gray-700/50"
+                        >
+                          <td className="py-2 px-3 text-gray-600 dark:text-gray-400">
+                            {new Date(row.effective_from).toLocaleString()}
+                          </td>
+                          <td className="py-2 px-3 text-right text-gray-900 dark:text-gray-100">
+                            {formatCurrency(row.price)}
+                          </td>
+                          <td className="py-2 px-3 text-right text-gray-500 dark:text-gray-400">
+                            {row.bulk_price
+                              ? `${formatCurrency(row.bulk_price)} (≥${row.bulk_min_qty})`
+                              : "—"}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                )}
+              </div>
+            </details>
           )}
           <ImageUpload
             label={t.products.productImage}
