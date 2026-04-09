@@ -50,8 +50,44 @@ export function ReceiptModal({
     const content = receiptRef.current;
     if (!content) return;
 
-    const printWindow = window.open("", "_blank", "width=400,height=600");
+    const printWindow = window.open("", "_blank", "width=320,height=700");
     if (!printWindow) return;
+
+    const totalPaid = receipt.isCreditSale
+      ? 0
+      : receipt.payments.reduce((sum, p) => sum + p.amount, 0);
+    const change = totalPaid > receipt.total ? totalPaid - receipt.total : 0;
+
+    const SEP_DOUBLE = "================================";
+    const SEP_SINGLE = "--------------------------------";
+
+    const padLine = (left: string, right: string, width = 32) => {
+      const gap = width - left.length - right.length;
+      return `${left}${" ".repeat(Math.max(1, gap))}${right}`;
+    };
+
+    const itemLines = receipt.items
+      .map((item) => {
+        const priceLabel =
+          item.originalPrice > item.price
+            ? `${item.quantity} x ${formatCurrency(item.price)} [SALE]`
+            : `${item.quantity} x ${formatCurrency(item.price)}`;
+        return `
+          <div style="margin-bottom:4px;">
+            <div style="word-break:break-word;">${item.name}</div>
+            <div>${padLine(priceLabel, formatCurrency(item.subtotal))}</div>
+          </div>`;
+      })
+      .join("");
+
+    const paymentLines = receipt.isCreditSale
+      ? `<div>${padLine(t.pos.payment, t.common.credit)}</div>`
+      : receipt.payments
+          .map(
+            (p) =>
+              `<div>${padLine(p.method.charAt(0).toUpperCase() + p.method.slice(1), formatCurrency(p.amount))}</div>`,
+          )
+          .join("");
 
     printWindow.document.write(`
       <!DOCTYPE html>
@@ -59,89 +95,54 @@ export function ReceiptModal({
         <head>
           <title>Receipt - ${receipt.invoiceNumber}</title>
           <style>
-            body { font-family: Arial, sans-serif; padding: 20px; margin: 0; color: #111; }
+            @page { size: 80mm auto; margin: 4mm 4mm; }
+            * { box-sizing: border-box; }
+            body {
+              font-family: 'Courier New', Courier, monospace;
+              font-size: 12px;
+              line-height: 1.4;
+              width: 72mm;
+              margin: 0;
+              padding: 0;
+              color: #000;
+              background: #fff;
+            }
             .center { text-align: center; }
             .bold { font-weight: bold; }
-            .mono { font-family: monospace; }
-            .small { font-size: 12px; color: #666; }
-            .divider { border-top: 1px dashed #ccc; margin: 12px 0; padding-top: 12px; }
-            .row { display: flex; justify-content: space-between; padding: 4px 0; font-size: 14px; }
-            .total-row { display: flex; justify-content: space-between; font-size: 16px; font-weight: bold; }
-            .sub { font-size: 12px; color: #666; }
+            .sep { white-space: pre; letter-spacing: 0; margin: 6px 0; }
+            .total-line { font-weight: bold; font-size: 14px; }
           </style>
         </head>
         <body>
-          <div class="center">
-            <div class="bold" style="font-size:18px;">${storeName}</div>
-            <div class="small">${formatDateTime(receipt.createdAt)}</div>
-            <div class="mono" style="margin-top:4px;">${receipt.invoiceNumber}</div>
-          </div>
-          <div class="divider">
-            ${receipt.items
-              .map(
-                (item) => `
-              <div class="row">
-                <div>
-                  <div>${item.name}</div>
-                  <div class="sub">${item.quantity} × ${formatCurrency(item.price)}${
-                    item.originalPrice > item.price
-                      ? ` <span style="text-decoration:line-through;color:#9ca3af;">${formatCurrency(item.originalPrice)}</span>`
-                      : ""
-                  }</div>
-                </div>
-                <div class="bold">${formatCurrency(item.subtotal)}</div>
-              </div>`,
-              )
-              .join("")}
-          </div>
-          <div class="divider">
-            ${
-              receipt.campaignSavings
-                ? `<div class="row" style="color:#16a34a;">
-              <span>${t.pos.campaignSavings}</span>
-              <span>- ${formatCurrency(receipt.campaignSavings)}</span>
-            </div>`
-                : ""
-            }
-            ${
-              receipt.cartCampaignDiscount
-                ? `<div class="row" style="color:#16a34a;">
-              <span>${t.pos.cartCampaign}</span>
-              <span>- ${formatCurrency(receipt.cartCampaignDiscount)}</span>
-            </div>`
-                : ""
-            }
-            ${
-              receipt.discount
-                ? `
-            <div class="row">
-              <span>${t.pos.subtotal}</span>
-              <span>${formatCurrency(receipt.subtotal)}</span>
-            </div>
-            <div class="row" style="color:#dc2626;">
-              <span>Discount (${receipt.discount.label})</span>
-              <span>- ${formatCurrency(receipt.discount.amount)}</span>
-            </div>`
-                : ""
-            }
-            <div class="total-row">
-              <span>${t.pos.total}</span>
-              <span>${formatCurrency(receipt.total)}</span>
-            </div>
-            ${
-              receipt.isCreditSale
-                ? `<div class="row" style="color:#d97706;"><span>${t.pos.payment}</span><span>${t.common.credit}</span></div>`
-                : receipt.payments
-                    .map(
-                      (p) => `<div class="row">
-              <span style="text-transform:capitalize;">${p.method}</span>
-              <span>${formatCurrency(p.amount)}</span>
-            </div>`,
-                    )
-                    .join("")
-            }
-          </div>
-          <div class="center small" style="margin-top:16px;">${t.pos.thankYou}</div>
+          <div class="center bold" style="font-size:15px;margin-bottom:2px;">${storeName}</div>
+          <div class="center" style="font-size:11px;">${formatDateTime(receipt.createdAt)}</div>
+          <div class="center">${receipt.invoiceNumber}</div>
+          <div class="sep">${SEP_DOUBLE}</div>
+          ${itemLines}
+          <div class="sep">${SEP_SINGLE}</div>
+          ${
+            receipt.campaignSavings
+              ? `<div>${padLine(t.pos.campaignSavings, `- ${formatCurrency(receipt.campaignSavings)}`)}</div>`
+              : ""
+          }
+          ${
+            receipt.cartCampaignDiscount
+              ? `<div>${padLine(t.pos.cartCampaign, `- ${formatCurrency(receipt.cartCampaignDiscount)}`)}</div>`
+              : ""
+          }
+          ${
+            receipt.discount
+              ? `<div>${padLine(t.pos.subtotal, formatCurrency(receipt.subtotal))}</div>
+                 <div>${padLine(`Disc (${receipt.discount.label})`, `- ${formatCurrency(receipt.discount.amount)}`)}</div>`
+              : ""
+          }
+          <div class="sep">${SEP_DOUBLE}</div>
+          <div class="total-line">${padLine(t.pos.total, formatCurrency(receipt.total))}</div>
+          <div class="sep">${SEP_SINGLE}</div>
+          ${paymentLines}
+          ${change > 0 ? `<div>${padLine("Change", formatCurrency(change))}</div>` : ""}
+          <div class="sep">${SEP_DOUBLE}</div>
+          <div class="center" style="margin-top:8px;font-size:11px;">${t.pos.thankYou}</div>
         </body>
       </html>
     `);
@@ -171,96 +172,117 @@ export function ReceiptModal({
           </button>
         </div>
 
-        <div ref={receiptRef} className="p-6 print-receipt">
-          <div className="text-center mb-4">
-            <h3 className="text-lg font-bold text-gray-900 dark:text-white">
+        {/* Thermal paper preview */}
+        <div className="px-4 py-2 overflow-y-auto max-h-[60vh]">
+          <div
+            ref={receiptRef}
+            className="bg-white text-black font-mono text-xs leading-snug mx-auto p-3"
+            style={{ width: "100%", maxWidth: "288px" }}
+          >
+            <div className="text-center font-bold text-sm mb-0.5">
               {storeName}
-            </h3>
-            <p className="text-xs text-gray-500 dark:text-gray-400">
-              {formatDateTime(receipt.createdAt)}
-            </p>
-            <p className="text-sm font-mono text-gray-700 dark:text-gray-300 mt-1">
-              {receipt.invoiceNumber}
-            </p>
-          </div>
-
-          <div className="border-t border-dashed border-gray-300 dark:border-gray-600 pt-3 mb-3">
-            {receipt.items.map((item) => (
-              <div
-                key={item.name}
-                className="flex justify-between text-sm py-1"
-              >
-                <div className="flex-1 min-w-0">
-                  <p className="text-gray-900 dark:text-gray-100 truncate">
-                    {item.name}
-                  </p>
-                  <p className="text-xs text-gray-500 dark:text-gray-400">
-                    {item.quantity} ×{" "}
-                    {item.originalPrice > item.price && (
-                      <span className="line-through mr-1 text-gray-400 dark:text-gray-500">
-                        {formatCurrency(item.originalPrice)}
-                      </span>
-                    )}
-                    {formatCurrency(item.price)}
-                  </p>
-                </div>
-                <span className="text-gray-900 dark:text-gray-100 font-medium ml-4">
-                  {formatCurrency(item.subtotal)}
-                </span>
-              </div>
-            ))}
-          </div>
-
-          <div className="border-t border-dashed border-gray-300 dark:border-gray-600 pt-3 space-y-1">
-            {receipt.campaignSavings != null && (
-              <div className="flex justify-between text-sm text-green-600 dark:text-green-400">
-                <span>{t.pos.campaignSavings}</span>
-                <span>- {formatCurrency(receipt.campaignSavings)}</span>
-              </div>
-            )}
-            {receipt.cartCampaignDiscount != null && (
-              <div className="flex justify-between text-sm text-green-600 dark:text-green-400">
-                <span>{t.pos.cartCampaign}</span>
-                <span>- {formatCurrency(receipt.cartCampaignDiscount)}</span>
-              </div>
-            )}
-            {receipt.discount && (
-              <>
-                <div className="flex justify-between text-sm text-gray-600 dark:text-gray-400">
-                  <span>{t.pos.subtotal}</span>
-                  <span>{formatCurrency(receipt.subtotal)}</span>
-                </div>
-                <div className="flex justify-between text-sm text-red-600">
-                  <span>Discount ({receipt.discount.label})</span>
-                  <span>- {formatCurrency(receipt.discount.amount)}</span>
-                </div>
-              </>
-            )}
-            <div className="flex justify-between text-base font-bold text-gray-900 dark:text-white">
-              <span>{t.pos.total}</span>
-              <span>{formatCurrency(receipt.total)}</span>
             </div>
-            {receipt.isCreditSale ? (
-              <div className="flex justify-between text-sm text-amber-600 dark:text-amber-400 font-medium">
-                <span>{t.pos.payment}</span>
-                <span>{t.common.credit}</span>
-              </div>
-            ) : (
-              receipt.payments.map((p) => (
-                <div
-                  key={p.method}
-                  className="flex justify-between text-sm text-gray-600 dark:text-gray-400"
-                >
-                  <span className="capitalize">{p.method}</span>
-                  <span>{formatCurrency(p.amount)}</span>
-                </div>
-              ))
-            )}
-          </div>
+            <div className="text-center text-[11px] text-gray-600">
+              {formatDateTime(receipt.createdAt)}
+            </div>
+            <div className="text-center text-[11px] mb-1">
+              {receipt.invoiceNumber}
+            </div>
 
-          <p className="text-center text-xs text-gray-400 mt-4">
-            {t.pos.thankYou}
-          </p>
+            <div className="border-t border-b border-dashed border-black py-2 my-1 space-y-1.5">
+              {receipt.items.map((item) => (
+                <div key={item.name}>
+                  <div className="break-words">{item.name}</div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">
+                      {item.quantity} x{" "}
+                      {item.originalPrice > item.price && (
+                        <span className="line-through text-gray-400 mr-1">
+                          {formatCurrency(item.originalPrice)}
+                        </span>
+                      )}
+                      {formatCurrency(item.price)}
+                      {item.originalPrice > item.price && (
+                        <span className="ml-1 text-gray-500">[SALE]</span>
+                      )}
+                    </span>
+                    <span className="font-medium">
+                      {formatCurrency(item.subtotal)}
+                    </span>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <div className="space-y-0.5 py-1">
+              {receipt.campaignSavings != null && (
+                <div className="flex justify-between">
+                  <span>{t.pos.campaignSavings}</span>
+                  <span>- {formatCurrency(receipt.campaignSavings)}</span>
+                </div>
+              )}
+              {receipt.cartCampaignDiscount != null && (
+                <div className="flex justify-between">
+                  <span>{t.pos.cartCampaign}</span>
+                  <span>- {formatCurrency(receipt.cartCampaignDiscount)}</span>
+                </div>
+              )}
+              {receipt.discount && (
+                <>
+                  <div className="flex justify-between text-gray-600">
+                    <span>{t.pos.subtotal}</span>
+                    <span>{formatCurrency(receipt.subtotal)}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Disc ({receipt.discount.label})</span>
+                    <span>- {formatCurrency(receipt.discount.amount)}</span>
+                  </div>
+                </>
+              )}
+            </div>
+
+            <div className="border-t border-dashed border-black mt-1 pt-1">
+              <div className="flex justify-between font-bold text-sm">
+                <span>{t.pos.total}</span>
+                <span>{formatCurrency(receipt.total)}</span>
+              </div>
+            </div>
+
+            <div className="border-t border-dashed border-black mt-1 pt-1 space-y-0.5">
+              {receipt.isCreditSale ? (
+                <div className="flex justify-between">
+                  <span>{t.pos.payment}</span>
+                  <span>{t.common.credit}</span>
+                </div>
+              ) : (
+                <>
+                  {receipt.payments.map((p) => (
+                    <div key={p.method} className="flex justify-between">
+                      <span className="capitalize">{p.method}</span>
+                      <span>{formatCurrency(p.amount)}</span>
+                    </div>
+                  ))}
+                  {(() => {
+                    const totalPaid = receipt.payments.reduce(
+                      (sum, p) => sum + p.amount,
+                      0,
+                    );
+                    const change = totalPaid - receipt.total;
+                    return change > 0 ? (
+                      <div className="flex justify-between">
+                        <span>Change</span>
+                        <span>{formatCurrency(change)}</span>
+                      </div>
+                    ) : null;
+                  })()}
+                </>
+              )}
+            </div>
+
+            <div className="border-t border-dashed border-black mt-1 pt-2 text-center text-[11px] text-gray-600">
+              {t.pos.thankYou}
+            </div>
+          </div>
         </div>
 
         <div className="flex gap-2 p-4 border-t border-gray-200 dark:border-gray-700 no-print">
