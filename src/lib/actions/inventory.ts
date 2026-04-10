@@ -1,8 +1,9 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { getCurrentUser } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
-import type { CreateAdjustmentInput } from "@/lib/types";
+import type { CreateAdjustmentInput, ReserveStockInput } from "@/lib/types";
 import { insertAuditLog, ownerAction } from "./action-utils";
 
 export async function getStockReport() {
@@ -10,6 +11,40 @@ export async function getStockReport() {
   const { data, error } = await supabase.rpc("get_stock_report");
   if (error) throw new Error(error.message);
   return data ?? [];
+}
+
+export async function reserveStock(input: ReserveStockInput) {
+  const user = await getCurrentUser();
+  if (!user) return { error: "Unauthorized" };
+
+  const supabase = await createClient();
+  const { data, error } = await supabase.rpc("reserve_stock", {
+    reservation_payload: input,
+  });
+
+  if (error) return { error: error.message };
+
+  revalidatePath("/pos");
+  revalidatePath("/inventory");
+  revalidatePath("/reports");
+  return { data };
+}
+
+export async function releaseStockReservations(reference: string) {
+  const user = await getCurrentUser();
+  if (!user) return { error: "Unauthorized" };
+
+  const supabase = await createClient();
+  const { data, error } = await supabase.rpc("release_stock_reservations", {
+    p_reference: reference,
+  });
+
+  if (error) return { error: error.message };
+
+  revalidatePath("/pos");
+  revalidatePath("/inventory");
+  revalidatePath("/reports");
+  return { data };
 }
 
 export async function getInventoryBatches(productId?: string) {

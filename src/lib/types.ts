@@ -276,6 +276,18 @@ export interface CreateSaleInput {
   campaignSavings?: number;
   cartCampaignDiscount?: number;
   idempotencyKey?: string;
+  reservationReference?: string;
+}
+
+export interface ReserveStockItemInput {
+  productId: string;
+  quantity: number;
+}
+
+export interface ReserveStockInput {
+  reference: string;
+  expiresAt?: string;
+  items: ReserveStockItemInput[];
 }
 
 export interface AdjustmentItemInput {
@@ -333,7 +345,19 @@ export interface StockReportRow {
   sku: string;
   name: string;
   stock_on_hand: number;
+  reserved_stock?: number;
+  available_stock?: number;
   stock_value: number;
+}
+
+export interface StockReservation {
+  id: string;
+  product_id: string;
+  quantity: number;
+  reference: string;
+  expires_at: string;
+  created_by: string | null;
+  created_at: string;
 }
 
 export interface SaleReturn {
