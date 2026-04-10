@@ -1,6 +1,6 @@
 "use client";
 
-import { Pencil, Plus, Search, Share2 } from "lucide-react";
+import { Download, Loader2, Pencil, Plus, Search } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
@@ -84,6 +84,7 @@ export function ProductsClient({
   const [editing, setEditing] = useState<Product | null>(null);
   const [imageUrl, setImageUrl] = useState("");
   const [loading, setLoading] = useState(false);
+  const [downloadingId, setDownloadingId] = useState<string | null>(null);
   const [priceHistory, setPriceHistory] = useState<ProductPrice[]>([]);
   const [productUnits, setProductUnits] = useState<ProductUnit[]>([]);
   const [newUnit, setNewUnit] = useState({
@@ -140,6 +141,32 @@ export function ProductsClient({
     setProductUnits([]);
     setNewUnit({ unit_name: "", conversion_to_base: "", is_base: false });
     setModalOpen(true);
+  }
+
+  async function downloadShareImage(product: Product) {
+    if (downloadingId) return;
+    setDownloadingId(product.id);
+    try {
+      const res = await fetch(`/api/products/${product.id}/share`);
+      if (!res.ok) throw new Error("Failed to generate image");
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      const slug = product.name
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, "-")
+        .replace(/^-|-$/g, "");
+      const now = new Date();
+      const ts = `${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, "0")}${String(now.getDate()).padStart(2, "0")}-${String(now.getHours()).padStart(2, "0")}${String(now.getMinutes()).padStart(2, "0")}`;
+      a.href = url;
+      a.download = `${slug}-${ts}.png`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch {
+      setToast({ message: "Failed to download image", type: "error" });
+    } finally {
+      setDownloadingId(null);
+    }
   }
 
   async function openEdit(product: Product) {
@@ -344,17 +371,25 @@ export function ProductsClient({
                           aria-hidden="true"
                         />
                       </button>
-                      <a
-                        href={`/api/products/${product.id}/share`}
-                        download={`${product.name}.png`}
-                        className="p-1 rounded hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
-                        aria-label={`Share ${product.name}`}
+                      <button
+                        type="button"
+                        onClick={() => downloadShareImage(product)}
+                        disabled={downloadingId === product.id}
+                        className="p-1 rounded hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                        aria-label={`Download image for ${product.name}`}
                       >
-                        <Share2
-                          className="h-4 w-4 text-gray-500"
-                          aria-hidden="true"
-                        />
-                      </a>
+                        {downloadingId === product.id ? (
+                          <Loader2
+                            className="h-4 w-4 text-gray-500 animate-spin"
+                            aria-hidden="true"
+                          />
+                        ) : (
+                          <Download
+                            className="h-4 w-4 text-gray-500"
+                            aria-hidden="true"
+                          />
+                        )}
+                      </button>
                     </div>
                   </td>
                 </tr>
