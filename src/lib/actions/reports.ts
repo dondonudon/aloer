@@ -170,13 +170,30 @@ export async function getSalesSummary(
   const supabase = await createClient();
   const tz = process.env.APP_TIMEZONE ?? "UTC";
 
+  // When a limit is requested without an explicit start date, only fetch the
+  // last (limit + 1) days so the query doesn't scan all historical rows.
+  // +1 ensures we catch a full day even at timezone boundaries.
+  // When neither a startDate nor a limit is provided (e.g. the /reports/sales
+  // page which filters client-side), default to the last 365 days. Callers
+  // that genuinely need older data should pass an explicit startDate.
+  let effectiveStartDate = startDate;
+  if (!effectiveStartDate && limit) {
+    const d = new Date();
+    d.setDate(d.getDate() - (limit + 1));
+    effectiveStartDate = d.toISOString().slice(0, 10);
+  } else if (!effectiveStartDate) {
+    const d = new Date();
+    d.setFullYear(d.getFullYear() - 1);
+    effectiveStartDate = d.toISOString().slice(0, 10);
+  }
+
   let query = supabase
     .from("sales")
     .select("created_at, total_amount, total_cogs")
     .eq("status", "completed")
     .order("created_at", { ascending: false });
 
-  if (startDate) query = query.gte("created_at", startDate);
+  if (effectiveStartDate) query = query.gte("created_at", effectiveStartDate);
   if (endDate) query = query.lte("created_at", endDate);
 
   const { data, error } = await query;

@@ -1,7 +1,7 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
-import { createClient } from "@/lib/supabase/server";
+import { revalidatePath, revalidateTag, unstable_cache } from "next/cache";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { ownerAction, validateName } from "./action-utils";
 
 export interface StoreSettings {
@@ -11,25 +11,35 @@ export interface StoreSettings {
   updated_at: string;
 }
 
-/** Gets the store settings (single row). */
+// Cached store settings — TTL 60s so every layout render doesn't pay a DB
+// roundtrip. Uses admin client to avoid request-scoped cookie dependency.
+// Revalidated by tag whenever updateStoreSettings is called.
+const _getCachedStoreSettings = unstable_cache(
+  async (): Promise<StoreSettings> => {
+    const admin = createAdminClient();
+    const { data, error } = await admin
+      .from("store_settings")
+      .select("*")
+      .limit(1)
+      .single();
+
+    if (error || !data) {
+      return {
+        id: "",
+        store_name: "My Store",
+        store_icon_url: null,
+        updated_at: new Date().toISOString(),
+      };
+    }
+    return data as StoreSettings;
+  },
+  ["store-settings"],
+  { revalidate: 60, tags: ["store-settings"] },
+);
+
+/** Gets the store settings (single row). Served from cache after first load. */
 export async function getStoreSettings(): Promise<StoreSettings> {
-  const supabase = await createClient();
-  const { data, error } = await supabase
-    .from("store_settings")
-    .select("*")
-    .limit(1)
-    .single();
-
-  if (error || !data) {
-    return {
-      id: "",
-      store_name: "My Store",
-      store_icon_url: null,
-      updated_at: new Date().toISOString(),
-    };
-  }
-
-  return data as StoreSettings;
+  return _getCachedStoreSettings();
 }
 
 /** Updates the store name and optional icon URL. Owner only. */
@@ -58,6 +68,7 @@ export async function updateStoreSettings(formData: FormData) {
       })
       .eq("id", existing.id);
     if (error) return { error: error.message };
+    revalidateTag("store-settings", { expire: 0 });
     revalidatePath("/", "layout");
     return {};
   });

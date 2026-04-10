@@ -1,6 +1,6 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
+import { revalidatePath, revalidateTag, unstable_cache } from "next/cache";
 import { getCurrentUser, isOwner } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
@@ -18,6 +18,7 @@ export async function saveTheme(theme: "light" | "dark"): Promise<void> {
   if (!user) return;
 
   await supabase.from("user_roles").update({ theme }).eq("user_id", user.id);
+  revalidateTag(`user-${user.id}`, { expire: 0 });
 }
 
 /**
@@ -32,6 +33,7 @@ export async function saveLocale(locale: "en" | "id"): Promise<void> {
   if (!user) return;
 
   await supabase.from("user_roles").update({ locale }).eq("user_id", user.id);
+  revalidateTag(`user-${user.id}`, { expire: 0 });
 }
 
 export interface ManagedUser {
@@ -42,6 +44,40 @@ export interface ManagedUser {
   created_at: string;
 }
 
+// Cached list of auth users + roles.
+// admin.auth.admin.listUsers() is an external Supabase Admin API call (~200ms).
+// Cache for 30 s; revalidated by tag whenever a role changes.
+const _getCachedUsers = unstable_cache(
+  async (): Promise<ManagedUser[]> => {
+    const admin = createAdminClient();
+    const { data: authUsers, error } = await admin.auth.admin.listUsers();
+    if (error || !authUsers) return [];
+
+    // Fetch roles via admin client too so we stay inside the same cached scope.
+    const { data: roles } = await admin
+      .from("user_roles")
+      .select("user_id, role");
+
+    const roleMap = new Map(
+      roles?.map((r) => [r.user_id, r.role as UserRole]) ?? [],
+    );
+
+    return authUsers.users.map((u) => ({
+      id: u.id,
+      email: u.email ?? "",
+      name:
+        (u.user_metadata?.full_name as string) ||
+        (u.user_metadata?.name as string) ||
+        u.email?.split("@")[0] ||
+        "",
+      role: roleMap.get(u.id) ?? null,
+      created_at: u.created_at,
+    }));
+  },
+  ["managed-users"],
+  { revalidate: 30, tags: ["managed-users"] },
+);
+
 /**
  * Returns all users who have ever signed in, with their assigned role.
  * Owner only. Uses admin client to read auth.users.
@@ -50,31 +86,7 @@ export async function getUsers(): Promise<ManagedUser[]> {
   const current = await getCurrentUser();
   if (!current || !isOwner(current.role)) return [];
 
-  const admin = createAdminClient();
-  const supabase = await createClient();
-
-  const { data: authUsers, error } = await admin.auth.admin.listUsers();
-  if (error || !authUsers) return [];
-
-  const { data: roles } = await supabase
-    .from("user_roles")
-    .select("user_id, role");
-
-  const roleMap = new Map(
-    roles?.map((r) => [r.user_id, r.role as UserRole]) ?? [],
-  );
-
-  return authUsers.users.map((u) => ({
-    id: u.id,
-    email: u.email ?? "",
-    name:
-      (u.user_metadata?.full_name as string) ||
-      (u.user_metadata?.name as string) ||
-      u.email?.split("@")[0] ||
-      "",
-    role: roleMap.get(u.id) ?? null,
-    created_at: u.created_at,
-  }));
+  return _getCachedUsers();
 }
 
 /**
@@ -103,6 +115,8 @@ export async function setUserRole(
       .upsert({ user_id: userId, role }, { onConflict: "user_id" });
   }
 
+  revalidateTag(`user-${userId}`, { expire: 0 });
+  revalidateTag("managed-users", { expire: 0 });
   revalidatePath("/settings");
   return {};
 }

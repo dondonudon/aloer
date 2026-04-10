@@ -12,14 +12,20 @@ interface Props {
 
 export default async function PurchaseOrderDetailPage({ params }: Props) {
   const { id } = await params;
-  const [{ po, items }, t] = await Promise.all([
+
+  // Run all three queries concurrently instead of awaiting getPurchaseOrderWithItems
+  // first and then sequentially fetching supplier payments.
+  // getSupplierPayments returns [] for non-credit POs (no records match).
+  const [{ po, items }, supplierPaymentsData, t] = await Promise.all([
     getPurchaseOrderWithItems(id),
+    getSupplierPayments(id),
     getServerTranslations(),
   ]);
 
+  // Only surface payments for credit POs that have been received.
   const supplierPayments =
     po.payment_method === "credit" && po.status === "received"
-      ? await getSupplierPayments(id)
+      ? supplierPaymentsData
       : [];
 
   const total = items.reduce(

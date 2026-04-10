@@ -20,24 +20,27 @@ const statusColors: Record<string, string> = {
 export default async function SaleDetailPage({ params }: Props) {
   const { id } = await params;
 
-  let sale: Awaited<ReturnType<typeof getSaleWithItems>>["sale"];
-  let items: Awaited<ReturnType<typeof getSaleWithItems>>["items"];
+  // Run all queries concurrently. getSaleWithItems resolves first internally
+  // (it too parallelises sale + items). getSaleCreditPayments and getSaleReturns
+  // start immediately rather than waiting for getSaleWithItems to finish.
+  // For non-credit sales, getSaleCreditPayments simply returns [].
+  const [saleAndItems, creditPaymentsData, saleReturnsResult, t] =
+    await Promise.all([
+      getSaleWithItems(id).catch(() => null),
+      getSaleCreditPayments(id),
+      getSaleReturns(id),
+      getServerTranslations(),
+    ]);
 
-  try {
-    const result = await getSaleWithItems(id);
-    sale = result.sale;
-    items = result.items;
-  } catch {
-    notFound();
-  }
+  if (!saleAndItems) notFound();
 
-  const [creditPayments, saleReturnsResult, t] = await Promise.all([
+  const { sale, items } = saleAndItems;
+
+  // Only surface credit payments for credit sales that are completed.
+  const creditPayments =
     sale.payment_method === "credit" && sale.status === "completed"
-      ? getSaleCreditPayments(id)
-      : Promise.resolve([]),
-    getSaleReturns(id),
-    getServerTranslations(),
-  ]);
+      ? creditPaymentsData
+      : [];
 
   return (
     <div className="max-w-3xl space-y-6">
