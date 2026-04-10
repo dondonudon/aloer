@@ -1,8 +1,25 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
+import { revalidatePath, revalidateTag, unstable_cache } from "next/cache";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 import { insertAuditLog, ownerAction, validateName } from "./action-utils";
+
+const getCachedActiveCategories = unstable_cache(
+  async () => {
+    const admin = createAdminClient();
+    const { data, error } = await admin
+      .from("categories")
+      .select("id, name, is_active, created_at")
+      .eq("is_active", true)
+      .order("name");
+
+    if (error) throw new Error(error.message);
+    return data;
+  },
+  ["active-categories"],
+  { revalidate: 60, tags: ["active-categories"] },
+);
 
 /** Gets all categories, ordered by name. */
 export async function getCategories() {
@@ -18,15 +35,7 @@ export async function getCategories() {
 
 /** Gets only active categories (for dropdowns). */
 export async function getActiveCategories() {
-  const supabase = await createClient();
-  const { data, error } = await supabase
-    .from("categories")
-    .select("*")
-    .eq("is_active", true)
-    .order("name");
-
-  if (error) throw new Error(error.message);
-  return data;
+  return getCachedActiveCategories();
 }
 
 /** Creates a new category. Owner only. */
@@ -54,6 +63,7 @@ export async function createCategory(formData: FormData) {
     );
     revalidatePath("/catalog/categories");
     revalidatePath("/products");
+    revalidateTag("active-categories", { expire: 0 });
     return {};
   });
 }
@@ -77,6 +87,7 @@ export async function updateCategory(id: string, formData: FormData) {
     await insertAuditLog(supabase, userId, "UPDATE_CATEGORY", "categories", id);
     revalidatePath("/catalog/categories");
     revalidatePath("/products");
+    revalidateTag("active-categories", { expire: 0 });
     return {};
   });
 }

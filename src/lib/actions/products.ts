@@ -1,8 +1,27 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
+import { revalidatePath, revalidateTag, unstable_cache } from "next/cache";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 import { insertAuditLog, ownerAction, validateName } from "./action-utils";
+
+const getCachedActiveProducts = unstable_cache(
+  async () => {
+    const admin = createAdminClient();
+    const { data, error } = await admin
+      .from("products")
+      .select(
+        "id, name, sku, category, unit, selling_price, bulk_price, bulk_min_qty, latest_cost_price, image_url, is_active, created_at, updated_at",
+      )
+      .eq("is_active", true)
+      .order("name");
+
+    if (error) throw new Error(error.message);
+    return data;
+  },
+  ["active-products"],
+  { revalidate: 60, tags: ["active-products"] },
+);
 
 export async function getProducts(options?: {
   search?: string;
@@ -16,7 +35,10 @@ export async function getProducts(options?: {
 
   let query = supabase
     .from("products")
-    .select("*", { count: "exact" })
+    .select(
+      "id, name, sku, category, unit, selling_price, bulk_price, bulk_min_qty, latest_cost_price, image_url, is_active, created_at, updated_at",
+      { count: "planned" },
+    )
     .order("name");
 
   if (options?.search) {
@@ -33,15 +55,7 @@ export async function getProducts(options?: {
 }
 
 export async function getActiveProducts() {
-  const supabase = await createClient();
-  const { data, error } = await supabase
-    .from("products")
-    .select("*")
-    .eq("is_active", true)
-    .order("name");
-
-  if (error) throw new Error(error.message);
-  return data;
+  return getCachedActiveProducts();
 }
 
 function parseProductForm(formData: FormData) {
@@ -103,6 +117,7 @@ export async function createProduct(formData: FormData) {
       product.id,
     );
     revalidatePath("/products");
+    revalidateTag("active-products", { expire: 0 });
     return {};
   });
 }
@@ -130,6 +145,7 @@ export async function updateProduct(id: string, formData: FormData) {
     if (error) return { error: error.message };
     await insertAuditLog(supabase, userId, "UPDATE_PRODUCT", "products", id);
     revalidatePath("/products");
+    revalidateTag("active-products", { expire: 0 });
     return {};
   });
 }

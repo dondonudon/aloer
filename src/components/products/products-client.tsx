@@ -1,15 +1,12 @@
 "use client";
 
 import { Download, Loader2, Pencil, Plus, Search } from "lucide-react";
-import Link from "next/link";
+import dynamic from "next/dynamic";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { ImageUpload } from "@/components/ui/image-upload";
 import { Input } from "@/components/ui/input";
-import { Modal } from "@/components/ui/modal";
 import { Pagination } from "@/components/ui/pagination";
-import { Select } from "@/components/ui/select";
 import { Toast } from "@/components/ui/toast";
 import {
   createProduct,
@@ -22,6 +19,11 @@ import {
 import { useI18n } from "@/lib/i18n/context";
 import type { Category, Product, ProductPrice, ProductUnit } from "@/lib/types";
 import { formatCurrency } from "@/lib/utils";
+
+const ProductEditorModal = dynamic(
+  () => import("./product-editor-modal").then((mod) => mod.ProductEditorModal),
+  { ssr: false },
+);
 
 interface ProductsClientProps {
   products: Product[];
@@ -97,6 +99,37 @@ export function ProductsClient({
     message: string;
     type: "success" | "error";
   } | null>(null);
+  const editorLabels = {
+    productName: t.products.name,
+    sku: t.products.sku,
+    manageCategories: t.products.manageCategories,
+    category: t.products.categoryName,
+    categoryPlaceholder: t.products.categoryPlaceholder,
+    unit: t.products.unit,
+    sellingPrice: t.products.sellingPrice,
+    bulkPriceOptional: t.products.bulkPriceOptional,
+    bulkPricePlaceholder: t.products.bulkPricePlaceholder,
+    bulkMinQty: t.products.bulkMinQty,
+    bulkMinQtyPlaceholder: t.products.bulkMinQtyPlaceholder,
+    priceHistory: t.products.priceHistory,
+    noPriceHistory: t.products.noPriceHistory,
+    unitsConversions: t.products.unitsConversions,
+    noUnitsYet: t.products.noUnitsYet,
+    unitName: t.products.unitName,
+    conversionToBase: t.products.conversionToBase,
+    isBaseUnit: t.products.isBaseUnit,
+    baseLabel: t.products.baseLabel,
+    deleteUnit: t.products.deleteUnit,
+    addUnit: t.products.addUnit,
+    productImage: t.products.productImage,
+    status: t.products.status,
+    active: t.products.active,
+    inactive: t.products.inactive,
+    cancel: t.common.cancel,
+    saving: t.common.saving,
+    create: t.common.create,
+    update: t.common.update,
+  };
 
   // Debounce search → URL (skip first render)
   const isFirstRender = useRef(true);
@@ -417,329 +450,26 @@ export function ProductsClient({
         buildLimitHref={buildLimitHref}
       />
 
-      <Modal
+      <ProductEditorModal
         open={modalOpen}
         onClose={() => setModalOpen(false)}
         title={editing ? t.products.editProduct : t.products.newProduct}
-      >
-        <form action={handleSubmit} className="space-y-4">
-          <Input
-            label={t.products.name}
-            name="name"
-            required
-            defaultValue={editing?.name}
-          />
-          <Input
-            label={t.products.sku}
-            name="sku"
-            required
-            defaultValue={editing?.sku}
-          />
-          <div className="space-y-1">
-            <div className="flex items-center justify-between">
-              <label
-                htmlFor="category"
-                className="block text-sm font-medium text-gray-700 dark:text-gray-300"
-              >
-                {t.products.categoryName}
-              </label>
-              <Link
-                href="/catalog/categories"
-                target="_blank"
-                className="text-xs text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300"
-              >
-                {t.products.manageCategories} →
-              </Link>
-            </div>
-            <Select
-              id="category"
-              name="category"
-              options={[
-                { value: "", label: `— ${t.products.categoryPlaceholder} —` },
-                ...categories.map((c) => ({ value: c.name, label: c.name })),
-              ]}
-              defaultValue={editing?.category ?? ""}
-            />
-          </div>
-          <Select
-            label={t.products.unit}
-            name="unit"
-            options={unitOptions}
-            defaultValue={editing?.unit ?? "pcs"}
-          />
-          <Input
-            label={t.products.sellingPrice}
-            name="selling_price"
-            type="number"
-            min="0"
-            step="100"
-            required
-            defaultValue={editing?.selling_price}
-          />
-          <div className="grid grid-cols-2 gap-3">
-            <Input
-              label={t.products.bulkPriceOptional}
-              name="bulk_price"
-              type="number"
-              min="0"
-              step="100"
-              defaultValue={editing?.bulk_price ?? ""}
-              placeholder={t.products.bulkPricePlaceholder}
-            />
-            <Input
-              label={t.products.bulkMinQty}
-              name="bulk_min_qty"
-              type="number"
-              min="2"
-              step="1"
-              defaultValue={editing?.bulk_min_qty ?? ""}
-              placeholder={t.products.bulkMinQtyPlaceholder}
-            />
-          </div>
-          {editing?.latest_cost_price != null && (
-            <p className="text-xs text-gray-500">
-              Latest cost: {formatCurrency(editing.latest_cost_price)} · Margin:{" "}
-              {(
-                ((editing.selling_price - editing.latest_cost_price) /
-                  editing.selling_price) *
-                100
-              ).toFixed(1)}
-              %
-            </p>
-          )}
-          {editing && (
-            <details className="text-xs">
-              <summary className="cursor-pointer font-medium text-gray-600 dark:text-gray-400 select-none">
-                {t.products.priceHistory}
-              </summary>
-              <div className="mt-2 rounded-lg border border-gray-100 dark:border-gray-700 overflow-hidden">
-                {priceHistory.length === 0 ? (
-                  <p className="py-3 px-4 text-gray-400">
-                    {t.products.noPriceHistory}
-                  </p>
-                ) : (
-                  <table className="w-full">
-                    <thead>
-                      <tr className="bg-gray-50 dark:bg-gray-700/50 text-gray-500">
-                        <th className="text-left py-2 px-3 font-medium">
-                          Date
-                        </th>
-                        <th className="text-right py-2 px-3 font-medium">
-                          {t.products.price}
-                        </th>
-                        <th className="text-right py-2 px-3 font-medium">
-                          {t.products.bulkPrice}
-                        </th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {priceHistory.map((row) => (
-                        <tr
-                          key={row.id}
-                          className="border-t border-gray-50 dark:border-gray-700/50"
-                        >
-                          <td className="py-2 px-3 text-gray-600 dark:text-gray-400">
-                            {new Date(row.effective_from).toLocaleString()}
-                          </td>
-                          <td className="py-2 px-3 text-right text-gray-900 dark:text-gray-100">
-                            {formatCurrency(row.price)}
-                          </td>
-                          <td className="py-2 px-3 text-right text-gray-500 dark:text-gray-400">
-                            {row.bulk_price
-                              ? `${formatCurrency(row.bulk_price)} (≥${row.bulk_min_qty})`
-                              : "—"}
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                )}
-              </div>
-            </details>
-          )}
-          {editing && (
-            <details className="text-xs">
-              <summary className="cursor-pointer font-medium text-gray-600 dark:text-gray-400 select-none">
-                {t.products.unitsConversions}
-              </summary>
-              <div className="mt-2 space-y-2">
-                {/* Existing units table */}
-                <div className="rounded-lg border border-gray-100 dark:border-gray-700 overflow-hidden">
-                  {productUnits.length === 0 ? (
-                    <p className="py-3 px-4 text-gray-400">
-                      {t.products.noUnitsYet}
-                    </p>
-                  ) : (
-                    <table className="w-full">
-                      <thead>
-                        <tr className="bg-gray-50 dark:bg-gray-700/50 text-gray-500">
-                          <th className="text-left py-2 px-3 font-medium">
-                            {t.products.unitName}
-                          </th>
-                          <th className="text-right py-2 px-3 font-medium">
-                            {t.products.conversionToBase}
-                          </th>
-                          <th className="text-center py-2 px-3 font-medium">
-                            {t.products.isBaseUnit}
-                          </th>
-                          <th
-                            className="py-2 px-3"
-                            aria-label={t.common.actions}
-                          />
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {productUnits.map((u) => (
-                          <tr
-                            key={u.id}
-                            className="border-t border-gray-50 dark:border-gray-700/50"
-                          >
-                            <td className="py-2 px-3 text-gray-900 dark:text-gray-100 font-medium">
-                              {u.unit_name}
-                            </td>
-                            <td className="py-2 px-3 text-right text-gray-600 dark:text-gray-400">
-                              {u.is_base ? "1" : `${u.conversion_to_base}`}
-                            </td>
-                            <td className="py-2 px-3 text-center">
-                              {u.is_base && (
-                                <span className="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300">
-                                  {t.products.baseLabel}
-                                </span>
-                              )}
-                            </td>
-                            <td className="py-2 px-3 text-right">
-                              <button
-                                type="button"
-                                onClick={() => handleDeleteUnit(u.id)}
-                                disabled={unitLoading}
-                                className="text-red-500 hover:text-red-700 disabled:opacity-40"
-                                aria-label={t.products.deleteUnit}
-                              >
-                                ✕
-                              </button>
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  )}
-                </div>
-                {/* Add new unit */}
-                <div className="flex items-end gap-2 flex-wrap">
-                  <div className="flex-1 min-w-[100px]">
-                    <label
-                      htmlFor="new-unit-name"
-                      className="block text-gray-500 dark:text-gray-400 mb-1"
-                    >
-                      {t.products.unitName}
-                    </label>
-                    <input
-                      id="new-unit-name"
-                      type="text"
-                      className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 px-2 py-1 text-xs text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      placeholder={t.products.unitNamePlaceholder}
-                      value={newUnit.unit_name}
-                      onChange={(e) =>
-                        setNewUnit((prev) => ({
-                          ...prev,
-                          unit_name: e.target.value,
-                        }))
-                      }
-                      aria-label={t.products.unitName}
-                    />
-                  </div>
-                  <div className="flex-1 min-w-[80px]">
-                    <label
-                      htmlFor="new-unit-conversion"
-                      className="block text-gray-500 dark:text-gray-400 mb-1"
-                    >
-                      {t.products.conversionToBase}
-                    </label>
-                    <input
-                      id="new-unit-conversion"
-                      type="number"
-                      min="0.001"
-                      step="any"
-                      className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 px-2 py-1 text-xs text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      placeholder={t.products.conversionPlaceholder}
-                      value={newUnit.conversion_to_base}
-                      onChange={(e) =>
-                        setNewUnit((prev) => ({
-                          ...prev,
-                          conversion_to_base: e.target.value,
-                        }))
-                      }
-                      aria-label={t.products.conversionToBase}
-                    />
-                  </div>
-                  <div className="flex items-center gap-1 pb-1">
-                    <input
-                      id="new-unit-is-base"
-                      type="checkbox"
-                      checked={newUnit.is_base}
-                      onChange={(e) =>
-                        setNewUnit((prev) => ({
-                          ...prev,
-                          is_base: e.target.checked,
-                        }))
-                      }
-                      className="h-3 w-3 rounded"
-                    />
-                    <label
-                      htmlFor="new-unit-is-base"
-                      className="text-gray-500 dark:text-gray-400 select-none"
-                    >
-                      {t.products.isBaseUnit}
-                    </label>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={handleAddUnit}
-                    disabled={unitLoading}
-                    className="rounded-lg bg-blue-600 px-3 py-1 text-xs font-medium text-white hover:bg-blue-700 disabled:opacity-50 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  >
-                    {t.products.addUnit}
-                  </button>
-                </div>
-              </div>
-            </details>
-          )}
-          <ImageUpload
-            label={t.products.productImage}
-            value={imageUrl}
-            onChange={setImageUrl}
-            folder="products"
-          />
-          <input type="hidden" name="image_url" value={imageUrl} />
-          {editing && (
-            <Select
-              label={t.products.status}
-              name="is_active"
-              options={[
-                { value: "true", label: t.products.active },
-                { value: "false", label: t.products.inactive },
-              ]}
-              defaultValue={String(editing.is_active)}
-            />
-          )}
-          <div className="flex justify-end gap-2 pt-2">
-            <Button
-              type="button"
-              variant="secondary"
-              onClick={() => setModalOpen(false)}
-            >
-              {t.common.cancel}
-            </Button>
-            <Button type="submit" disabled={loading}>
-              {loading
-                ? t.common.saving
-                : editing
-                  ? t.common.update
-                  : t.common.create}
-            </Button>
-          </div>
-        </form>
-      </Modal>
+        onSubmit={handleSubmit}
+        editing={editing}
+        categories={categories}
+        unitOptions={unitOptions}
+        imageUrl={imageUrl}
+        onImageUrlChange={setImageUrl}
+        loading={loading}
+        priceHistory={priceHistory}
+        productUnits={productUnits}
+        newUnit={newUnit}
+        onNewUnitChange={setNewUnit}
+        unitLoading={unitLoading}
+        onAddUnit={handleAddUnit}
+        onDeleteUnit={handleDeleteUnit}
+        labels={editorLabels}
+      />
 
       {toast && (
         <Toast

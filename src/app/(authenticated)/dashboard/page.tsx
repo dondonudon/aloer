@@ -12,7 +12,7 @@ import { getServerTranslations } from "@/lib/i18n/server";
 import { formatCurrency } from "@/lib/utils";
 
 export default async function DashboardPage() {
-  const user = await getCurrentUser();
+  const userPromise = getCurrentUser();
   const [t, todaySales, salesSummary, stockReport, creditSales, creditPOs] =
     await Promise.all([
       getServerTranslations(),
@@ -22,6 +22,7 @@ export default async function DashboardPage() {
       getOutstandingCreditSales(),
       getOutstandingCreditPOs(),
     ]);
+  const user = await userPromise;
 
   const totalAR = creditSales.reduce((sum, s) => sum + s.outstanding, 0);
   const totalAP = creditPOs.reduce((sum, p) => sum + p.outstanding, 0);

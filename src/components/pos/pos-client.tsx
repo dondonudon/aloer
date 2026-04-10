@@ -1,9 +1,9 @@
 "use client";
 
+import dynamic from "next/dynamic";
 import { useState } from "react";
 import { CartPanel } from "@/components/pos/cart-panel";
 import { ProductGrid } from "@/components/pos/product-grid";
-import { ReceiptModal } from "@/components/pos/receipt-modal";
 import { useStore } from "@/components/ui/store-context";
 import { Toast } from "@/components/ui/toast";
 import { createSale } from "@/lib/actions/sales";
@@ -15,6 +15,12 @@ import type {
   Reseller,
   SalePaymentInput,
 } from "@/lib/types";
+
+const ReceiptModal = dynamic(
+  () =>
+    import("@/components/pos/receipt-modal").then((mod) => mod.ReceiptModal),
+  { ssr: false },
+);
 
 interface POSClientProps {
   products: Product[];

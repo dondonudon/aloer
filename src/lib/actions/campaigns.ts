@@ -1,10 +1,29 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
+import { revalidatePath, revalidateTag, unstable_cache } from "next/cache";
 import { getCurrentUser } from "@/lib/auth";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 import type { CampaignWithProducts } from "@/lib/types";
 import { insertAuditLog, ownerAction } from "./action-utils";
+
+const getCachedActiveCampaigns = unstable_cache(
+  async (): Promise<CampaignWithProducts[]> => {
+    const admin = createAdminClient();
+    const now = new Date().toISOString();
+    const { data, error } = await admin
+      .from("campaigns")
+      .select("*, campaign_products(*)")
+      .eq("is_active", true)
+      .lte("start_date", now)
+      .gte("end_date", now);
+
+    if (error) throw new Error(error.message);
+    return (data ?? []) as CampaignWithProducts[];
+  },
+  ["active-campaigns"],
+  { revalidate: 60, tags: ["active-campaigns"] },
+);
 
 /**
  * Parses the shared campaign form fields used by both create and update.
@@ -85,17 +104,7 @@ export async function getCampaigns(): Promise<CampaignWithProducts[]> {
  * Gets currently active campaigns (within date range and is_active).
  */
 export async function getActiveCampaigns(): Promise<CampaignWithProducts[]> {
-  const supabase = await createClient();
-  const now = new Date().toISOString();
-  const { data, error } = await supabase
-    .from("campaigns")
-    .select("*, campaign_products(*)")
-    .eq("is_active", true)
-    .lte("start_date", now)
-    .gte("end_date", now);
-
-  if (error) throw new Error(error.message);
-  return (data ?? []) as CampaignWithProducts[];
+  return getCachedActiveCampaigns();
 }
 
 /** Creates a new campaign. Owner only. */
@@ -152,6 +161,7 @@ export async function createCampaign(formData: FormData) {
 
     revalidatePath("/catalog/campaigns");
     revalidatePath("/pos");
+    revalidateTag("active-campaigns", { expire: 0 });
     await insertAuditLog(
       supabase,
       user.id,
@@ -224,6 +234,7 @@ export async function updateCampaign(campaignId: string, formData: FormData) {
     );
     revalidatePath("/catalog/campaigns");
     revalidatePath("/pos");
+    revalidateTag("active-campaigns", { expire: 0 });
     return {};
   });
 }
@@ -238,6 +249,7 @@ export async function toggleCampaign(campaignId: string, isActive: boolean) {
     if (error) return { error: error.message };
     revalidatePath("/catalog/campaigns");
     revalidatePath("/pos");
+    revalidateTag("active-campaigns", { expire: 0 });
     return {};
   });
 }
@@ -259,6 +271,7 @@ export async function deleteCampaign(campaignId: string) {
     );
     revalidatePath("/catalog/campaigns");
     revalidatePath("/pos");
+    revalidateTag("active-campaigns", { expire: 0 });
     return {};
   });
 }
