@@ -1,5 +1,6 @@
 import { DollarSign, Package, ShoppingCart, TrendingUp } from "lucide-react";
 import Link from "next/link";
+import { LowStockAlert } from "@/components/dashboard/low-stock-alert";
 import {
   getOutstandingCreditPOs,
   getOutstandingCreditSales,
@@ -29,7 +30,7 @@ export default async function DashboardPage() {
     ? stockReport.reduce((sum, s) => sum + s.stock_on_hand, 0)
     : 0;
   const lowStockItems = Array.isArray(stockReport)
-    ? stockReport.filter((s) => s.stock_on_hand > 0 && s.stock_on_hand <= 5)
+    ? stockReport.filter((s) => s.stock_on_hand <= 5)
     : [];
 
   const stats = [
@@ -205,24 +206,11 @@ export default async function DashboardPage() {
       )}
 
       {/* Low stock alert */}
-      {lowStockItems.length > 0 && (
-        <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700/50 rounded-xl p-5">
-          <h2 className="text-base font-semibold text-amber-800 dark:text-amber-400 mb-2">
-            {t.dashboard.lowStockAlert}
-          </h2>
-          <ul className="space-y-1">
-            {lowStockItems.map((item) => (
-              <li
-                key={item.sku}
-                className="text-sm text-amber-700 dark:text-amber-300"
-              >
-                {item.name} ({item.sku}) — {item.stock_on_hand}{" "}
-                {t.dashboard.remaining}
-              </li>
-            ))}
-          </ul>
-        </div>
-      )}
+      <LowStockAlert
+        items={lowStockItems}
+        remainingLabel={t.dashboard.remaining}
+        title={t.dashboard.lowStockAlert}
+      />
     </div>
   );
 }
