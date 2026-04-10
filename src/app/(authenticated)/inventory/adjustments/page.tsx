@@ -2,15 +2,25 @@ import { Plus } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { PageHeader } from "@/components/ui/page-header";
+import { RoutePagination } from "@/components/ui/route-pagination";
 import { getAdjustments } from "@/lib/actions/inventory";
 import { getServerTranslations } from "@/lib/i18n/server";
+import { paginate, parsePage, parsePageSize } from "@/lib/pagination";
 import { formatDateTime } from "@/lib/utils";
 
-export default async function AdjustmentsPage() {
+interface Props {
+  searchParams: Promise<Record<string, string | undefined>>;
+}
+
+export default async function AdjustmentsPage({ searchParams }: Props) {
+  const params = await searchParams;
+  const page = parsePage(params.page);
+  const pageSize = parsePageSize(params.limit);
   const [adjustments, t] = await Promise.all([
     getAdjustments(),
     getServerTranslations(),
   ]);
+  const { items, totalPages } = paginate(adjustments, page, pageSize);
 
   return (
     <div className="space-y-4">
@@ -50,7 +60,7 @@ export default async function AdjustmentsPage() {
               </tr>
             </thead>
             <tbody>
-              {adjustments.map((adj) => (
+              {items.map((adj) => (
                 <tr
                   key={adj.id}
                   className="border-b border-gray-50 dark:border-gray-700/50 hover:bg-gray-50 dark:hover:bg-gray-700/30"
@@ -72,7 +82,7 @@ export default async function AdjustmentsPage() {
                   </td>
                 </tr>
               ))}
-              {adjustments.length === 0 && (
+              {items.length === 0 && (
                 <tr>
                   <td
                     colSpan={5}
@@ -86,6 +96,13 @@ export default async function AdjustmentsPage() {
           </table>
         </div>
       </div>
+
+      <RoutePagination
+        pathname="/inventory/adjustments"
+        page={page}
+        totalPages={totalPages}
+        pageSize={pageSize}
+      />
     </div>
   );
 }

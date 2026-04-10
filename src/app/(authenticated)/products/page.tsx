@@ -1,8 +1,6 @@
 import { ProductsClient } from "@/components/products/products-client";
 import { getProducts } from "@/lib/actions/products";
-
-const VALID_PAGE_SIZES = [10, 20, 50, 100] as const;
-type ValidPageSize = (typeof VALID_PAGE_SIZES)[number];
+import { parsePage, parsePageSize } from "@/lib/pagination";
 
 interface Props {
   searchParams: Promise<Record<string, string | undefined>>;
@@ -10,14 +8,9 @@ interface Props {
 
 export default async function ProductsPage({ searchParams }: Props) {
   const params = await searchParams;
-  const page = Math.max(1, Number(params.page ?? 1));
+  const page = parsePage(params.page);
   const search = params.search ?? "";
-  const rawLimit = Number(params.limit ?? 10);
-  const limit: ValidPageSize = VALID_PAGE_SIZES.includes(
-    rawLimit as ValidPageSize,
-  )
-    ? (rawLimit as ValidPageSize)
-    : 10;
+  const limit = parsePageSize(params.limit);
 
   const { data: products, count } = await getProducts({ search, page, limit });
 

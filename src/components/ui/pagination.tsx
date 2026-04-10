@@ -14,10 +14,14 @@ interface PaginationProps {
   totalPages: number;
   /** Function that returns the href for a given page number */
   buildHref: (page: number) => string;
+  /** Optional callback invoked when a page is selected instead of navigating by link */
+  onPageChange?: (page: number) => void;
   /** Current page size (enables the rows-per-page dropdown when provided) */
   pageSize?: number;
   /** Function that returns the href for a new limit value; resets to page 1 */
   buildLimitHref?: (limit: number) => string;
+  /** Optional callback invoked when the page size changes instead of navigating by link */
+  onPageSizeChange?: (limit: number) => void;
 }
 
 /**
@@ -28,8 +32,10 @@ export function Pagination({
   page,
   totalPages,
   buildHref,
+  onPageChange,
   pageSize,
   buildLimitHref,
+  onPageSizeChange,
 }: PaginationProps) {
   const { t } = useI18n();
   const router = useRouter();
@@ -37,6 +43,7 @@ export function Pagination({
   const showLimitDropdown =
     pageSize !== undefined && buildLimitHref !== undefined;
   const showPageNav = totalPages > 1;
+  const useCallbacks = onPageChange !== undefined;
 
   if (!showLimitDropdown && !showPageNav) return null;
 
@@ -77,9 +84,14 @@ export function Pagination({
           <select
             id="pagination-rows-per-page"
             value={pageSize}
-            onChange={(e) =>
-              router.push(buildLimitHref(Number(e.target.value)))
-            }
+            onChange={(e) => {
+              const nextLimit = Number(e.target.value);
+              if (onPageSizeChange) {
+                onPageSizeChange(nextLimit);
+                return;
+              }
+              router.push(buildLimitHref(nextLimit));
+            }}
             className="rounded-md border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 py-1 pl-2 pr-7 text-sm text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
           >
             {PAGE_SIZE_OPTIONS.map((opt) => (
@@ -97,13 +109,24 @@ export function Pagination({
           className="flex items-center gap-1"
         >
           {page > 1 ? (
-            <Link
-              href={buildHref(page - 1)}
-              className={inactiveLink}
-              aria-label={t.pagination.previousPage}
-            >
-              <ChevronLeft className="h-4 w-4" aria-hidden="true" />
-            </Link>
+            useCallbacks ? (
+              <button
+                type="button"
+                onClick={() => onPageChange?.(page - 1)}
+                className={inactiveLink}
+                aria-label={t.pagination.previousPage}
+              >
+                <ChevronLeft className="h-4 w-4" aria-hidden="true" />
+              </button>
+            ) : (
+              <Link
+                href={buildHref(page - 1)}
+                className={inactiveLink}
+                aria-label={t.pagination.previousPage}
+              >
+                <ChevronLeft className="h-4 w-4" aria-hidden="true" />
+              </Link>
+            )
           ) : (
             <button
               type="button"
@@ -124,6 +147,17 @@ export function Pagination({
               >
                 …
               </span>
+            ) : useCallbacks ? (
+              <button
+                key={p}
+                type="button"
+                onClick={() => onPageChange?.(p)}
+                className={p === page ? activeLink : inactiveLink}
+                aria-label={`${t.pagination.page} ${p}`}
+                aria-current={p === page ? "page" : undefined}
+              >
+                {p}
+              </button>
             ) : (
               <Link
                 key={p}
@@ -138,13 +172,24 @@ export function Pagination({
           )}
 
           {page < totalPages ? (
-            <Link
-              href={buildHref(page + 1)}
-              className={inactiveLink}
-              aria-label={t.pagination.nextPage}
-            >
-              <ChevronRight className="h-4 w-4" aria-hidden="true" />
-            </Link>
+            useCallbacks ? (
+              <button
+                type="button"
+                onClick={() => onPageChange?.(page + 1)}
+                className={inactiveLink}
+                aria-label={t.pagination.nextPage}
+              >
+                <ChevronRight className="h-4 w-4" aria-hidden="true" />
+              </button>
+            ) : (
+              <Link
+                href={buildHref(page + 1)}
+                className={inactiveLink}
+                aria-label={t.pagination.nextPage}
+              >
+                <ChevronRight className="h-4 w-4" aria-hidden="true" />
+              </Link>
+            )
           ) : (
             <button
               type="button"

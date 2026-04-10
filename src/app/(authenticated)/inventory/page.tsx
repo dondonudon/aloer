@@ -4,8 +4,18 @@ import { InventoryListClient } from "@/components/inventory/inventory-list-clien
 import { Button } from "@/components/ui/button";
 import { getStockReport } from "@/lib/actions/inventory";
 import { getServerTranslations } from "@/lib/i18n/server";
+import { parsePage, parsePageSize } from "@/lib/pagination";
 
-export default async function InventoryPage() {
+interface Props {
+  searchParams: Promise<Record<string, string | undefined>>;
+}
+
+export default async function InventoryPage({ searchParams }: Props) {
+  const params = await searchParams;
+  const page = parsePage(params.page);
+  const pageSize = parsePageSize(params.limit);
+  const search = params.search ?? "";
+
   const [t, stockReport] = await Promise.all([
     getServerTranslations(),
     getStockReport(),
@@ -26,7 +36,13 @@ export default async function InventoryPage() {
         </Link>
       </div>
 
-      <InventoryListClient stock={stock} />
+      <InventoryListClient
+        key={`${page}-${pageSize}-${search}`}
+        stock={stock}
+        initialPage={page}
+        initialPageSize={pageSize}
+        initialSearch={search}
+      />
 
       <div className="flex justify-end">
         <Link href="/inventory/adjustments">

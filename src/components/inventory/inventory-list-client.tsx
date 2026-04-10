@@ -2,8 +2,10 @@
 
 import { Search } from "lucide-react";
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { usePathname, useRouter } from "next/navigation";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Input } from "@/components/ui/input";
+import { Pagination } from "@/components/ui/pagination";
 import { useI18n } from "@/lib/i18n/context";
 import { formatCurrency } from "@/lib/utils";
 
@@ -17,14 +19,44 @@ interface StockItem {
 
 interface InventoryListClientProps {
   stock: StockItem[];
+  initialPage: number;
+  initialPageSize: number;
+  initialSearch: string;
 }
 
 /**
  * Inventory list with search filtering.
  */
-export function InventoryListClient({ stock }: InventoryListClientProps) {
+export function InventoryListClient({
+  stock,
+  initialPage,
+  initialPageSize,
+  initialSearch,
+}: InventoryListClientProps) {
   const { t } = useI18n();
-  const [search, setSearch] = useState("");
+  const router = useRouter();
+  const pathname = usePathname();
+  const [search, setSearch] = useState(initialSearch);
+  const [page, setPage] = useState(initialPage);
+  const [pageSize] = useState(initialPageSize);
+
+  const isFirstRender = useRef(true);
+  useEffect(() => {
+    if (isFirstRender.current) {
+      isFirstRender.current = false;
+      return;
+    }
+
+    const t = setTimeout(() => {
+      const params = new URLSearchParams();
+      if (search) params.set("search", search);
+      if (pageSize !== 10) params.set("limit", String(pageSize));
+      const qs = params.toString();
+      router.push(qs ? `${pathname}?${qs}` : pathname);
+    }, 400);
+
+    return () => clearTimeout(t);
+  }, [search, pageSize, router, pathname]);
 
   const filtered = useMemo(() => {
     if (!search) return stock;
@@ -39,6 +71,30 @@ export function InventoryListClient({ stock }: InventoryListClientProps) {
   const totalItems = filtered.reduce((sum, s) => sum + s.stock_on_hand, 0);
   const totalValue = filtered.reduce((sum, s) => sum + s.stock_value, 0);
 
+  const totalPages = Math.ceil(filtered.length / pageSize);
+  const currentPage = Math.min(page, Math.max(totalPages, 1));
+  const visibleItems = filtered.slice(
+    (currentPage - 1) * pageSize,
+    currentPage * pageSize,
+  );
+
+  function buildHref(nextPage: number) {
+    const params = new URLSearchParams();
+    if (search) params.set("search", search);
+    if (pageSize !== 10) params.set("limit", String(pageSize));
+    if (nextPage > 1) params.set("page", String(nextPage));
+    const qs = params.toString();
+    return qs ? `${pathname}?${qs}` : pathname;
+  }
+
+  function buildLimitHref(nextLimit: number) {
+    const params = new URLSearchParams();
+    if (search) params.set("search", search);
+    if (nextLimit !== 10) params.set("limit", String(nextLimit));
+    const qs = params.toString();
+    return qs ? `${pathname}?${qs}` : pathname;
+  }
+
   return (
     <div className="space-y-4">
       <div className="relative">
@@ -49,7 +105,10 @@ export function InventoryListClient({ stock }: InventoryListClientProps) {
         <Input
           placeholder={t.inventory.searchPlaceholder}
           value={search}
-          onChange={(e) => setSearch(e.target.value)}
+          onChange={(e) => {
+            setSearch(e.target.value);
+            setPage(1);
+          }}
           className="pl-10"
           aria-label={t.inventory.searchPlaceholder}
         />
@@ -83,7 +142,7 @@ export function InventoryListClient({ stock }: InventoryListClientProps) {
               </tr>
             </thead>
             <tbody>
-              {filtered.map((item) => (
+              {visibleItems.map((item) => (
                 <tr
                   key={item.sku}
                   className="border-b border-gray-50 dark:border-gray-700/50 hover:bg-gray-50 dark:hover:bg-gray-700/30"
@@ -134,6 +193,14 @@ export function InventoryListClient({ stock }: InventoryListClientProps) {
           </table>
         </div>
       </div>
+
+      <Pagination
+        page={currentPage}
+        totalPages={totalPages}
+        buildHref={buildHref}
+        pageSize={pageSize}
+        buildLimitHref={buildLimitHref}
+      />
     </div>
   );
 }

@@ -1,12 +1,22 @@
 import { SalesHistoryClient } from "@/components/settings/sales-history-client";
+import { RoutePagination } from "@/components/ui/route-pagination";
 import { getSales } from "@/lib/actions/sales";
 import { getServerTranslations } from "@/lib/i18n/server";
+import { parsePage, parsePageSize } from "@/lib/pagination";
 
-export default async function SalesHistoryPage() {
-  const [{ data: sales }, t] = await Promise.all([
-    getSales({ limit: 200 }),
+interface Props {
+  searchParams: Promise<Record<string, string | undefined>>;
+}
+
+export default async function SalesHistoryPage({ searchParams }: Props) {
+  const params = await searchParams;
+  const page = parsePage(params.page);
+  const pageSize = parsePageSize(params.limit);
+  const [{ data: sales, count }, t] = await Promise.all([
+    getSales({ page, limit: pageSize }),
     getServerTranslations(),
   ]);
+  const totalPages = Math.ceil((count ?? 0) / pageSize);
 
   return (
     <div className="space-y-6">
@@ -14,6 +24,12 @@ export default async function SalesHistoryPage() {
         {t.settings.salesHistory}
       </h1>
       <SalesHistoryClient sales={sales} />
+      <RoutePagination
+        pathname="/sales/history"
+        page={page}
+        totalPages={totalPages}
+        pageSize={pageSize}
+      />
     </div>
   );
 }

@@ -3,6 +3,7 @@
 import { Download } from "lucide-react";
 import { useMemo, useState } from "react";
 import { Input } from "@/components/ui/input";
+import { Pagination } from "@/components/ui/pagination";
 import { exportPdf } from "@/lib/export";
 import { useI18n } from "@/lib/i18n/context";
 import type { SalesSummaryRow } from "@/lib/types";
@@ -19,6 +20,8 @@ export function SalesReportClient({ summary }: SalesReportClientProps) {
   const { t } = useI18n();
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
 
   const filtered = useMemo(() => {
     return summary.filter((row) => {
@@ -27,6 +30,13 @@ export function SalesReportClient({ summary }: SalesReportClientProps) {
       return true;
     });
   }, [summary, startDate, endDate]);
+
+  const totalPages = Math.ceil(filtered.length / pageSize);
+  const currentPage = Math.min(page, Math.max(totalPages, 1));
+  const visibleRows = filtered.slice(
+    (currentPage - 1) * pageSize,
+    currentPage * pageSize,
+  );
 
   const totals = useMemo(() => {
     return filtered.reduce(
@@ -54,7 +64,10 @@ export function SalesReportClient({ summary }: SalesReportClientProps) {
             id="sales-start"
             type="date"
             value={startDate}
-            onChange={(e) => setStartDate(e.target.value)}
+            onChange={(e) => {
+              setStartDate(e.target.value);
+              setPage(1);
+            }}
             className="w-40"
           />
         </div>
@@ -69,7 +82,10 @@ export function SalesReportClient({ summary }: SalesReportClientProps) {
             id="sales-end"
             type="date"
             value={endDate}
-            onChange={(e) => setEndDate(e.target.value)}
+            onChange={(e) => {
+              setEndDate(e.target.value);
+              setPage(1);
+            }}
             className="w-40"
           />
         </div>
@@ -79,6 +95,7 @@ export function SalesReportClient({ summary }: SalesReportClientProps) {
             onClick={() => {
               setStartDate("");
               setEndDate("");
+              setPage(1);
             }}
             className="text-sm text-blue-600 hover:text-blue-700"
           >
@@ -156,7 +173,7 @@ export function SalesReportClient({ summary }: SalesReportClientProps) {
               </tr>
             </thead>
             <tbody>
-              {filtered.map((row) => {
+              {visibleRows.map((row) => {
                 const margin =
                   row.total_revenue > 0
                     ? ((row.gross_profit / row.total_revenue) * 100).toFixed(1)
@@ -225,6 +242,19 @@ export function SalesReportClient({ summary }: SalesReportClientProps) {
           </table>
         </div>
       </div>
+
+      <Pagination
+        page={currentPage}
+        totalPages={totalPages}
+        buildHref={() => "#"}
+        onPageChange={setPage}
+        pageSize={pageSize}
+        buildLimitHref={() => "#"}
+        onPageSizeChange={(nextLimit) => {
+          setPageSize(nextLimit);
+          setPage(1);
+        }}
+      />
     </div>
   );
 }
