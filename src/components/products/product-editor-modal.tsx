@@ -2,11 +2,13 @@
 
 import Link from "next/link";
 import type { Dispatch, SetStateAction } from "react";
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { ImageUpload } from "@/components/ui/image-upload";
 import { Input } from "@/components/ui/input";
 import { Modal } from "@/components/ui/modal";
 import { Select } from "@/components/ui/select";
+import { getActiveCategories } from "@/lib/actions/categories";
 import type { Category, Product, ProductPrice, ProductUnit } from "@/lib/types";
 import { formatCurrency } from "@/lib/utils";
 
@@ -54,7 +56,6 @@ interface ProductsEditorModalProps {
   onClose: () => void;
   onSubmit: (formData: FormData) => Promise<void>;
   editing: Product | null;
-  categories: Category[];
   unitOptions: Array<{ value: string; label: string }>;
   imageUrl: string;
   onImageUrlChange: (url: string) => void;
@@ -75,7 +76,6 @@ export function ProductEditorModal({
   onClose,
   onSubmit,
   editing,
-  categories,
   unitOptions,
   imageUrl,
   onImageUrlChange,
@@ -89,6 +89,26 @@ export function ProductEditorModal({
   onDeleteUnit,
   labels,
 }: ProductsEditorModalProps) {
+  const [categories, setCategories] = useState<Category[]>([]);
+
+  useEffect(() => {
+    if (!open) return;
+
+    let cancelled = false;
+
+    getActiveCategories()
+      .then((data) => {
+        if (!cancelled) setCategories(data ?? []);
+      })
+      .catch(() => {
+        if (!cancelled) setCategories([]);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [open]);
+
   return (
     <Modal open={open} onClose={onClose} title={title}>
       <form action={onSubmit} className="space-y-4">
@@ -125,7 +145,10 @@ export function ProductEditorModal({
             name="category"
             options={[
               { value: "", label: `— ${labels.categoryPlaceholder} —` },
-              ...categories.map((c) => ({ value: c.name, label: c.name })),
+              ...categories.map((c: Category) => ({
+                value: c.name,
+                label: c.name,
+              })),
             ]}
             defaultValue={editing?.category ?? ""}
           />

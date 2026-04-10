@@ -1,5 +1,4 @@
 import { ProductsClient } from "@/components/products/products-client";
-import { getActiveCategories } from "@/lib/actions/categories";
 import { getProducts } from "@/lib/actions/products";
 
 const VALID_PAGE_SIZES = [10, 20, 50, 100] as const;
@@ -20,15 +19,11 @@ export default async function ProductsPage({ searchParams }: Props) {
     ? (rawLimit as ValidPageSize)
     : 10;
 
-  const [{ data: products, count }, categories] = await Promise.all([
-    getProducts({ search, page, limit }),
-    getActiveCategories(),
-  ]);
+  const { data: products, count } = await getProducts({ search, page, limit });
 
   return (
     <ProductsClient
       products={products}
-      categories={categories}
       total={count}
       page={page}
       pageSize={limit}

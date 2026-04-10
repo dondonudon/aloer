@@ -37,7 +37,7 @@ export async function getProducts(options?: {
     .from("products")
     .select(
       "id, name, sku, category, unit, selling_price, bulk_price, bulk_min_qty, latest_cost_price, image_url, is_active, created_at, updated_at",
-      { count: "planned" },
+      { count: "exact" },
     )
     .order("name");
 

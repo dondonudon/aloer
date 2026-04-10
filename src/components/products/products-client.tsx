@@ -17,7 +17,7 @@ import {
   upsertProductUnit,
 } from "@/lib/actions/products";
 import { useI18n } from "@/lib/i18n/context";
-import type { Category, Product, ProductPrice, ProductUnit } from "@/lib/types";
+import type { Product, ProductPrice, ProductUnit } from "@/lib/types";
 import { formatCurrency } from "@/lib/utils";
 
 const ProductEditorModal = dynamic(
@@ -27,7 +27,6 @@ const ProductEditorModal = dynamic(
 
 interface ProductsClientProps {
   products: Product[];
-  categories: Category[];
   total: number;
   page: number;
   pageSize: number;
@@ -65,7 +64,6 @@ function MarginBadge({
 
 export function ProductsClient({
   products,
-  categories,
   total,
   page,
   pageSize,
@@ -456,7 +454,6 @@ export function ProductsClient({
         title={editing ? t.products.editProduct : t.products.newProduct}
         onSubmit={handleSubmit}
         editing={editing}
-        categories={categories}
         unitOptions={unitOptions}
         imageUrl={imageUrl}
         onImageUrlChange={setImageUrl}
