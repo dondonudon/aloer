@@ -1,0 +1,13 @@
+User-agent: *
+Disallow: /api/
+Disallow: /dashboard
+Disallow: /pos
+Disallow: /sales
+Disallow: /purchases
+Disallow: /inventory
+Disallow: /products
+Disallow: /catalog
+Disallow: /reports
+Disallow: /credit
+Disallow: /settings
+Allow: /login

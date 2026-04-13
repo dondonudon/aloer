@@ -215,7 +215,6 @@ export function Sidebar({
                 alt=""
                 width={32}
                 height={32}
-                unoptimized
                 priority
                 className="h-8 w-8 rounded-lg object-cover flex-shrink-0"
               />
@@ -255,11 +254,11 @@ export function Sidebar({
                   className="w-full flex items-center justify-between px-3 py-1 mb-0.5 rounded hover:bg-gray-100 dark:hover:bg-gray-700/50 transition-colors group"
                   aria-expanded={!isGroupCollapsed}
                 >
-                  <span className="text-[11px] font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500 group-hover:text-gray-600 dark:group-hover:text-gray-400 transition-colors">
+                  <span className="text-[11px] font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-300 group-hover:text-gray-700 dark:group-hover:text-gray-200 transition-colors">
                     {group.label}
                   </span>
                   <ChevronDown
-                    className={`h-3.5 w-3.5 text-gray-400 dark:text-gray-500 transition-transform duration-200 ${
+                    className={`h-3.5 w-3.5 text-gray-500 dark:text-gray-300 transition-transform duration-200 ${
                       isGroupCollapsed ? "-rotate-90" : ""
                     }`}
                     aria-hidden="true"
@@ -335,7 +334,7 @@ export function Sidebar({
               type="button"
               onClick={() => setLocale(locale === "en" ? "id" : "en")}
               className="inline-flex items-center gap-1 px-2 py-1.5 rounded-lg text-xs font-semibold text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
-              aria-label={t.nav.language}
+              aria-label={`${t.nav.language}: ${locale.toUpperCase()}`}
               title={
                 locale === "en" ? "Switch to Indonesia" : "Switch to English"
               }
@@ -395,7 +394,6 @@ export function Sidebar({
             alt=""
             width={28}
             height={28}
-            unoptimized
             priority
             className="h-7 w-7 rounded-md object-cover flex-shrink-0"
           />
