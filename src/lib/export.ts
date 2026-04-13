@@ -9,7 +9,6 @@
  * download. Column headers are taken from the keys of the first row.
  */
 export async function exportXlsx(
-export async function exportXlsx(
   rows: Record<string, unknown>[],
   filename: string,
 ): Promise<void> {
@@ -25,7 +24,6 @@ export async function exportXlsx(
  * Exports an array of row objects to a CSV file and triggers a browser
  * download.
  */
-export async function exportCsv(
 export async function exportCsv(
   rows: Record<string, unknown>[],
   filename: string,
