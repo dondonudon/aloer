@@ -82,7 +82,7 @@ export function ListFilter({
       <div>
         <label
           htmlFor={`${idPrefix}-start`}
-          className="block text-xs font-medium text-gray-500 mb-1"
+          className="block text-xs font-medium text-gray-500 dark:text-gray-300 mb-1"
         >
           {t.filter.from}
         </label>
@@ -97,7 +97,7 @@ export function ListFilter({
       <div>
         <label
           htmlFor={`${idPrefix}-end`}
-          className="block text-xs font-medium text-gray-500 mb-1"
+          className="block text-xs font-medium text-gray-500 dark:text-gray-300 mb-1"
         >
           {t.filter.to}
         </label>
