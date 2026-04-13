@@ -187,7 +187,7 @@ export function SalesListClient({
         <div className="flex items-center gap-2">
           <button
             type="button"
-            onClick={() => exportXlsx(toExportRows(sales), "sales")}
+            onClick={() => void exportXlsx(toExportRows(sales), "sales")}
             className="inline-flex items-center gap-1.5 rounded-lg border border-gray-200 dark:border-gray-700 px-3 py-1.5 text-xs font-medium text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
             aria-label={t.common.exportXlsx}
           >
@@ -196,7 +196,7 @@ export function SalesListClient({
           </button>
           <button
             type="button"
-            onClick={() => exportCsv(toExportRows(sales), "sales")}
+            onClick={() => void exportCsv(toExportRows(sales), "sales")}
             className="inline-flex items-center gap-1.5 rounded-lg border border-gray-200 dark:border-gray-700 px-3 py-1.5 text-xs font-medium text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
             aria-label={t.common.exportCsv}
           >
