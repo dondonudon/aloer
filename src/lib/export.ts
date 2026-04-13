@@ -2,18 +2,18 @@
 // All functions run in the browser — no server round-trip needed since
 // the data is already available in the calling component.
 
-import * as XLSX from "xlsx";
-
 // ─── XLSX / CSV ─────────────────────────────────────────────────────────────
 
 /**
  * Exports an array of row objects to an XLSX file and triggers a browser
  * download. Column headers are taken from the keys of the first row.
  */
-export function exportXlsx(
+export async function exportXlsx(
   rows: Record<string, unknown>[],
   filename: string,
-): void {
+): Promise<void> {
+  // Dynamic import keeps xlsx out of the initial bundle
+  const XLSX = await import("xlsx");
   const ws = XLSX.utils.json_to_sheet(rows);
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, "Sheet1");
@@ -24,10 +24,12 @@ export function exportXlsx(
  * Exports an array of row objects to a CSV file and triggers a browser
  * download.
  */
-export function exportCsv(
+export async function exportCsv(
   rows: Record<string, unknown>[],
   filename: string,
-): void {
+): Promise<void> {
+  // Dynamic import keeps xlsx out of the initial bundle
+  const XLSX = await import("xlsx");
   const ws = XLSX.utils.json_to_sheet(rows);
   const csv = XLSX.utils.sheet_to_csv(ws);
   const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });

@@ -2,7 +2,6 @@ User-agent: *
 Disallow: /api/
 Disallow: /dashboard
 Disallow: /pos
-Disallow: /sales
 Disallow: /purchases
 Disallow: /inventory
 Disallow: /products
