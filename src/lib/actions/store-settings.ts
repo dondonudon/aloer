@@ -2,7 +2,7 @@
 
 import { revalidatePath, revalidateTag, unstable_cache } from "next/cache";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { ownerAction, validateName } from "./action-utils";
+import { formatDbError, ownerAction, validateName } from "./action-utils";
 
 export interface StoreSettings {
   id: string;
@@ -67,7 +67,7 @@ export async function updateStoreSettings(formData: FormData) {
         updated_at: new Date().toISOString(),
       })
       .eq("id", existing.id);
-    if (error) return { error: error.message };
+    if (error) return { error: await formatDbError(error) };
     revalidateTag("store-settings", { expire: 0 });
     revalidatePath("/", "layout");
     return {};

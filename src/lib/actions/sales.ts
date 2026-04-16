@@ -9,7 +9,7 @@ import type {
   SaleReturn,
   SaleReturnItem,
 } from "@/lib/types";
-import { insertAuditLog, ownerAction } from "./action-utils";
+import { formatDbError, insertAuditLog, ownerAction } from "./action-utils";
 
 export async function createSale(input: CreateSaleInput) {
   const user = await getCurrentUser();
@@ -20,7 +20,7 @@ export async function createSale(input: CreateSaleInput) {
     sale_payload: input,
   });
 
-  if (error) return { error: error.message };
+  if (error) return { error: await formatDbError(error) };
 
   await insertAuditLog(supabase, user.id, "CREATE_SALE", "sales");
   revalidatePath("/pos");
@@ -122,7 +122,7 @@ export async function voidSale(saleId: string, reason: string) {
       p_sale_id: saleId,
       p_reason: reason,
     });
-    if (error) return { error: error.message };
+    if (error) return { error: await formatDbError(error) };
     await insertAuditLog(supabase, userId, "VOID_SALE", "sales", saleId, {
       reason,
     });
@@ -140,7 +140,7 @@ export async function createSaleReturn(input: CreateSaleReturnInput) {
     const { data, error } = await supabase.rpc("create_sale_return", {
       p_payload: input,
     });
-    if (error) return { error: error.message };
+    if (error) return { error: await formatDbError(error) };
     await insertAuditLog(
       supabase,
       userId,

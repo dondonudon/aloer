@@ -5,7 +5,7 @@ import { getCurrentUser } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 import type { CampaignWithProducts } from "@/lib/types";
-import { insertAuditLog, ownerAction } from "./action-utils";
+import { formatDbError, insertAuditLog, ownerAction } from "./action-utils";
 
 const getCachedActiveCampaigns = unstable_cache(
   async (): Promise<CampaignWithProducts[]> => {
@@ -144,7 +144,7 @@ export async function createCampaign(formData: FormData) {
       })
       .select()
       .single();
-    if (error) return { error: error.message };
+    if (error) return { error: await formatDbError(error) };
 
     if (productIds.length > 0) {
       const { error: cpError } = await supabase
@@ -156,7 +156,7 @@ export async function createCampaign(formData: FormData) {
             min_quantity: minQuantities[pid] ?? 1,
           })),
         );
-      if (cpError) return { error: cpError.message };
+      if (cpError) return { error: await formatDbError(cpError) };
     }
 
     revalidatePath("/catalog/campaigns");
@@ -204,13 +204,13 @@ export async function updateCampaign(campaignId: string, formData: FormData) {
         trigger_value: triggerValue,
       })
       .eq("id", campaignId);
-    if (error) return { error: error.message };
+    if (error) return { error: await formatDbError(error) };
 
     const { error: deleteError } = await supabase
       .from("campaign_products")
       .delete()
       .eq("campaign_id", campaignId);
-    if (deleteError) return { error: deleteError.message };
+    if (deleteError) return { error: await formatDbError(deleteError) };
 
     if (productIds.length > 0) {
       const { error: cpError } = await supabase
@@ -222,7 +222,7 @@ export async function updateCampaign(campaignId: string, formData: FormData) {
             min_quantity: minQuantities[pid] ?? 1,
           })),
         );
-      if (cpError) return { error: cpError.message };
+      if (cpError) return { error: await formatDbError(cpError) };
     }
 
     await insertAuditLog(
@@ -246,7 +246,7 @@ export async function toggleCampaign(campaignId: string, isActive: boolean) {
       .from("campaigns")
       .update({ is_active: isActive })
       .eq("id", campaignId);
-    if (error) return { error: error.message };
+    if (error) return { error: await formatDbError(error) };
     revalidatePath("/catalog/campaigns");
     revalidatePath("/pos");
     revalidateTag("active-campaigns", { expire: 0 });
@@ -261,7 +261,7 @@ export async function deleteCampaign(campaignId: string) {
       .from("campaigns")
       .delete()
       .eq("id", campaignId);
-    if (error) return { error: error.message };
+    if (error) return { error: await formatDbError(error) };
     await insertAuditLog(
       supabase,
       userId,

@@ -23,8 +23,8 @@ export function Toast({ message, type, onClose }: ToastProps) {
   return (
     <div
       role="alert"
-      className={`fixed bottom-4 right-4 z-50 flex items-center gap-3 rounded-lg px-4 py-3 shadow-lg transition-all duration-300 ${
-        visible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-2"
+      className={`fixed top-4 right-4 z-[200] flex items-center gap-3 rounded-lg px-4 py-3 shadow-lg transition-all duration-300 ${
+        visible ? "opacity-100 -translate-y-0" : "opacity-0 -translate-y-2"
       } ${type === "success" ? "bg-green-50 text-green-800 border border-green-200" : "bg-red-50 text-red-800 border border-red-200"}`}
     >
       {type === "success" ? (

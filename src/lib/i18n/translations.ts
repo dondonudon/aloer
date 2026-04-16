@@ -54,6 +54,24 @@ export interface Translations {
     tryAgain: string;
   };
 
+  /** User-facing messages for common database constraint errors. */
+  dbErrors: {
+    /** Postgres 23505 — duplicate SKU */
+    duplicateSku: string;
+    /** Postgres 23505 — duplicate name field */
+    duplicateName: string;
+    /** Postgres 23505 — any other unique violation */
+    duplicateValue: string;
+    /** Postgres 23503 — foreign key violation */
+    foreignKeyViolation: string;
+    /** Postgres 23502 — not-null violation */
+    notNullViolation: string;
+    /** Postgres 23514 — check constraint violation */
+    checkViolation: string;
+    /** Fallback for any other database error */
+    generic: string;
+  };
+
   pagination: {
     label: string;
     previousPage: string;
@@ -577,6 +595,20 @@ export const en: Translations = {
     somethingWentWrong: "Something went wrong",
     unexpectedError: "An unexpected error occurred. Please try again.",
     tryAgain: "Try again",
+  },
+
+  dbErrors: {
+    duplicateSku:
+      "A product with this SKU already exists. Please use a different SKU.",
+    duplicateName:
+      "A record with this name already exists. Please use a different name.",
+    duplicateValue: "This value already exists. Please use a different one.",
+    foreignKeyViolation:
+      "This record is linked to other data and cannot be removed.",
+    notNullViolation:
+      "A required field is missing. Please fill in all required fields.",
+    checkViolation: "The provided value is not allowed.",
+    generic: "Something went wrong. Please try again.",
   },
 
   pagination: {
@@ -1105,6 +1137,18 @@ export const id: Translations = {
     somethingWentWrong: "Terjadi kesalahan",
     unexpectedError: "Kesalahan tak terduga. Silakan coba lagi.",
     tryAgain: "Coba lagi",
+  },
+
+  dbErrors: {
+    duplicateSku: "Produk dengan SKU ini sudah ada. Gunakan SKU yang berbeda.",
+    duplicateName: "Data dengan nama ini sudah ada. Gunakan nama yang berbeda.",
+    duplicateValue: "Nilai ini sudah ada. Gunakan nilai yang berbeda.",
+    foreignKeyViolation:
+      "Data ini terkait dengan data lain dan tidak dapat dihapus.",
+    notNullViolation:
+      "Ada kolom wajib yang belum diisi. Lengkapi semua kolom yang diperlukan.",
+    checkViolation: "Nilai yang dimasukkan tidak diperbolehkan.",
+    generic: "Terjadi kesalahan. Silakan coba lagi.",
   },
 
   pagination: {

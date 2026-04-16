@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { getCurrentUser } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import type { POPaymentMethod } from "@/lib/types";
-import { insertAuditLog, ownerAction } from "./action-utils";
+import { formatDbError, insertAuditLog, ownerAction } from "./action-utils";
 
 export async function getPurchaseOrders(options?: {
   status?: string;
@@ -100,7 +100,7 @@ export async function createPurchaseOrder(formData: FormData) {
       .select()
       .single();
 
-    if (poError) return { error: poError.message };
+    if (poError) return { error: await formatDbError(poError) };
 
     let items: Array<{
       product_id: string;
@@ -148,7 +148,7 @@ export async function createPurchaseOrder(formData: FormData) {
       .from("purchase_order_items")
       .insert(poItems);
 
-    if (itemsError) return { error: itemsError.message };
+    if (itemsError) return { error: await formatDbError(itemsError) };
 
     await insertAuditLog(
       supabase,
@@ -167,7 +167,7 @@ export async function receivePurchaseOrder(poId: string) {
     const { data, error } = await supabase.rpc("receive_purchase_order", {
       p_po_id: poId,
     });
-    if (error) return { error: error.message };
+    if (error) return { error: await formatDbError(error) };
     await insertAuditLog(
       supabase,
       userId,
@@ -189,7 +189,7 @@ export async function cancelPurchaseOrder(poId: string) {
       .update({ status: "cancelled" })
       .eq("id", poId)
       .eq("status", "draft");
-    if (error) return { error: error.message };
+    if (error) return { error: await formatDbError(error) };
     await insertAuditLog(
       supabase,
       userId,

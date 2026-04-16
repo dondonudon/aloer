@@ -3,7 +3,12 @@
 import { revalidatePath, revalidateTag, unstable_cache } from "next/cache";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
-import { insertAuditLog, ownerAction, validateName } from "./action-utils";
+import {
+  formatDbError,
+  insertAuditLog,
+  ownerAction,
+  validateName,
+} from "./action-utils";
 
 const getCachedActiveProducts = unstable_cache(
   async () => {
@@ -108,7 +113,7 @@ export async function createProduct(formData: FormData) {
       })
       .select("id")
       .single();
-    if (error) return { error: error.message };
+    if (error) return { error: await formatDbError(error) };
     await insertAuditLog(
       supabase,
       userId,
@@ -142,7 +147,7 @@ export async function updateProduct(id: string, formData: FormData) {
         is_active: formData.get("is_active") === "true",
       })
       .eq("id", id);
-    if (error) return { error: error.message };
+    if (error) return { error: await formatDbError(error) };
     await insertAuditLog(supabase, userId, "UPDATE_PRODUCT", "products", id);
     revalidatePath("/products");
     revalidateTag("active-products", { expire: 0 });
@@ -203,7 +208,7 @@ export async function upsertProductUnit(
           is_base: unit.is_base,
         })
         .eq("id", unit.id);
-      if (error) return { error: error.message };
+      if (error) return { error: await formatDbError(error) };
       await insertAuditLog(
         supabase,
         userId,
@@ -222,7 +227,7 @@ export async function upsertProductUnit(
         })
         .select("id")
         .single();
-      if (error) return { error: error.message };
+      if (error) return { error: await formatDbError(error) };
       await insertAuditLog(
         supabase,
         userId,
@@ -242,7 +247,7 @@ export async function deleteProductUnit(id: string) {
       .from("product_units")
       .delete()
       .eq("id", id);
-    if (error) return { error: error.message };
+    if (error) return { error: await formatDbError(error) };
     await insertAuditLog(
       supabase,
       userId,

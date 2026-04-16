@@ -3,7 +3,12 @@
 import { revalidatePath, revalidateTag, unstable_cache } from "next/cache";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
-import { insertAuditLog, ownerAction, validateName } from "./action-utils";
+import {
+  formatDbError,
+  insertAuditLog,
+  ownerAction,
+  validateName,
+} from "./action-utils";
 
 const getCachedActiveCategories = unstable_cache(
   async () => {
@@ -50,10 +55,7 @@ export async function createCategory(formData: FormData) {
       .insert({ name })
       .select("id")
       .single();
-    if (error) {
-      if (error.code === "23505") return { error: "Category already exists" };
-      return { error: error.message };
-    }
+    if (error) return { error: await formatDbError(error) };
     await insertAuditLog(
       supabase,
       userId,
@@ -80,10 +82,7 @@ export async function updateCategory(id: string, formData: FormData) {
       .from("categories")
       .update({ name, is_active: isActive })
       .eq("id", id);
-    if (error) {
-      if (error.code === "23505") return { error: "Category already exists" };
-      return { error: error.message };
-    }
+    if (error) return { error: await formatDbError(error) };
     await insertAuditLog(supabase, userId, "UPDATE_CATEGORY", "categories", id);
     revalidatePath("/catalog/categories");
     revalidatePath("/products");

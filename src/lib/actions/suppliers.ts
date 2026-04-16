@@ -2,7 +2,12 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
-import { insertAuditLog, ownerAction, validateName } from "./action-utils";
+import {
+  formatDbError,
+  insertAuditLog,
+  ownerAction,
+  validateName,
+} from "./action-utils";
 
 export async function getSuppliers() {
   const supabase = await createClient();
@@ -30,7 +35,7 @@ export async function createSupplier(formData: FormData) {
       })
       .select("id")
       .single();
-    if (error) return { error: error.message };
+    if (error) return { error: await formatDbError(error) };
     await insertAuditLog(
       supabase,
       userId,
@@ -59,7 +64,7 @@ export async function updateSupplier(id: string, formData: FormData) {
         is_active: formData.get("is_active") === "true",
       })
       .eq("id", id);
-    if (error) return { error: error.message };
+    if (error) return { error: await formatDbError(error) };
     await insertAuditLog(supabase, userId, "UPDATE_SUPPLIER", "suppliers", id);
     revalidatePath("/purchases");
     revalidatePath("/catalog/suppliers");

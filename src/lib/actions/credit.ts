@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
-import { insertAuditLog, ownerAction } from "./action-utils";
+import { formatDbError, insertAuditLog, ownerAction } from "./action-utils";
 
 /**
  * Fetches all credit payment collections for a given sale.
@@ -73,7 +73,7 @@ export async function collectSalePayment(saleId: string, formData: FormData) {
         notes,
       },
     });
-    if (error) return { error: error.message };
+    if (error) return { error: await formatDbError(error) };
     await insertAuditLog(
       supabase,
       userId,

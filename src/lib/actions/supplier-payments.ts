@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
-import { insertAuditLog, ownerAction } from "./action-utils";
+import { formatDbError, insertAuditLog, ownerAction } from "./action-utils";
 
 /** Fetches all supplier payments for a given purchase order, oldest-first, with resolved creator names. */
 export async function getSupplierPayments(poId: string) {
@@ -63,7 +63,7 @@ export async function paySupplier(poId: string, formData: FormData) {
     const { data, error } = await supabase.rpc("pay_supplier", {
       p_payload: { po_id: poId, amount, payment_method: paymentMethod, notes },
     });
-    if (error) return { error: error.message };
+    if (error) return { error: await formatDbError(error) };
     await insertAuditLog(
       supabase,
       userId,

@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { getCurrentUser } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import type { CreateAdjustmentInput, ReserveStockInput } from "@/lib/types";
-import { insertAuditLog, ownerAction } from "./action-utils";
+import { formatDbError, insertAuditLog, ownerAction } from "./action-utils";
 
 export async function getStockReport() {
   const supabase = await createClient();
@@ -22,7 +22,7 @@ export async function reserveStock(input: ReserveStockInput) {
     reservation_payload: input,
   });
 
-  if (error) return { error: error.message };
+  if (error) return { error: await formatDbError(error) };
 
   revalidatePath("/pos");
   revalidatePath("/inventory");
@@ -39,7 +39,7 @@ export async function releaseStockReservations(reference: string) {
     p_reference: reference,
   });
 
-  if (error) return { error: error.message };
+  if (error) return { error: await formatDbError(error) };
 
   revalidatePath("/pos");
   revalidatePath("/inventory");
@@ -69,7 +69,7 @@ export async function createAdjustment(input: CreateAdjustmentInput) {
     const { data, error } = await supabase.rpc("create_inventory_adjustment", {
       adj_payload: input,
     });
-    if (error) return { error: error.message };
+    if (error) return { error: await formatDbError(error) };
     await insertAuditLog(
       supabase,
       userId,

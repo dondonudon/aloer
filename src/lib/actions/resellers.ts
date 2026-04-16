@@ -3,7 +3,12 @@
 import { revalidatePath, revalidateTag, unstable_cache } from "next/cache";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
-import { insertAuditLog, ownerAction, validateName } from "./action-utils";
+import {
+  formatDbError,
+  insertAuditLog,
+  ownerAction,
+  validateName,
+} from "./action-utils";
 
 const getCachedActiveResellers = unstable_cache(
   async () => {
@@ -55,7 +60,7 @@ export async function createReseller(formData: FormData) {
       })
       .select("id")
       .single();
-    if (error) return { error: error.message };
+    if (error) return { error: await formatDbError(error) };
     await insertAuditLog(
       supabase,
       userId,
@@ -86,7 +91,7 @@ export async function updateReseller(id: string, formData: FormData) {
         is_active: formData.get("is_active") === "true",
       })
       .eq("id", id);
-    if (error) return { error: error.message };
+    if (error) return { error: await formatDbError(error) };
     await insertAuditLog(supabase, userId, "UPDATE_RESELLER", "resellers", id);
     revalidatePath("/catalog/resellers");
     revalidatePath("/pos");

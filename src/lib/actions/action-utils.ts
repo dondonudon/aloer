@@ -1,5 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { getCurrentUser, isOwner } from "@/lib/auth";
+import { getServerTranslations } from "@/lib/i18n/server";
 import { createClient } from "@/lib/supabase/server";
 
 /** Canonical result shape for all mutating server actions. */
@@ -47,6 +48,44 @@ export async function insertAuditLog(
     entity_id: entityId ?? null,
     payload: payload ?? null,
   });
+}
+
+/**
+ * Maps a Supabase/Postgres error to a translated, user-friendly string.
+ * Uses the Postgres error code for reliable discrimination (codes are stable
+ * across PG versions; message text is not).  Only call this on database
+ * errors — not on application-level validation errors.
+ *
+ * Postgres class-23 codes handled:
+ *   23505 — unique_violation
+ *   23503 — foreign_key_violation
+ *   23502 — not_null_violation
+ *   23514 — check_violation
+ */
+export async function formatDbError(error: {
+  message: string;
+  code?: string | null;
+}): Promise<string> {
+  const t = await getServerTranslations();
+  const db = t.dbErrors;
+
+  switch (error.code) {
+    case "23505": {
+      // unique_violation — narrow down which field
+      const msg = error.message;
+      if (msg.includes("sku")) return db.duplicateSku;
+      if (msg.includes("name")) return db.duplicateName;
+      return db.duplicateValue;
+    }
+    case "23503": // foreign_key_violation
+      return db.foreignKeyViolation;
+    case "23502": // not_null_violation
+      return db.notNullViolation;
+    case "23514": // check_violation
+      return db.checkViolation;
+    default:
+      return db.generic;
+  }
 }
 
 /**
