@@ -1,7 +1,7 @@
 "use client";
 
-import { useCallback, useId, useState } from "react";
 import type { InputHTMLAttributes } from "react";
+import { useCallback, useId, useState } from "react";
 
 interface NumericInputProps
   extends Omit<InputHTMLAttributes<HTMLInputElement>, "type" | "onChange"> {

@@ -15,9 +15,8 @@ import {
 } from "lucide-react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { NumericInput } from "@/components/ui/numeric-input";
 import { Modal } from "@/components/ui/modal";
+import { NumericInput } from "@/components/ui/numeric-input";
 import type { CartItem } from "@/lib/hooks/use-cart";
 import { useI18n } from "@/lib/i18n/context";
 import type {

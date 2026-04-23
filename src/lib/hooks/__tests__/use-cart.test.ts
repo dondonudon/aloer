@@ -411,7 +411,6 @@ describe("useCart — product-specific campaign", () => {
     // subtotal = 5000 + 10000 = 15000
     expect(result.current.subtotal).toBe(15000);
   });
-
 });
 
 // ---------------------------------------------------------------------------

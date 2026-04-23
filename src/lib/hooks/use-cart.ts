@@ -75,7 +75,9 @@ export function useCart(campaigns: CampaignWithProducts[]) {
     return { productCampaignMap, cartCampaigns };
   }, [campaigns]);
 
-  function getCampaignForProduct(productId: string): CampaignWithProducts | null {
+  function getCampaignForProduct(
+    productId: string,
+  ): CampaignWithProducts | null {
     return (
       productCampaignMap.get(productId) ??
       productCampaignMap.get("__all__") ??

@@ -59,8 +59,15 @@ function parseCampaignForm(formData: FormData) {
 function validateCampaignForm(
   fields: ReturnType<typeof parseCampaignForm>,
 ): string | null {
-  const { name, discountType, discountValue, startDate, endDate, triggerType, triggerValue } =
-    fields;
+  const {
+    name,
+    discountType,
+    discountValue,
+    startDate,
+    endDate,
+    triggerType,
+    triggerValue,
+  } = fields;
   if (!name || !discountType || !discountValue || !startDate || !endDate)
     return "All fields are required";
   if (
@@ -102,8 +109,16 @@ export async function createCampaign(formData: FormData) {
   const validationError = validateCampaignForm(fields);
   if (validationError) return { error: validationError };
 
-  const { name, discountType, discountValue, startDate, endDate, triggerType, triggerValue, productIds } =
-    fields;
+  const {
+    name,
+    discountType,
+    discountValue,
+    startDate,
+    endDate,
+    triggerType,
+    triggerValue,
+    productIds,
+  } = fields;
 
   // Need user.id for created_by
   const user = await getCurrentUser();
@@ -159,8 +174,16 @@ export async function updateCampaign(campaignId: string, formData: FormData) {
   const validationError = validateCampaignForm(fields);
   if (validationError) return { error: validationError };
 
-  const { name, discountType, discountValue, startDate, endDate, triggerType, triggerValue, productIds } =
-    fields;
+  const {
+    name,
+    discountType,
+    discountValue,
+    startDate,
+    endDate,
+    triggerType,
+    triggerValue,
+    productIds,
+  } = fields;
 
   return ownerAction(async (supabase, userId) => {
     const { error } = await supabase
