@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { NumericInput } from "@/components/ui/numeric-input";
 import { Modal } from "@/components/ui/modal";
 import { Select } from "@/components/ui/select";
 import { Toast } from "@/components/ui/toast";
@@ -167,13 +168,9 @@ export function SupplierPaymentsClient({ poId, totalAmount, payments }: Props) {
           onClose={() => setShowModal(false)}
         >
           <form onSubmit={handleSubmit} className="space-y-4">
-            <Input
+            <NumericInput
               label={t.common.amount}
               name="amount"
-              type="number"
-              min="0.01"
-              step="0.01"
-              max={String(outstanding)}
               placeholder={formatCurrency(outstanding)}
               required
             />
@@ -196,7 +193,7 @@ export function SupplierPaymentsClient({ poId, totalAmount, payments }: Props) {
               >
                 {t.common.cancel}
               </Button>
-              <Button type="submit" disabled={loading}>
+              <Button type="submit" loading={loading}>
                 {loading ? t.common.saving : t.credit.recordPayment}
               </Button>
             </div>

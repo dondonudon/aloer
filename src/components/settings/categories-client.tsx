@@ -164,7 +164,7 @@ export function CategoriesClient({ categories }: CategoriesClientProps) {
             >
               {t.common.cancel}
             </Button>
-            <Button type="submit" disabled={loading}>
+            <Button type="submit" loading={loading}>
               {loading
                 ? t.common.saving
                 : editing

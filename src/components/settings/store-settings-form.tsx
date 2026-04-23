@@ -61,7 +61,7 @@ export function StoreSettingsForm({
             folder="store"
           />
           <input type="hidden" name="storeIconUrl" value={iconUrl} />
-          <Button type="submit" disabled={loading}>
+          <Button type="submit" loading={loading}>
             {loading ? t.common.saving : t.settings.saveSettings}
           </Button>
         </form>

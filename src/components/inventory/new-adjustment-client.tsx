@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { NumericInput } from "@/components/ui/numeric-input";
 import { PageHeader } from "@/components/ui/page-header";
 import { Select } from "@/components/ui/select";
 import { Toast } from "@/components/ui/toast";
@@ -168,11 +169,8 @@ export function NewAdjustmentClient({ products }: Props) {
                 }
                 placeholder={t.inventory.qtyPlaceholder}
               />
-              <Input
+              <NumericInput
                 label={t.inventory.costPrice}
-                type="number"
-                min="0"
-                step="100"
                 value={item.costPrice}
                 onChange={(e) => updateItem(index, "costPrice", e.target.value)}
               />
@@ -215,7 +213,8 @@ export function NewAdjustmentClient({ products }: Props) {
           </Button>
           <Button
             onClick={handleSubmit}
-            disabled={loading || items.length === 0}
+            loading={loading}
+            disabled={items.length === 0}
           >
             {loading ? t.common.processing : t.inventory.createAdjustment}
           </Button>

@@ -15,6 +15,7 @@ import {
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { NumericInput } from "@/components/ui/numeric-input";
 import { Modal } from "@/components/ui/modal";
 import type { CartItem } from "@/lib/hooks/use-cart";
 import { useI18n } from "@/lib/i18n/context";
@@ -299,11 +300,8 @@ export function CartPanel({
               </button>
             </div>
             <div className="flex-1">
-              <Input
+              <NumericInput
                 id="discount-value"
-                type="number"
-                min="0"
-                max={discountType === "percentage" ? "100" : String(subtotal)}
                 placeholder={
                   discountType === "percentage" ? "0 – 100" : t.common.amount
                 }
@@ -370,7 +368,8 @@ export function CartPanel({
             <div className="grid grid-cols-2 gap-2">
               <Button
                 onClick={() => handleQuickPay("cash")}
-                disabled={cart.length === 0 || loading}
+                loading={loading}
+                disabled={cart.length === 0}
                 className="flex items-center justify-center gap-2"
               >
                 <Banknote className="h-4 w-4" aria-hidden="true" />
@@ -378,7 +377,8 @@ export function CartPanel({
               </Button>
               <Button
                 onClick={() => handleQuickPay("transfer")}
-                disabled={cart.length === 0 || loading}
+                loading={loading}
+                disabled={cart.length === 0}
                 variant="secondary"
                 className="flex items-center justify-center gap-2"
               >
@@ -389,7 +389,8 @@ export function CartPanel({
             <div className="grid grid-cols-2 gap-2">
               <Button
                 onClick={() => setSplitMode(true)}
-                disabled={cart.length === 0 || loading}
+                loading={loading}
+                disabled={cart.length === 0}
                 variant="secondary"
                 className="flex items-center justify-center gap-2 text-xs"
               >
@@ -401,7 +402,8 @@ export function CartPanel({
               </Button>
               <Button
                 onClick={handleCreditSale}
-                disabled={cart.length === 0 || loading || !selectedResellerId}
+                loading={loading}
+                disabled={cart.length === 0 || !selectedResellerId}
                 variant="secondary"
                 className="flex items-center justify-center gap-2 text-xs text-amber-600 dark:text-amber-400 border-amber-300 dark:border-amber-600 hover:bg-amber-50 dark:hover:bg-amber-900/20 disabled:opacity-40"
                 title={
@@ -418,23 +420,17 @@ export function CartPanel({
         ) : (
           <div className="space-y-2">
             <div className="grid grid-cols-2 gap-2">
-              <Input
+              <NumericInput
                 label={t.common.cash}
                 id="split-cash"
-                type="number"
-                min="0"
-                step="1"
                 placeholder="0"
                 value={cashAmt}
                 onChange={(e) => setCashAmt(e.target.value)}
                 aria-label={t.common.cash}
               />
-              <Input
+              <NumericInput
                 label={t.common.transfer}
                 id="split-transfer"
-                type="number"
-                min="0"
-                step="1"
                 placeholder="0"
                 value={transferAmt}
                 onChange={(e) => setTransferAmt(e.target.value)}
@@ -466,7 +462,8 @@ export function CartPanel({
               <Button
                 type="button"
                 onClick={handleSplitPay}
-                disabled={!splitValid || loading}
+                loading={loading}
+                disabled={!splitValid}
                 className="text-xs"
               >
                 {t.pos.confirm}
@@ -502,7 +499,7 @@ export function CartPanel({
             <Button variant="secondary" onClick={cancelCheckout}>
               {t.common.cancel}
             </Button>
-            <Button onClick={confirmCheckout} disabled={loading}>
+            <Button onClick={confirmCheckout} loading={loading}>
               {t.pos.confirm}
             </Button>
           </div>

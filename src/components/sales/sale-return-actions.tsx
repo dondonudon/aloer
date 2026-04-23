@@ -331,7 +331,8 @@ export function SaleReturnActions({
             <Button
               variant="primary"
               onClick={handleSubmit}
-              disabled={loading || !hasSelectedItems}
+              loading={loading}
+              disabled={!hasSelectedItems}
             >
               {loading ? t.common.processing : t.sales.confirmReturn}
             </Button>

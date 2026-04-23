@@ -6,6 +6,7 @@ import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { ImageUpload } from "@/components/ui/image-upload";
 import { Input } from "@/components/ui/input";
+import { NumericInput } from "@/components/ui/numeric-input";
 import { Modal } from "@/components/ui/modal";
 import { Select } from "@/components/ui/select";
 import { getActiveCategories } from "@/lib/actions/categories";
@@ -159,22 +160,16 @@ export function ProductEditorModal({
           options={unitOptions}
           defaultValue={editing?.unit ?? "pcs"}
         />
-        <Input
+        <NumericInput
           label={labels.sellingPrice}
           name="selling_price"
-          type="number"
-          min="0"
-          step="100"
           required
           defaultValue={editing?.selling_price}
         />
         <div className="grid grid-cols-2 gap-3">
-          <Input
+          <NumericInput
             label={labels.bulkPriceOptional}
             name="bulk_price"
-            type="number"
-            min="0"
-            step="100"
             defaultValue={editing?.bulk_price ?? ""}
             placeholder={labels.bulkPricePlaceholder}
           />
@@ -407,7 +402,7 @@ export function ProductEditorModal({
           <Button type="button" variant="secondary" onClick={onClose}>
             {labels.cancel}
           </Button>
-          <Button type="submit" disabled={loading}>
+          <Button type="submit" loading={loading}>
             {loading ? labels.saving : editing ? labels.update : labels.create}
           </Button>
         </div>

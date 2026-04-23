@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { NumericInput } from "@/components/ui/numeric-input";
 import { Modal } from "@/components/ui/modal";
 import { Toast } from "@/components/ui/toast";
 import {
@@ -360,13 +361,10 @@ export function CampaignsClient({ campaigns, products }: CampaignsClientProps) {
               >
                 {t.settings.discountValue}
               </label>
-              <Input
+              <NumericInput
                 id="campaign-discount-value"
                 value={form.discountValue}
                 onChange={(e) => setF("discountValue", e.target.value)}
-                type="number"
-                step="any"
-                min="0.01"
                 required
                 placeholder={form.discountType === "percentage" ? "10" : "5000"}
               />
@@ -439,14 +437,12 @@ export function CampaignsClient({ campaigns, products }: CampaignsClientProps) {
               >
                 {t.settings.minimumCartTotal}
               </label>
-              <Input
+              <NumericInput
                 id="campaign-trigger-value"
                 value={form.triggerValue}
                 onChange={(e) => setF("triggerValue", e.target.value)}
-                type="number"
-                min="1"
                 required
-                placeholder="100000"
+                placeholder="100,000"
               />
             </div>
           )}
@@ -489,7 +485,7 @@ export function CampaignsClient({ campaigns, products }: CampaignsClientProps) {
             >
               {t.common.cancel}
             </Button>
-            <Button type="submit" disabled={loading}>
+            <Button type="submit" loading={loading}>
               {loading
                 ? modal?.mode === "edit"
                   ? t.common.saving

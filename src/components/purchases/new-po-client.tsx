@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { NumericInput } from "@/components/ui/numeric-input";
 import { PageHeader } from "@/components/ui/page-header";
 import { Select } from "@/components/ui/select";
 import { Toast } from "@/components/ui/toast";
@@ -187,11 +188,8 @@ export function NewPurchaseOrderClient({ products, suppliers }: Props) {
                 value={item.quantity}
                 onChange={(e) => updateItem(index, "quantity", e.target.value)}
               />
-              <Input
+              <NumericInput
                 label={t.purchases.costPrice}
-                type="number"
-                min="0"
-                step="100"
                 value={item.cost_price}
                 onChange={(e) =>
                   updateItem(index, "cost_price", e.target.value)
@@ -233,7 +231,8 @@ export function NewPurchaseOrderClient({ products, suppliers }: Props) {
           </Button>
           <Button
             onClick={handleSubmit}
-            disabled={loading || items.length === 0}
+            loading={loading}
+            disabled={items.length === 0}
           >
             {loading ? "Creating..." : "Create PO"}
           </Button>
