@@ -36,10 +36,7 @@ interface CartPanelProps {
   discountAmount: number;
   finalTotal: number;
   loading: boolean;
-  getCampaignForProduct: (
-    productId: string,
-    quantity?: number,
-  ) => CampaignWithProducts | null;
+  getCampaignForProduct: (productId: string) => CampaignWithProducts | null;
   getEffectivePrice: (product: Product, quantity: number) => number;
   onUpdateQuantity: (productId: string, delta: number) => void;
   onRemove: (productId: string) => void;
@@ -190,10 +187,7 @@ export function CartPanel({
             item.product.bulk_price != null &&
             item.product.bulk_min_qty != null &&
             item.quantity >= item.product.bulk_min_qty;
-          const campaign = getCampaignForProduct(
-            item.product.id,
-            item.quantity,
-          );
+          const campaign = getCampaignForProduct(item.product.id);
           return (
             <div
               key={item.product.id}

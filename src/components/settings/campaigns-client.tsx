@@ -35,7 +35,6 @@ interface CampaignFormState {
   triggerType: CampaignTriggerType;
   triggerValue: string;
   selectedProducts: string[];
-  minQuantities: Record<string, string>;
 }
 
 const defaultForm: CampaignFormState = {
@@ -47,7 +46,6 @@ const defaultForm: CampaignFormState = {
   triggerType: "always",
   triggerValue: "",
   selectedProducts: [],
-  minQuantities: {},
 };
 
 /** Converts a UTC ISO timestamp to a value suitable for datetime-local inputs. */
@@ -67,7 +65,6 @@ export function CampaignsClient({ campaigns, products }: CampaignsClientProps) {
   const triggerLabel: Record<CampaignTriggerType, string> = {
     always: t.settings.always,
     min_cart_total: t.settings.minCartTotal,
-    min_product_qty: t.settings.minProductQty,
   };
   const [modal, setModal] = useState<{
     mode: "create" | "edit";
@@ -103,12 +100,6 @@ export function CampaignsClient({ campaigns, products }: CampaignsClientProps) {
       triggerType: c.trigger_type,
       triggerValue: c.trigger_value != null ? String(c.trigger_value) : "",
       selectedProducts: c.campaign_products.map((cp) => cp.product_id),
-      minQuantities: Object.fromEntries(
-        c.campaign_products.map((cp) => [
-          cp.product_id,
-          String(cp.min_quantity),
-        ]),
-      ),
     });
     setModal({ mode: "edit", campaign: c });
   }
@@ -137,17 +128,6 @@ export function CampaignsClient({ campaigns, products }: CampaignsClientProps) {
       fd.set("trigger_value", form.triggerValue);
     }
     fd.set("product_ids", JSON.stringify(form.selectedProducts));
-    fd.set(
-      "min_quantities",
-      JSON.stringify(
-        Object.fromEntries(
-          Object.entries(form.minQuantities).map(([k, v]) => [
-            k,
-            parseFloat(v) || 1,
-          ]),
-        ),
-      ),
-    );
 
     const result =
       modal?.mode === "edit" && modal.campaign
@@ -262,20 +242,7 @@ export function CampaignsClient({ campaigns, products }: CampaignsClientProps) {
                     · {new Date(c.start_date).toLocaleDateString("id-ID")} →{" "}
                     {new Date(c.end_date).toLocaleDateString("id-ID")}
                   </p>
-                  {c.trigger_type === "min_product_qty" &&
-                  c.campaign_products.length > 0 ? (
-                    <p className="text-xs text-gray-400 mt-1 truncate">
-                      {c.campaign_products
-                        .map((cp) => {
-                          const name = products.find(
-                            (p) => p.id === cp.product_id,
-                          )?.name;
-                          return name ? `${name} (≥${cp.min_quantity})` : null;
-                        })
-                        .filter(Boolean)
-                        .join(", ")}
-                    </p>
-                  ) : productNames.length > 0 ? (
+                  {productNames.length > 0 ? (
                     <p className="text-xs text-gray-400 mt-1 truncate">
                       Products: {productNames.join(", ")}
                     </p>
@@ -460,9 +427,6 @@ export function CampaignsClient({ campaigns, products }: CampaignsClientProps) {
               <option value="min_cart_total">
                 {t.settings.triggerMinCart}
               </option>
-              <option value="min_product_qty">
-                {t.settings.triggerMinQty}
-              </option>
             </select>
           </div>
 
@@ -491,9 +455,7 @@ export function CampaignsClient({ campaigns, products }: CampaignsClientProps) {
           {showProductSelection && (
             <div>
               <p className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                {form.triggerType === "min_product_qty"
-                  ? t.settings.productsMinQty
-                  : t.settings.productsOptional}
+                {t.settings.productsOptional}
               </p>
               <div className="max-h-48 overflow-y-auto border border-gray-200 dark:border-gray-600 rounded-lg p-2 space-y-1">
                 {products
@@ -513,26 +475,6 @@ export function CampaignsClient({ campaigns, products }: CampaignsClientProps) {
                         {p.name}
                       </span>
                       <span className="text-xs text-gray-400">{p.sku}</span>
-                      {form.triggerType === "min_product_qty" &&
-                        form.selectedProducts.includes(p.id) && (
-                          <input
-                            type="number"
-                            min="1"
-                            value={form.minQuantities[p.id] ?? "1"}
-                            onChange={(e) =>
-                              setForm((f) => ({
-                                ...f,
-                                minQuantities: {
-                                  ...f.minQuantities,
-                                  [p.id]: e.target.value,
-                                },
-                              }))
-                            }
-                            onClick={(e) => e.stopPropagation()}
-                            className="w-16 rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 px-2 py-0.5 text-xs"
-                            aria-label={`Minimum quantity for ${p.name}`}
-                          />
-                        )}
                     </label>
                   ))}
               </div>

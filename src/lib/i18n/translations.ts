@@ -466,7 +466,6 @@ export interface Translations {
     disabled: string;
     always: string;
     minCartTotal: string;
-    minProductQty: string;
     editCampaign: string;
     campaignName: string;
     campaignNamePlaceholder: string;
@@ -479,9 +478,7 @@ export interface Translations {
     triggerRule: string;
     triggerAlways: string;
     triggerMinCart: string;
-    triggerMinQty: string;
     minimumCartTotal: string;
-    productsMinQty: string;
     productsOptional: string;
     campaignUpdated: string;
     campaignCreated: string;
@@ -1000,7 +997,6 @@ export const en: Translations = {
     disabled: "Disabled",
     always: "Always",
     minCartTotal: "Min cart total",
-    minProductQty: "Min product qty",
     editCampaign: "Edit Campaign",
     campaignName: "Campaign Name",
     campaignNamePlaceholder: "Weekend Sale",
@@ -1013,10 +1009,7 @@ export const en: Translations = {
     triggerRule: "Trigger Rule",
     triggerAlways: "Always — applies whenever product is in cart",
     triggerMinCart: "Min cart total — order discount when subtotal ≥ threshold",
-    triggerMinQty:
-      "Min product qty — per-product discount when qty ≥ threshold",
     minimumCartTotal: "Minimum Cart Total (IDR)",
-    productsMinQty: "Products & minimum quantities",
     productsOptional: "Products (leave empty for all products)",
     campaignUpdated: "Campaign updated",
     campaignCreated: "Campaign created",
@@ -1540,7 +1533,6 @@ export const id: Translations = {
     disabled: "Dinonaktifkan",
     always: "Selalu",
     minCartTotal: "Min total keranjang",
-    minProductQty: "Min qty produk",
     editCampaign: "Edit Kampanye",
     campaignName: "Nama Kampanye",
     campaignNamePlaceholder: "Diskon Akhir Pekan",
@@ -1554,9 +1546,7 @@ export const id: Translations = {
     triggerAlways: "Selalu — berlaku setiap kali produk ada di keranjang",
     triggerMinCart:
       "Min total keranjang — diskon pesanan jika subtotal ≥ ambang batas",
-    triggerMinQty: "Min qty produk — diskon per produk jika qty ≥ ambang batas",
     minimumCartTotal: "Total Keranjang Minimum (IDR)",
-    productsMinQty: "Produk & kuantitas minimum",
     productsOptional: "Produk (kosongkan untuk semua produk)",
     campaignUpdated: "Kampanye diperbarui",
     campaignCreated: "Kampanye dibuat",

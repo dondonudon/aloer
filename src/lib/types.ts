@@ -53,10 +53,7 @@ export type AccountType =
   | "expense";
 export type InventoryMovementType = "IN" | "OUT" | "ADJUSTMENT" | "RETURN";
 export type CampaignDiscountType = "percentage" | "fixed";
-export type CampaignTriggerType =
-  | "always"
-  | "min_cart_total"
-  | "min_product_qty";
+export type CampaignTriggerType = "always" | "min_cart_total";
 
 export interface UserRoleRow {
   id: string;

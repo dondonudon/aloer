@@ -412,22 +412,6 @@ describe("useCart — product-specific campaign", () => {
     expect(result.current.subtotal).toBe(15000);
   });
 
-  it("respects min_product_qty threshold on targeted campaigns", () => {
-    const product = makeProduct({ id: "prod", selling_price: 10000 });
-    const campaign = makeActiveCampaign({
-      trigger_type: "min_product_qty",
-      discount_type: "percentage",
-      discount_value: 30,
-      campaign_products: [{ product_id: "prod", min_quantity: 3 } as never],
-    });
-
-    const { result } = renderHook(() => useCart([campaign]));
-
-    // below threshold — no discount
-    expect(result.current.getEffectivePrice(product, 2)).toBe(10000);
-    // at threshold — discount applies
-    expect(result.current.getEffectivePrice(product, 3)).toBe(7000);
-  });
 });
 
 // ---------------------------------------------------------------------------

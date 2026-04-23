@@ -91,21 +91,9 @@ export function ProductGrid({
                 )}
                 {campaign && campaign.trigger_type !== "min_cart_total" && (
                   <span className="text-[10px] text-orange-600 font-medium mt-0.5">
-                    {campaign.trigger_type === "min_product_qty"
-                      ? (() => {
-                          const cp = campaign.campaign_products.find(
-                            (cp) => cp.product_id === product.id,
-                          );
-                          const minQty = cp?.min_quantity ?? 1;
-                          const disc =
-                            campaign.discount_type === "percentage"
-                              ? `${campaign.discount_value}% off`
-                              : `${formatCurrency(campaign.discount_value)} off`;
-                          return `Buy ${minQty}+ → ${disc}`;
-                        })()
-                      : campaign.discount_type === "percentage"
-                        ? `${campaign.discount_value}% off`
-                        : `${formatCurrency(campaign.discount_value)} off`}
+                    {campaign.discount_type === "percentage"
+                      ? `${campaign.discount_value}% off`
+                      : `${formatCurrency(campaign.discount_value)} off`}
                   </span>
                 )}
               </button>

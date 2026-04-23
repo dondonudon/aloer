@@ -46,7 +46,7 @@ export function useCart(campaigns: CampaignWithProducts[]) {
   );
   const [discountValue, setDiscountValue] = useState("");
 
-  // Split active campaigns into: per-product (always / min_product_qty) and
+  // Split active campaigns into: per-product (always) and
   // cart-total triggered (min_cart_total).  Evaluated once per campaigns change.
   const { productCampaignMap, cartCampaigns } = useMemo(() => {
     const now = new Date();
@@ -60,7 +60,6 @@ export function useCart(campaigns: CampaignWithProducts[]) {
       if (c.trigger_type === "min_cart_total") {
         cartCampaigns.push(c);
       } else {
-        // 'always' or 'min_product_qty'
         if (c.campaign_products.length === 0) {
           productCampaignMap.set("__all__", c);
         } else {
@@ -75,30 +74,12 @@ export function useCart(campaigns: CampaignWithProducts[]) {
     return { productCampaignMap, cartCampaigns };
   }, [campaigns]);
 
-  /**
-   * Returns the active campaign for a product, enforcing trigger rules.
-   * @param quantity — when provided, enforces min_product_qty threshold.
-   *                   Omit (or pass 0) for display-only contexts (product grid).
-   */
-  function getCampaignForProduct(
-    productId: string,
-    quantity = 0,
-  ): CampaignWithProducts | null {
-    const campaign =
+  function getCampaignForProduct(productId: string): CampaignWithProducts | null {
+    return (
       productCampaignMap.get(productId) ??
       productCampaignMap.get("__all__") ??
-      null;
-    if (!campaign) return null;
-
-    if (campaign.trigger_type === "min_product_qty" && quantity > 0) {
-      const cp = campaign.campaign_products.find(
-        (cp) => cp.product_id === productId,
-      );
-      const minQty = cp?.min_quantity ?? 1;
-      if (quantity < minQty) return null;
-    }
-
-    return campaign;
+      null
+    );
   }
 
   function getEffectivePrice(product: Product, quantity: number): number {
@@ -112,7 +93,7 @@ export function useCart(campaigns: CampaignWithProducts[]) {
       price = product.bulk_price;
     }
 
-    const campaign = getCampaignForProduct(product.id, quantity);
+    const campaign = getCampaignForProduct(product.id);
     if (campaign) {
       if (campaign.discount_type === "percentage") {
         price = price * (1 - campaign.discount_value / 100);
@@ -132,7 +113,7 @@ export function useCart(campaigns: CampaignWithProducts[]) {
 
   // Total saved across all cart items due to active per-item campaigns.
   const campaignSavings = cart.reduce((sum, item) => {
-    const campaign = getCampaignForProduct(item.product.id, item.quantity);
+    const campaign = getCampaignForProduct(item.product.id);
     if (!campaign) return sum;
     let basePrice = item.product.selling_price;
     if (

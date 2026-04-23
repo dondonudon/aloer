@@ -43,9 +43,6 @@ function parseCampaignForm(formData: FormData) {
   const productIds = JSON.parse(
     (formData.get("product_ids") as string) || "[]",
   ) as string[];
-  const minQuantities = JSON.parse(
-    (formData.get("min_quantities") as string) || "{}",
-  ) as Record<string, number>;
 
   return {
     name,
@@ -56,22 +53,14 @@ function parseCampaignForm(formData: FormData) {
     triggerType,
     triggerValue,
     productIds,
-    minQuantities,
   };
 }
 
 function validateCampaignForm(
   fields: ReturnType<typeof parseCampaignForm>,
 ): string | null {
-  const {
-    name,
-    discountType,
-    discountValue,
-    startDate,
-    endDate,
-    triggerType,
-    triggerValue,
-  } = fields;
+  const { name, discountType, discountValue, startDate, endDate, triggerType, triggerValue } =
+    fields;
   if (!name || !discountType || !discountValue || !startDate || !endDate)
     return "All fields are required";
   if (
@@ -113,17 +102,8 @@ export async function createCampaign(formData: FormData) {
   const validationError = validateCampaignForm(fields);
   if (validationError) return { error: validationError };
 
-  const {
-    name,
-    discountType,
-    discountValue,
-    startDate,
-    endDate,
-    triggerType,
-    triggerValue,
-    productIds,
-    minQuantities,
-  } = fields;
+  const { name, discountType, discountValue, startDate, endDate, triggerType, triggerValue, productIds } =
+    fields;
 
   // Need user.id for created_by
   const user = await getCurrentUser();
@@ -153,7 +133,7 @@ export async function createCampaign(formData: FormData) {
           productIds.map((pid) => ({
             campaign_id: campaign.id,
             product_id: pid,
-            min_quantity: minQuantities[pid] ?? 1,
+            min_quantity: 1,
           })),
         );
       if (cpError) return { error: await formatDbError(cpError) };
@@ -179,17 +159,8 @@ export async function updateCampaign(campaignId: string, formData: FormData) {
   const validationError = validateCampaignForm(fields);
   if (validationError) return { error: validationError };
 
-  const {
-    name,
-    discountType,
-    discountValue,
-    startDate,
-    endDate,
-    triggerType,
-    triggerValue,
-    productIds,
-    minQuantities,
-  } = fields;
+  const { name, discountType, discountValue, startDate, endDate, triggerType, triggerValue, productIds } =
+    fields;
 
   return ownerAction(async (supabase, userId) => {
     const { error } = await supabase
@@ -219,7 +190,7 @@ export async function updateCampaign(campaignId: string, formData: FormData) {
           productIds.map((pid) => ({
             campaign_id: campaignId,
             product_id: pid,
-            min_quantity: minQuantities[pid] ?? 1,
+            min_quantity: 1,
           })),
         );
       if (cpError) return { error: await formatDbError(cpError) };
