@@ -36,6 +36,9 @@ interface CartPanelProps {
   cartCampaignDiscount: number;
   discountAmount: number;
   finalTotal: number;
+  hasCostData: boolean;
+  grossProfit: number;
+  marginPercent: number;
   loading: boolean;
   getCampaignForProduct: (productId: string) => CampaignWithProducts | null;
   getEffectivePrice: (product: Product, quantity: number) => number;
@@ -65,6 +68,9 @@ export function CartPanel({
   cartCampaignDiscount,
   discountAmount,
   finalTotal,
+  hasCostData,
+  grossProfit,
+  marginPercent,
   loading,
   getCampaignForProduct,
   getEffectivePrice,
@@ -351,6 +357,22 @@ export function CartPanel({
                 <span>- {formatCurrency(discountAmount)}</span>
               </div>
             </>
+          )}
+          {hasCostData && (
+            <div
+              className={`flex justify-between text-sm font-medium ${
+                marginPercent >= 30
+                  ? "text-green-600 dark:text-green-400"
+                  : marginPercent >= 10
+                    ? "text-amber-500 dark:text-amber-400"
+                    : "text-red-500 dark:text-red-400"
+              }`}
+            >
+              <span>{t.pos.margin}</span>
+              <span>
+                {formatCurrency(grossProfit)} ({marginPercent.toFixed(1)}%)
+              </span>
+            </div>
           )}
           <div className="flex justify-between items-center">
             <span className="text-lg font-bold text-gray-900 dark:text-white">

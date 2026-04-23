@@ -152,6 +152,18 @@ export function useCart(campaigns: CampaignWithProducts[]) {
 
   const finalTotal = subtotal - cartCampaignDiscount - discountAmount;
 
+  const totalCogs = cart.reduce(
+    (sum, item) => sum + (item.product.latest_cost_price ?? 0) * item.quantity,
+    0,
+  );
+  // Only meaningful when every cart item has a recorded cost price.
+  const hasCostData =
+    cart.length > 0 &&
+    cart.every((item) => item.product.latest_cost_price != null);
+  const grossProfit = finalTotal - totalCogs;
+  const marginPercent =
+    hasCostData && finalTotal > 0 ? (grossProfit / finalTotal) * 100 : 0;
+
   function addToCart(product: Product) {
     setCart((prev) => {
       const existing = prev.find((i) => i.product.id === product.id);
@@ -240,6 +252,9 @@ export function useCart(campaigns: CampaignWithProducts[]) {
     cartCampaignDiscount,
     discountAmount,
     finalTotal,
+    hasCostData,
+    grossProfit,
+    marginPercent,
     getCampaignForProduct,
     getEffectivePrice,
     addToCart,

@@ -176,6 +176,7 @@ export interface Translations {
     done: string;
     payment: string;
     checkoutConfirmTitle: string;
+    margin: string;
   };
 
   sales: {
@@ -708,6 +709,7 @@ export const en: Translations = {
     done: "Done",
     payment: "Payment",
     checkoutConfirmTitle: "Confirm Checkout",
+    margin: "Margin",
   },
 
   sales: {
@@ -1244,6 +1246,7 @@ export const id: Translations = {
     done: "Selesai",
     payment: "Pembayaran",
     checkoutConfirmTitle: "Konfirmasi Pembayaran",
+    margin: "Margin",
   },
 
   sales: {

@@ -60,6 +60,9 @@ export function POSClient({
     cartCampaignDiscount,
     discountAmount,
     finalTotal,
+    hasCostData,
+    grossProfit,
+    marginPercent,
     getCampaignForProduct,
     getEffectivePrice,
     addToCart,
@@ -122,6 +125,9 @@ export function POSClient({
         cartCampaignDiscount={cartCampaignDiscount}
         discountAmount={discountAmount}
         finalTotal={finalTotal}
+        hasCostData={hasCostData}
+        grossProfit={grossProfit}
+        marginPercent={marginPercent}
         loading={loading}
         getCampaignForProduct={getCampaignForProduct}
         getEffectivePrice={getEffectivePrice}
