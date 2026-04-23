@@ -45,6 +45,7 @@ export function useCart(campaigns: CampaignWithProducts[]) {
     "percentage",
   );
   const [discountValue, setDiscountValue] = useState("");
+  const [deliveryFee, setDeliveryFee] = useState("");
 
   // Split active campaigns into: per-product (always) and
   // cart-total triggered (min_cart_total).  Evaluated once per campaigns change.
@@ -152,6 +153,12 @@ export function useCart(campaigns: CampaignWithProducts[]) {
 
   const finalTotal = subtotal - cartCampaignDiscount - discountAmount;
 
+  const deliveryFeeAmount = (() => {
+    const parsed = parseFloat(deliveryFee);
+    if (!deliveryFee || Number.isNaN(parsed) || parsed <= 0) return 0;
+    return Math.round(parsed);
+  })();
+
   const totalCogs = cart.reduce(
     (sum, item) => sum + (item.product.latest_cost_price ?? 0) * item.quantity,
     0,
@@ -160,7 +167,7 @@ export function useCart(campaigns: CampaignWithProducts[]) {
   const hasCostData =
     cart.length > 0 &&
     cart.every((item) => item.product.latest_cost_price != null);
-  const grossProfit = finalTotal - totalCogs;
+  const grossProfit = finalTotal - totalCogs - deliveryFeeAmount;
   const marginPercent =
     hasCostData && finalTotal > 0 ? (grossProfit / finalTotal) * 100 : 0;
 
@@ -195,6 +202,7 @@ export function useCart(campaigns: CampaignWithProducts[]) {
   function clearCart() {
     setCart([]);
     setDiscountValue("");
+    setDeliveryFee("");
   }
 
   /** Builds the items payload for the createSale server action. */
@@ -247,6 +255,8 @@ export function useCart(campaigns: CampaignWithProducts[]) {
     cart,
     discountType,
     discountValue,
+    deliveryFee,
+    deliveryFeeAmount,
     subtotal,
     campaignSavings,
     cartCampaignDiscount,
@@ -263,6 +273,7 @@ export function useCart(campaigns: CampaignWithProducts[]) {
     clearCart,
     setDiscountType,
     setDiscountValue,
+    setDeliveryFee,
     buildSaleItems,
     buildReceiptData,
   };

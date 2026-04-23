@@ -151,6 +151,13 @@ export default async function SaleDetailPage({ params }: Props) {
           </div>
         )}
 
+        {sale.delivery_fee > 0 && (
+          <div className="flex justify-between py-2 border-t border-gray-200 dark:border-gray-700 text-sm text-orange-600 dark:text-orange-400">
+            <span>{t.pos.deliveryFee}</span>
+            <span>- {formatCurrency(sale.delivery_fee)}</span>
+          </div>
+        )}
+
         {sale.status === "completed" && (
           <div className="flex justify-between py-2 border-t border-gray-200 dark:border-gray-700 font-semibold">
             <span className="text-sm">{t.sales.grossProfit}</span>

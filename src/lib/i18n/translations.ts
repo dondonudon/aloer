@@ -177,6 +177,7 @@ export interface Translations {
     payment: string;
     checkoutConfirmTitle: string;
     margin: string;
+    deliveryFee: string;
   };
 
   sales: {
@@ -710,6 +711,7 @@ export const en: Translations = {
     payment: "Payment",
     checkoutConfirmTitle: "Confirm Checkout",
     margin: "Margin",
+    deliveryFee: "Delivery Fee",
   },
 
   sales: {
@@ -1079,6 +1081,7 @@ export const en: Translations = {
     "4001": "Sales Revenue",
     "5001": "Cost of Goods Sold",
     "5002": "Inventory Adjustment Expense",
+    "5003": "Delivery Expense",
   },
 };
 
@@ -1247,6 +1250,7 @@ export const id: Translations = {
     payment: "Pembayaran",
     checkoutConfirmTitle: "Konfirmasi Pembayaran",
     margin: "Margin",
+    deliveryFee: "Ongkos Kirim",
   },
 
   sales: {
@@ -1617,6 +1621,7 @@ export const id: Translations = {
     "4001": "Pendapatan Penjualan",
     "5001": "Harga Pokok Penjualan",
     "5002": "Beban Penyesuaian Inventaris",
+    "5003": "Beban Pengiriman",
   },
 };
 

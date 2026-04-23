@@ -163,6 +163,7 @@ export interface Sale {
   discount_amount: number;
   campaign_savings: number;
   cart_campaign_discount: number;
+  delivery_fee: number;
   payment_method: PaymentMethod;
   status: SaleStatus;
   voided_at: string | null;
@@ -272,6 +273,7 @@ export interface CreateSaleInput {
   discountAmount?: number;
   campaignSavings?: number;
   cartCampaignDiscount?: number;
+  deliveryFee?: number;
   idempotencyKey?: string;
   reservationReference?: string;
 }

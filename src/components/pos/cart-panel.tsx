@@ -11,6 +11,7 @@ import {
   SplitSquareHorizontal,
   Tag,
   Trash2,
+  Truck,
 } from "lucide-react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
@@ -31,6 +32,8 @@ interface CartPanelProps {
   cart: CartItem[];
   discountType: "percentage" | "fixed";
   discountValue: string;
+  deliveryFee: string;
+  deliveryFeeAmount: number;
   subtotal: number;
   campaignSavings: number;
   cartCampaignDiscount: number;
@@ -46,6 +49,7 @@ interface CartPanelProps {
   onRemove: (productId: string) => void;
   onDiscountTypeChange: (type: "percentage" | "fixed") => void;
   onDiscountValueChange: (value: string) => void;
+  onDeliveryFeeChange: (value: string) => void;
   onCheckout: (payments: SalePaymentInput[], isCreditSale?: boolean) => void;
   resellers?: Reseller[];
   selectedResellerId?: string;
@@ -63,6 +67,8 @@ export function CartPanel({
   cart,
   discountType,
   discountValue,
+  deliveryFee,
+  deliveryFeeAmount,
   subtotal,
   campaignSavings,
   cartCampaignDiscount,
@@ -78,6 +84,7 @@ export function CartPanel({
   onRemove,
   onDiscountTypeChange,
   onDiscountValueChange,
+  onDeliveryFeeChange,
   onCheckout,
   resellers = [],
   selectedResellerId = "",
@@ -320,6 +327,25 @@ export function CartPanel({
           </div>
         </div>
 
+        {/* Delivery fee input */}
+        <div>
+          <label
+            htmlFor="delivery-fee"
+            className="flex items-center gap-1.5 text-xs font-medium text-gray-600 dark:text-gray-400 mb-1.5"
+          >
+            <Truck className="h-3.5 w-3.5" aria-hidden="true" />
+            {t.pos.deliveryFee}
+          </label>
+          <NumericInput
+            id="delivery-fee"
+            placeholder={t.common.amount}
+            value={deliveryFee}
+            onChange={(e) => onDeliveryFeeChange(e.target.value)}
+            className="text-sm w-full"
+            aria-label={t.pos.deliveryFee}
+          />
+        </div>
+
         {/* Totals */}
         <div className="space-y-1">
           {campaignSavings > 0 && (
@@ -357,6 +383,15 @@ export function CartPanel({
                 <span>- {formatCurrency(discountAmount)}</span>
               </div>
             </>
+          )}
+          {deliveryFeeAmount > 0 && (
+            <div className="flex justify-between text-sm text-orange-600 dark:text-orange-400">
+              <span className="flex items-center gap-1">
+                <Truck className="h-3.5 w-3.5" aria-hidden="true" />
+                {t.pos.deliveryFee}
+              </span>
+              <span>- {formatCurrency(deliveryFeeAmount)}</span>
+            </div>
           )}
           {hasCostData && (
             <div

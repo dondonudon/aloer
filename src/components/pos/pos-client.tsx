@@ -55,6 +55,8 @@ export function POSClient({
     cart,
     discountType,
     discountValue,
+    deliveryFee,
+    deliveryFeeAmount,
     subtotal,
     campaignSavings,
     cartCampaignDiscount,
@@ -71,6 +73,7 @@ export function POSClient({
     clearCart,
     setDiscountType,
     setDiscountValue,
+    setDeliveryFee,
     buildSaleItems,
     buildReceiptData,
   } = useCart(campaigns);
@@ -90,6 +93,7 @@ export function POSClient({
       campaignSavings: campaignSavings > 0 ? campaignSavings : undefined,
       cartCampaignDiscount:
         cartCampaignDiscount > 0 ? cartCampaignDiscount : undefined,
+      deliveryFee: deliveryFeeAmount > 0 ? deliveryFeeAmount : undefined,
       idempotencyKey,
     });
     if (result.error) {
@@ -120,6 +124,8 @@ export function POSClient({
         cart={cart}
         discountType={discountType}
         discountValue={discountValue}
+        deliveryFee={deliveryFee}
+        deliveryFeeAmount={deliveryFeeAmount}
         subtotal={subtotal}
         campaignSavings={campaignSavings}
         cartCampaignDiscount={cartCampaignDiscount}
@@ -135,6 +141,7 @@ export function POSClient({
         onRemove={removeFromCart}
         onDiscountTypeChange={setDiscountType}
         onDiscountValueChange={setDiscountValue}
+        onDeliveryFeeChange={setDeliveryFee}
         onCheckout={handleCheckout}
         resellers={resellers}
         selectedResellerId={selectedResellerId}
