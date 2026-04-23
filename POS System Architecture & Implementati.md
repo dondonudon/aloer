@@ -1,6 +1,6 @@
 # Aloer — POS System Architecture & Implementation Plan
 
-> **Last updated:** April 9, 2026
+> **Last updated:** April 23, 2026
 
 ---
 
@@ -11,18 +11,18 @@
 | Area | Detail |
 |---|---|
 | **Tech stack** | Next.js 16.2.2 (App Router, TypeScript 5), React 19, Supabase (PostgreSQL + Auth + Storage), Tailwind CSS v4, Biome |
-| **Database** | All 23 tables + 8 RPC functions implemented. Base schema in `supabase/migrations/00001_schema.sql`; incremental migrations `00002` – `00008` extend it |
+| **Database** | All 23 tables + 8 RPC functions implemented. Base schema in `supabase/migrations/00001_schema.sql`; incremental migrations `00002` – `00011` extend it |
 | **Idempotency (POS)** | `sales.idempotency_key` column + unique partial index. `create_sale_transaction` short-circuits and returns the existing sale when the same key is replayed. Frontend generates a UUID per checkout attempt and rotates it after a successful sale. Migration: `00008_idempotency_key.sql`. |
 | **Auth** | Google OAuth only. Whitelist-based: users must exist in `user_roles` to access the app |
 | **RBAC** | Owner and Cashier roles enforced at Server Action level (`ownerAction()` wrapper) and via RLS |
-| **POS screen** | `/pos` — product grid, cart, FIFO sale, cash/transfer/split/credit payment, discount (% or fixed), campaign discounts, reseller picker, receipt modal |
+| **POS screen** | `/pos` — product grid, cart, FIFO sale, cash/transfer/split/credit payment, discount (% or fixed), campaign discounts, reseller picker, delivery fee input, cost/margin display, receipt modal |
 | **Sales** | `/sales` — filterable by date range and status. `/sales/[id]` — line items, COGS, profit, void button (owner only), partial return flow (owner only) |
 | **Products** | `/products` — CRUD, cost tracking, margin badge, category dropdown, drag-drop image upload, price history modal, unit management |
 | **Inventory** | `/inventory` — stock on hand + value per product, per-batch detail. `/inventory/adjustments` — history and create new |
 | **Purchases** | `/purchases` — create PO, receive PO (inventory + journal), cancel PO, pay supplier (AP flow) |
 | **Credit (AR/AP)** | `/credit` — outstanding credit sales (AR) and credit POs (AP), payment collection per record |
 | **Catalog** | `/catalog/categories`, `/catalog/suppliers` (with inline edit), `/catalog/resellers`, `/catalog/campaigns` — full CRUD |
-| **Campaigns** | Percentage or fixed discount, product-level targeting, date range, min cart total / min qty triggers |
+| **Campaigns** | Percentage or fixed discount, product-level targeting, date range, min cart total trigger |
 | **Reports** | `/reports` — Sales summary (server-translated), Profit & Loss (date range), Balance Sheet (period filtering: monthly/yearly), Stock Report page removed (Inventory page covers this) |
 | **Settings** | Store name + icon upload; User role assignment (owner/cashier) inline, no Supabase dashboard needed |
 | **Sidebar** | Minimize/expand toggle (desktop, `w-14`/`w-64`), role badge, dark mode toggle, role-filtered nav |
@@ -176,7 +176,7 @@ Permissions by role:
 
 ### 4.6 Sales Tables
 
-**sales** — invoice_number (seq), total_amount, total_cogs, discount_type, discount_value, discount_amount, payment_method ('cash'|'transfer'|'mixed'|'credit'), reseller_id FK (nullable), status ('completed'|'voided'), voided_at, voided_by, void_reason, created_by  
+**sales** — invoice_number (seq), total_amount, total_cogs, discount_type, discount_value, discount_amount, delivery_fee (numeric, default 0), payment_method ('cash'|'transfer'|'mixed'|'credit'), reseller_id FK (nullable), status ('completed'|'voided'), voided_at, voided_by, void_reason, created_by  
 **sale_items** — sale_id, product_id, quantity, price, subtotal  
 **sale_payments** — Multiple tender rows per sale (method: cash|transfer, amount) — supports cash+transfer split  
 **sale_credit_payments** — AR collection records (amount, payment_method, notes, created_by)
@@ -202,12 +202,13 @@ Seeded chart of accounts:
 | 4001 | Sales Revenue | revenue |
 | 5001 | Cost of Goods Sold | expense |
 | 5002 | Inventory Adjustment Expense | expense |
+| 5003 | Delivery Expense | expense |
 
 ---
 
 ### 4.8 Other Tables
 
-**campaigns** — name, discount_type ('percentage'|'fixed'), discount_value, trigger_type ('always'|'min_cart_total'|'min_product_qty'), trigger_value, start_date, end_date, is_active, created_by  
+**campaigns** — name, discount_type ('percentage'|'fixed'), discount_value, trigger_type ('always'|'min_cart_total'), trigger_value, start_date, end_date, is_active, created_by  
 **campaign_products** — campaign_id, product_id, min_quantity  
 **store_settings** — Single-row: store_name, store_icon_url
 
@@ -408,9 +409,11 @@ All critical operations run as atomic PostgreSQL functions. Implementations live
 | Sales Revenue (4001) | | total |
 | COGS (5001) | cogs | |
 | Inventory (1100) | | cogs |
+| Delivery Expense (5003) | delivery_fee | |
+| Cash (1001) | | delivery_fee |
 
 ### Sale (transfer / mixed — per payment tender)
-Same as cash but debits Bank/Transfer (1002) for transfer portion.
+Same as cash but debits Bank/Transfer (1002) for transfer portion. Delivery fee follows the same tender account.
 
 ### Sale (credit)
 | Account | Debit | Credit |
@@ -498,7 +501,7 @@ src/lib/
     use-toast.ts                  → toast notification
 
   components/
-  ui/                             → button, input, select, modal, toast, sidebar,
+  ui/                             → button, input, numeric-input, select, modal, toast, sidebar,
                                     page-header, list-filter, image-upload,
                                     table-page-loading, theme-provider
   pos/                            → pos-client, product-grid, cart-panel, receipt-modal
@@ -593,7 +596,7 @@ npx playwright test --project=authenticated    # needs e2e/.auth/user.json
 | File | Coverage |
 |---|---|
 | `utils.test.ts` | `formatCurrency`, `formatDate`, `formatDateTime` |
-| `hooks/__tests__/use-cart.test.ts` | Add/update/remove/clear cart; bulk pricing; campaign discounts (%, fixed, inactive, expired, min_cart_total); manual discounts (%, fixed, cap); `buildSaleItems` |
+| `hooks/__tests__/use-cart.test.ts` | Add/update/remove/clear cart; bulk pricing; campaign discounts (%, fixed, inactive, expired, min_cart_total); manual discounts (%, fixed, cap); `buildSaleItems`; delivery fee in cart totals |
 | `actions/__tests__/action-utils.test.ts` | `validateName` (all branches); `ownerAction` (unauthenticated, cashier role, owner passes userId, propagates handler result); `insertAuditLog` (correct fields, null defaults, silently ignores error responses) |
 
 ### Component tests (`src/components/ui/__tests__/`, `src/components/sales/__tests__/`)
