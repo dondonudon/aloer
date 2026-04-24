@@ -1,3 +1,5 @@
+import Link from "next/link";
+
 interface LowStockItem {
   sku: string;
   name: string;
@@ -6,16 +8,20 @@ interface LowStockItem {
 
 interface LowStockAlertProps {
   items: LowStockItem[];
+  totalCount: number;
   remainingLabel: string;
   title: string;
+  viewAllLabel: string;
 }
 
 export function LowStockAlert({
   items,
+  totalCount,
   remainingLabel,
   title,
+  viewAllLabel,
 }: LowStockAlertProps) {
-  if (!items.length) return null;
+  if (!totalCount) return null;
   return (
     <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700/50 rounded-xl p-5">
       <h2 className="text-base font-semibold text-amber-800 dark:text-amber-400 mb-2">
@@ -31,6 +37,14 @@ export function LowStockAlert({
           </li>
         ))}
       </ul>
+      {totalCount > 5 && (
+        <Link
+          href="/inventory?lowStock=true"
+          className="mt-3 inline-block text-sm font-medium text-amber-700 dark:text-amber-400 hover:underline"
+        >
+          {viewAllLabel}
+        </Link>
+      )}
     </div>
   );
 }

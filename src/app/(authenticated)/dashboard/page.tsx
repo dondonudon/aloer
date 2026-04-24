@@ -317,14 +317,21 @@ async function DashboardLowStockAlert({
   ]);
 
   const lowStockItems = Array.isArray(stockReport)
-    ? stockReport.filter((item) => item.stock_on_hand <= 5)
+    ? stockReport
+        .filter((item) => item.stock_on_hand <= 5)
+        .sort((a, b) => a.stock_on_hand - b.stock_on_hand)
     : [];
 
   return (
     <LowStockAlert
-      items={lowStockItems}
+      items={lowStockItems.slice(0, 5)}
+      totalCount={lowStockItems.length}
       remainingLabel={t.dashboard.remaining}
       title={t.dashboard.lowStockAlert}
+      viewAllLabel={t.dashboard.viewAllLowStock.replace(
+        "{count}",
+        String(lowStockItems.length),
+      )}
     />
   );
 }

@@ -15,6 +15,7 @@ export default async function InventoryPage({ searchParams }: Props) {
   const page = parsePage(params.page);
   const pageSize = parsePageSize(params.limit);
   const search = params.search ?? "";
+  const lowStockOnly = params.lowStock === "true";
 
   const [t, stockReport] = await Promise.all([
     getServerTranslations(),
@@ -37,11 +38,12 @@ export default async function InventoryPage({ searchParams }: Props) {
       </div>
 
       <InventoryListClient
-        key={`${page}-${pageSize}-${search}`}
+        key={`${page}-${pageSize}-${search}-${lowStockOnly}`}
         stock={stock}
         initialPage={page}
         initialPageSize={pageSize}
         initialSearch={search}
+        initialLowStockOnly={lowStockOnly}
       />
 
       <div className="flex justify-end">

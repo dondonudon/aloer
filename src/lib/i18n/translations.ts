@@ -148,6 +148,8 @@ export interface Translations {
     lowStockAlert: string;
     /** "remaining" — prepended by quantity in JSX */
     remaining: string;
+    /** "View all {count} low-stock items →" — {count} replaced at runtime */
+    viewAllLowStock: string;
   };
 
   pos: {
@@ -326,6 +328,7 @@ export interface Translations {
     number: string;
     notes: string;
     noAdjustmentsYet: string;
+    lowStockOnly: string;
   };
 
   purchases: {
@@ -683,6 +686,7 @@ export const en: Translations = {
     apSuppliers: "AP — You owe suppliers",
     lowStockAlert: "Low Stock Alert",
     remaining: "remaining",
+    viewAllLowStock: "View all {count} low-stock items →",
   },
 
   pos: {
@@ -859,6 +863,7 @@ export const en: Translations = {
     number: "Number",
     notes: "Notes",
     noAdjustmentsYet: "No adjustments yet",
+    lowStockOnly: "Low stock only",
   },
 
   purchases: {
@@ -1222,6 +1227,7 @@ export const id: Translations = {
     apSuppliers: "AP — Anda berhutang kepada pemasok",
     lowStockAlert: "Peringatan Stok Rendah",
     remaining: "tersisa",
+    viewAllLowStock: "Lihat semua {count} item stok rendah →",
   },
 
   pos: {
@@ -1398,6 +1404,7 @@ export const id: Translations = {
     number: "Nomor",
     notes: "Catatan",
     noAdjustmentsYet: "Belum ada penyesuaian",
+    lowStockOnly: "Hanya stok rendah",
   },
 
   purchases: {
