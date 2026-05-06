@@ -374,6 +374,25 @@ export interface Translations {
     cancelPO: string;
     poReceived: string;
     poCancelled: string;
+    voidPO: string;
+    voidPOConfirm: string;
+    reasonForVoiding: string;
+    voidPlaceholder: string;
+    confirmVoid: string;
+    poVoidedSuccess: string;
+    voidReason: string;
+    processReturn: string;
+    returnConfirmNote: string;
+    returnHistory: string;
+    refundMethod: string;
+    totalRefund: string;
+    refundAmount: string;
+    returnQty: string;
+    maxReturn: string;
+    returnNotes: string;
+    returnNotesPlaceholder: string;
+    confirmReturn: string;
+    returnCreatedSuccess: string;
   };
 
   reports: {
@@ -908,6 +927,27 @@ export const en: Translations = {
     cancelPO: "Cancel PO",
     poReceived: "Purchase order received",
     poCancelled: "Purchase order cancelled",
+    voidPO: "Void PO",
+    voidPOConfirm:
+      "Voiding will return all stock to the supplier and reverse the purchase. This cannot be undone.",
+    reasonForVoiding: "Reason for voiding",
+    voidPlaceholder: "e.g. Goods damaged on receipt, wrong supplier",
+    confirmVoid: "Confirm Void",
+    poVoidedSuccess: "Purchase order voided successfully",
+    voidReason: "Void Reason",
+    processReturn: "Process Return",
+    returnConfirmNote:
+      "Enter the quantity to return for each item. The supplier will refund you for the returned stock.",
+    returnHistory: "Return History",
+    refundMethod: "Refund Method",
+    totalRefund: "Total Refund",
+    refundAmount: "Refund",
+    returnQty: "Return Qty",
+    maxReturn: "Returnable",
+    returnNotes: "Notes (optional)",
+    returnNotesPlaceholder: "e.g. Damaged on arrival",
+    confirmReturn: "Confirm Return",
+    returnCreatedSuccess: "Return processed successfully",
   },
 
   reports: {
@@ -1449,6 +1489,27 @@ export const id: Translations = {
     cancelPO: "Batalkan PO",
     poReceived: "Pesanan pembelian diterima",
     poCancelled: "Pesanan pembelian dibatalkan",
+    voidPO: "Batalkan PO",
+    voidPOConfirm:
+      "Pembatalan akan mengembalikan semua stok ke pemasok dan membalik pembelian. Tindakan ini tidak dapat dibatalkan.",
+    reasonForVoiding: "Alasan pembatalan",
+    voidPlaceholder: "mis. Barang rusak saat diterima, pemasok salah",
+    confirmVoid: "Konfirmasi Pembatalan",
+    poVoidedSuccess: "Pesanan pembelian berhasil dibatalkan",
+    voidReason: "Alasan Pembatalan",
+    processReturn: "Proses Retur",
+    returnConfirmNote:
+      "Masukkan kuantitas yang akan diretur untuk setiap item. Pemasok akan mengembalikan dana sesuai stok yang diretur.",
+    returnHistory: "Riwayat Retur",
+    refundMethod: "Metode Pengembalian",
+    totalRefund: "Total Pengembalian",
+    refundAmount: "Pengembalian",
+    returnQty: "Qty Retur",
+    maxReturn: "Bisa Diretur",
+    returnNotes: "Catatan (opsional)",
+    returnNotesPlaceholder: "mis. Rusak saat tiba",
+    confirmReturn: "Konfirmasi Retur",
+    returnCreatedSuccess: "Retur berhasil diproses",
   },
 
   reports: {

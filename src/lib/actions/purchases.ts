@@ -3,7 +3,12 @@
 import { revalidatePath } from "next/cache";
 import { getCurrentUser } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
-import type { POPaymentMethod } from "@/lib/types";
+import type {
+  CreatePurchaseReturnInput,
+  POPaymentMethod,
+  PurchaseReturn,
+  PurchaseReturnItem,
+} from "@/lib/types";
 import { formatDbError, insertAuditLog, ownerAction } from "./action-utils";
 
 export async function getPurchaseOrders(options?: {
@@ -63,17 +68,30 @@ export async function getPurchaseOrderWithItems(poId: string) {
   if (itemsResult.error) throw new Error(itemsResult.error.message);
 
   const po = poResult.data;
-  let created_by_name: string | null = null;
-  if (po.created_by) {
+  const userIds = [po.created_by, po.voided_by].filter((id): id is string =>
+    Boolean(id),
+  );
+  const userNames: Record<string, string> = {};
+  if (userIds.length > 0) {
     const { data: profiles } = await supabase
       .from("profiles")
       .select("id, full_name")
-      .eq("id", po.created_by)
-      .limit(1);
-    created_by_name = profiles?.[0]?.full_name ?? null;
+      .in("id", userIds);
+    for (const p of profiles ?? []) {
+      userNames[p.id] = p.full_name;
+    }
   }
 
-  return { po: { ...po, created_by_name }, items: itemsResult.data };
+  return {
+    po: {
+      ...po,
+      created_by_name: po.created_by
+        ? (userNames[po.created_by] ?? null)
+        : null,
+      voided_by_name: po.voided_by ? (userNames[po.voided_by] ?? null) : null,
+    },
+    items: itemsResult.data,
+  };
 }
 
 export async function createPurchaseOrder(formData: FormData) {
@@ -200,4 +218,109 @@ export async function cancelPurchaseOrder(poId: string) {
     revalidatePath("/purchases");
     return {};
   });
+}
+
+export async function voidPurchaseOrder(poId: string, reason: string) {
+  return ownerAction(async (supabase, userId) => {
+    const { data, error } = await supabase.rpc("void_purchase_order", {
+      p_po_id: poId,
+      p_reason: reason,
+    });
+    if (error) return { error: await formatDbError(error) };
+    await insertAuditLog(
+      supabase,
+      userId,
+      "VOID_PURCHASE_ORDER",
+      "purchase_orders",
+      poId,
+      { reason },
+    );
+    revalidatePath("/purchases");
+    revalidatePath("/inventory");
+    revalidatePath("/reports");
+    return { data };
+  });
+}
+
+export async function createPurchaseReturn(input: CreatePurchaseReturnInput) {
+  return ownerAction(async (supabase, userId) => {
+    const { data, error } = await supabase.rpc("create_purchase_return", {
+      p_payload: input,
+    });
+    if (error) return { error: await formatDbError(error) };
+    await insertAuditLog(
+      supabase,
+      userId,
+      "CREATE_PURCHASE_RETURN",
+      "purchase_returns",
+      input.purchase_order_id,
+      {
+        return_id: (data as { return_id: string }).return_id,
+      },
+    );
+    revalidatePath("/purchases");
+    revalidatePath("/inventory");
+    revalidatePath("/reports");
+    return {
+      data: data as {
+        return_id: string;
+        return_number: string;
+        total_refund: number;
+      },
+    };
+  });
+}
+
+export async function getPurchaseReturns(poId: string): Promise<{
+  returns: (PurchaseReturn & { items: PurchaseReturnItem[] })[];
+}> {
+  const supabase = await createClient();
+
+  const { data: returnsData, error: returnsError } = await supabase
+    .from("purchase_returns")
+    .select("*")
+    .eq("purchase_order_id", poId)
+    .order("created_at", { ascending: true });
+
+  if (returnsError) throw new Error(returnsError.message);
+  if (!returnsData || returnsData.length === 0) return { returns: [] };
+
+  const returnIds = returnsData.map((r) => r.id);
+
+  const [itemsResult, profilesResult] = await Promise.all([
+    supabase
+      .from("purchase_return_items")
+      .select("*, products(name, sku)")
+      .in("return_id", returnIds),
+    supabase
+      .from("profiles")
+      .select("id, full_name")
+      .in(
+        "id",
+        returnsData
+          .map((r) => r.created_by)
+          .filter((id): id is string => Boolean(id)),
+      ),
+  ]);
+
+  if (itemsResult.error) throw new Error(itemsResult.error.message);
+
+  const userNames: Record<string, string> = {};
+  for (const p of profilesResult.data ?? []) {
+    userNames[p.id] = p.full_name;
+  }
+
+  const itemsByReturn: Record<string, PurchaseReturnItem[]> = {};
+  for (const item of itemsResult.data ?? []) {
+    if (!itemsByReturn[item.return_id]) itemsByReturn[item.return_id] = [];
+    itemsByReturn[item.return_id].push(item as PurchaseReturnItem);
+  }
+
+  return {
+    returns: returnsData.map((r) => ({
+      ...r,
+      created_by_name: r.created_by ? (userNames[r.created_by] ?? null) : null,
+      items: itemsByReturn[r.id] ?? [],
+    })),
+  };
 }

@@ -1,7 +1,12 @@
 import { PODetailActions } from "@/components/purchases/po-detail-actions";
+import { POReturnActions } from "@/components/purchases/po-return-actions";
+import { POVoidActions } from "@/components/purchases/po-void-actions";
 import { SupplierPaymentsClient } from "@/components/purchases/supplier-payments-client";
 import { PageHeader } from "@/components/ui/page-header";
-import { getPurchaseOrderWithItems } from "@/lib/actions/purchases";
+import {
+  getPurchaseOrderWithItems,
+  getPurchaseReturns,
+} from "@/lib/actions/purchases";
 import { getSupplierPayments } from "@/lib/actions/supplier-payments";
 import { getServerTranslations } from "@/lib/i18n/server";
 import { formatCurrency, formatDateTime } from "@/lib/utils";
@@ -10,17 +15,26 @@ interface Props {
   params: Promise<{ id: string }>;
 }
 
+const statusColors: Record<string, string> = {
+  draft: "bg-gray-50 text-gray-700",
+  received: "bg-green-50 text-green-700",
+  cancelled: "bg-yellow-50 text-yellow-700",
+  voided: "bg-red-50 text-red-600",
+};
+
 export default async function PurchaseOrderDetailPage({ params }: Props) {
   const { id } = await params;
 
-  // Run all three queries concurrently instead of awaiting getPurchaseOrderWithItems
-  // first and then sequentially fetching supplier payments.
-  // getSupplierPayments returns [] for non-credit POs (no records match).
-  const [{ po, items }, supplierPaymentsData, t] = await Promise.all([
-    getPurchaseOrderWithItems(id),
-    getSupplierPayments(id),
-    getServerTranslations(),
-  ]);
+  // Run all queries concurrently.
+  // getSupplierPayments returns [] for non-credit POs.
+  // getPurchaseReturns returns [] when no returns have been made.
+  const [{ po, items }, supplierPaymentsData, purchaseReturnsResult, t] =
+    await Promise.all([
+      getPurchaseOrderWithItems(id),
+      getSupplierPayments(id),
+      getPurchaseReturns(id),
+      getServerTranslations(),
+    ]);
 
   // Only surface payments for credit POs that have been received.
   const supplierPayments =
@@ -40,7 +54,28 @@ export default async function PurchaseOrderDetailPage({ params }: Props) {
         backHref="/purchases"
         backLabel={t.purchases.title}
       >
+        <span
+          className={`inline-flex items-center rounded-full px-2.5 py-1 text-xs font-medium capitalize ${
+            statusColors[po.status] ?? ""
+          }`}
+        >
+          {po.status}
+        </span>
         <PODetailActions poId={po.id} status={po.status} />
+        <POVoidActions poId={po.id} status={po.status} />
+        <POReturnActions
+          poId={po.id}
+          poStatus={po.status}
+          poItems={items.map((item) => ({
+            id: item.id,
+            product_id: item.product_id,
+            quantity: item.quantity,
+            cost_price: item.cost_price,
+            subtotal: item.subtotal,
+            products: item.products as { name: string; sku: string } | null,
+          }))}
+          existingReturns={purchaseReturnsResult.returns}
+        />
       </PageHeader>
       <p className="text-sm text-gray-500 dark:text-gray-400">
         {t.purchases.created} {formatDateTime(po.created_at)}
@@ -94,6 +129,25 @@ export default async function PurchaseOrderDetailPage({ params }: Props) {
             <p className="text-sm text-gray-700 dark:text-gray-300">
               {po.notes}
             </p>
+          </div>
+        )}
+
+        {po.status === "voided" && po.void_reason && (
+          <div className="border-t border-gray-200 dark:border-gray-700 pt-3">
+            <p className="text-xs text-gray-500 dark:text-gray-400">
+              {t.purchases.voidReason}
+            </p>
+            <p className="text-sm text-red-600">{po.void_reason}</p>
+            {po.voided_at && (
+              <p className="text-xs text-gray-400 mt-1">
+                {formatDateTime(po.voided_at)}
+                {po.voided_by_name && (
+                  <span className="ml-1">
+                    · {t.common.voidedBy} {po.voided_by_name}
+                  </span>
+                )}
+              </p>
+            )}
           </div>
         )}
       </div>

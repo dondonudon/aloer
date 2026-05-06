@@ -44,7 +44,7 @@ export interface SupplierPayment {
   created_by_name?: string | null;
 }
 export type SaleStatus = "completed" | "voided";
-export type PurchaseOrderStatus = "draft" | "received" | "cancelled";
+export type PurchaseOrderStatus = "draft" | "received" | "cancelled" | "voided";
 export type AccountType =
   | "asset"
   | "liability"
@@ -185,6 +185,9 @@ export interface PurchaseOrder {
   created_by: string | null;
   created_at: string;
   received_at: string | null;
+  voided_at: string | null;
+  voided_by: string | null;
+  void_reason: string | null;
 }
 
 export interface PurchaseOrderItem {
@@ -394,4 +397,40 @@ export interface CreateSaleReturnInput {
   refund_method: "cash" | "transfer";
   notes?: string;
   items: SaleReturnItemInput[];
+}
+
+export interface PurchaseReturn {
+  id: string;
+  return_number: string;
+  purchase_order_id: string;
+  refund_method: "cash" | "transfer";
+  total_refund: number;
+  notes: string | null;
+  created_by: string | null;
+  created_at: string;
+  /** Resolved display name of the user who created this return. */
+  created_by_name?: string | null;
+}
+
+export interface PurchaseReturnItem {
+  id: string;
+  return_id: string;
+  product_id: string;
+  quantity: number;
+  unit_cost: number;
+  refund_amount: number;
+  /** Resolved product name (joined query). */
+  products?: { name: string; sku: string } | null;
+}
+
+export interface PurchaseReturnItemInput {
+  product_id: string;
+  quantity: number;
+}
+
+export interface CreatePurchaseReturnInput {
+  purchase_order_id: string;
+  refund_method: "cash" | "transfer";
+  notes?: string;
+  items: PurchaseReturnItemInput[];
 }
