@@ -44,7 +44,8 @@ function canvasToBlob(
 ): Promise<Blob> {
   return new Promise((resolve, reject) => {
     canvas.toBlob(
-      (blob) => (blob ? resolve(blob) : reject(new Error("Canvas encode failed"))),
+      (blob) =>
+        blob ? resolve(blob) : reject(new Error("Canvas encode failed")),
       type,
       quality,
     );
