@@ -43,7 +43,7 @@ export function Modal({ open, onClose, title, children }: ModalProps) {
   if (!mounted || !open) return null;
 
   return createPortal(
-    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+    <div className="fixed inset-x-0 top-0 z-100 flex h-dvh items-center justify-center p-4">
       {/* Backdrop */}
       <div
         className="absolute inset-0 bg-black/40"
@@ -55,7 +55,7 @@ export function Modal({ open, onClose, title, children }: ModalProps) {
         role="dialog"
         aria-modal="true"
         aria-labelledby="modal-title"
-        className="relative flex w-full max-w-lg max-h-[calc(100vh-2rem)] flex-col rounded-xl shadow-xl bg-white dark:bg-gray-800"
+        className="relative flex w-full max-w-lg max-h-[calc(100dvh-2rem)] flex-col rounded-xl shadow-xl bg-white dark:bg-gray-800"
       >
         <div className="flex shrink-0 items-center justify-between px-6 pt-6 pb-4">
           <h2
