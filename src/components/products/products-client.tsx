@@ -1,12 +1,21 @@
 "use client";
 
-import { Download, Loader2, Pencil, Plus, Search } from "lucide-react";
+import { Download, Loader2, Pencil, Plus } from "lucide-react";
 import dynamic from "next/dynamic";
 import { usePathname, useRouter } from "next/navigation";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { DataTable, type DataTableColumn } from "@/components/ui/data-table";
+import {
+  ActiveFilter,
+  FilterBar,
+  RangeFilter,
+  SearchFilter,
+  SelectFilter,
+  type SelectFilterOption,
+} from "@/components/ui/filters";
 import { Pagination } from "@/components/ui/pagination";
+import { StatusBadge } from "@/components/ui/status-badge";
 import { Toast } from "@/components/ui/toast";
 import {
   createProduct,
@@ -25,12 +34,23 @@ const ProductEditorModal = dynamic(
   { ssr: false },
 );
 
+export interface ProductsFilterState {
+  search: string;
+  category: string;
+  unit: string;
+  /** "" | "true" | "false" — string form lives in the URL */
+  active: string;
+  minPrice: string;
+  maxPrice: string;
+}
+
 interface ProductsClientProps {
   products: Product[];
   total: number;
   page: number;
   pageSize: number;
-  search: string;
+  categories: string[];
+  filters: ProductsFilterState;
 }
 
 function MarginBadge({
@@ -62,14 +82,47 @@ function MarginBadge({
   );
 }
 
+const EMPTY_FILTERS: ProductsFilterState = {
+  search: "",
+  category: "",
+  unit: "",
+  active: "",
+  minPrice: "",
+  maxPrice: "",
+};
+
+function buildQuery(
+  filters: ProductsFilterState,
+  extra?: Record<string, string>,
+) {
+  const params = new URLSearchParams();
+  if (filters.search) params.set("search", filters.search);
+  if (filters.category) params.set("category", filters.category);
+  if (filters.unit) params.set("unit", filters.unit);
+  if (filters.active) params.set("active", filters.active);
+  if (filters.minPrice) params.set("minPrice", filters.minPrice);
+  if (filters.maxPrice) params.set("maxPrice", filters.maxPrice);
+  if (extra) {
+    for (const [k, v] of Object.entries(extra)) {
+      if (v) params.set(k, v);
+      else params.delete(k);
+    }
+  }
+  return params;
+}
+
 export function ProductsClient({
   products,
   total,
   page,
   pageSize,
-  search: initialSearch,
+  categories,
+  filters: initialFilters,
 }: ProductsClientProps) {
   const { t } = useI18n();
+  const router = useRouter();
+  const pathname = usePathname();
+
   const unitOptions = [
     { value: "pcs", label: t.products.unitPcs },
     { value: "kg", label: t.products.unitKg },
@@ -77,9 +130,25 @@ export function ProductsClient({
     { value: "box", label: t.products.unitBox },
     { value: "liter", label: t.products.unitLiter },
   ];
-  const router = useRouter();
-  const pathname = usePathname();
-  const [search, setSearch] = useState(initialSearch);
+
+  const categoryFilterOptions: SelectFilterOption[] = [
+    { value: "", label: t.filter.allCategories },
+    ...categories.map((c) => ({ value: c, label: c })),
+  ];
+  const unitFilterOptions: SelectFilterOption[] = [
+    { value: "", label: t.filter.allUnits },
+    ...unitOptions,
+  ];
+
+  const [filters, setFilters] = useState<ProductsFilterState>(initialFilters);
+  const hasActiveFilters =
+    !!filters.search ||
+    !!filters.category ||
+    !!filters.unit ||
+    !!filters.active ||
+    !!filters.minPrice ||
+    !!filters.maxPrice;
+
   const [modalOpen, setModalOpen] = useState(false);
   const [editing, setEditing] = useState<Product | null>(null);
   const [imageUrl, setImageUrl] = useState("");
@@ -129,39 +198,66 @@ export function ProductsClient({
     update: t.common.update,
   };
 
-  // Debounce search → URL (skip first render)
+  const navigate = useCallback(
+    (next: ProductsFilterState) => {
+      const qs = buildQuery(next).toString();
+      router.push(qs ? `${pathname}?${qs}` : pathname);
+    },
+    [pathname, router],
+  );
+
+  // Text-typed inputs (search + price range) are debounced;
+  // select filters navigate immediately via `updateFilter`.
+  const filtersRef = useRef(filters);
+  useEffect(() => {
+    filtersRef.current = filters;
+  });
   const isFirstRender = useRef(true);
+  // biome-ignore lint/correctness/useExhaustiveDependencies: search/minPrice/maxPrice are intentional debounce triggers — we read the rest from filtersRef so a stale immediate-navigate doesn't get overwritten.
   useEffect(() => {
     if (isFirstRender.current) {
       isFirstRender.current = false;
       return;
     }
-    const t = setTimeout(() => {
-      const params = new URLSearchParams();
-      if (search) params.set("search", search);
+    const handle = setTimeout(() => navigate(filtersRef.current), 400);
+    return () => clearTimeout(handle);
+  }, [filters.search, filters.minPrice, filters.maxPrice, navigate]);
+
+  function updateFilter<K extends keyof ProductsFilterState>(
+    key: K,
+    value: ProductsFilterState[K],
+    immediate = true,
+  ) {
+    const next = { ...filters, [key]: value };
+    setFilters(next);
+    if (immediate) navigate(next);
+  }
+
+  function clearAll() {
+    setFilters(EMPTY_FILTERS);
+    navigate(EMPTY_FILTERS);
+  }
+
+  const buildHref = useCallback(
+    (p: number) => {
+      const params = buildQuery(filters);
+      if (pageSize !== 10) params.set("limit", String(pageSize));
+      if (p > 1) params.set("page", String(p));
       const qs = params.toString();
-      router.push(qs ? `${pathname}?${qs}` : pathname);
-    }, 400);
-    return () => clearTimeout(t);
-  }, [search, router, pathname]);
+      return qs ? `${pathname}?${qs}` : pathname;
+    },
+    [filters, pageSize, pathname],
+  );
 
-  function buildHref(p: number) {
-    const params = new URLSearchParams();
-    if (search) params.set("search", search);
-    if (pageSize !== 10) params.set("limit", String(pageSize));
-    if (p > 1) params.set("page", String(p));
-    const qs = params.toString();
-    return qs ? `${pathname}?${qs}` : pathname;
-  }
-
-  function buildLimitHref(limit: number) {
-    const params = new URLSearchParams();
-    if (search) params.set("search", search);
-    if (limit !== 10) params.set("limit", String(limit));
-    // page intentionally omitted — resets to 1
-    const qs = params.toString();
-    return qs ? `${pathname}?${qs}` : pathname;
-  }
+  const buildLimitHref = useCallback(
+    (limit: number) => {
+      const params = buildQuery(filters);
+      if (limit !== 10) params.set("limit", String(limit));
+      const qs = params.toString();
+      return qs ? `${pathname}?${qs}` : pathname;
+    },
+    [filters, pathname],
+  );
 
   const totalPages = Math.ceil(total / pageSize);
 
@@ -278,6 +374,115 @@ export function ProductsClient({
     setLoading(false);
   }
 
+  const columns: DataTableColumn<Product>[] = [
+    {
+      id: "sku",
+      header: t.products.sku,
+      cell: (p) => (
+        <span className="font-mono text-gray-700 dark:text-gray-300">
+          {p.sku}
+        </span>
+      ),
+    },
+    {
+      id: "name",
+      header: t.products.name,
+      cell: (p) => (
+        <span className="text-gray-900 dark:text-gray-100 font-medium">
+          {p.name}
+        </span>
+      ),
+    },
+    {
+      id: "category",
+      header: t.products.category,
+      cellClassName: "text-gray-600 dark:text-gray-400",
+      cell: (p) => p.category || "—",
+    },
+    {
+      id: "unit",
+      header: t.products.unit,
+      cellClassName: "text-gray-600 dark:text-gray-400",
+      cell: (p) => p.unit,
+    },
+    {
+      id: "price",
+      header: t.products.price,
+      align: "right",
+      cellClassName: "text-gray-900 dark:text-gray-100",
+      cell: (p) => formatCurrency(p.selling_price),
+    },
+    {
+      id: "bulkPrice",
+      header: t.products.bulkPrice,
+      align: "right",
+      cellClassName: "text-gray-600 dark:text-gray-400",
+      cell: (p) =>
+        p.bulk_price
+          ? `${formatCurrency(p.bulk_price)} (≥${p.bulk_min_qty})`
+          : "—",
+    },
+    {
+      id: "margin",
+      header: t.products.margin,
+      align: "right",
+      cell: (p) =>
+        p.latest_cost_price ? (
+          <MarginBadge
+            sellingPrice={p.selling_price}
+            costPrice={p.latest_cost_price}
+          />
+        ) : (
+          <span className="text-gray-400 text-xs">{t.products.noCostData}</span>
+        ),
+    },
+    {
+      id: "status",
+      header: t.products.status,
+      align: "center",
+      cell: (p) => (
+        <StatusBadge
+          active={p.is_active}
+          activeLabel={t.products.active}
+          inactiveLabel={t.products.inactive}
+        />
+      ),
+    },
+    {
+      id: "actions",
+      header: t.products.actions,
+      align: "center",
+      cell: (p) => (
+        <div className="flex items-center justify-center gap-1">
+          <button
+            type="button"
+            onClick={() => openEdit(p)}
+            className="p-1 rounded hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+            aria-label={`Edit ${p.name}`}
+          >
+            <Pencil className="h-4 w-4 text-gray-500" aria-hidden="true" />
+          </button>
+          <button
+            type="button"
+            onClick={() => downloadShareImage(p)}
+            disabled={downloadingId === p.id}
+            className="p-1 rounded hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            aria-label={`Download image for ${p.name}`}
+          >
+            {downloadingId === p.id ? (
+              <Loader2
+                className="h-4 w-4 text-gray-500 animate-spin"
+                aria-hidden="true"
+              />
+            ) : (
+              <Download className="h-4 w-4 text-gray-500" aria-hidden="true" />
+            )}
+          </button>
+        </div>
+      ),
+    },
+  ];
+
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
@@ -290,155 +495,48 @@ export function ProductsClient({
         </Button>
       </div>
 
-      <div className="relative">
-        <Search
-          className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400"
-          aria-hidden="true"
-        />
-        <Input
+      <FilterBar onClear={hasActiveFilters ? clearAll : undefined}>
+        <SearchFilter
+          value={filters.search}
+          onChange={(v) => updateFilter("search", v, false)}
           placeholder={t.products.searchPlaceholder}
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          className="pl-10"
-          aria-label={t.products.searchPlaceholder}
         />
-      </div>
+        <SelectFilter
+          label={t.filter.filterByCategory}
+          srOnlyLabel
+          value={filters.category}
+          onChange={(v) => updateFilter("category", v)}
+          options={categoryFilterOptions}
+        />
+        <SelectFilter
+          label={t.filter.filterByUnit}
+          srOnlyLabel
+          value={filters.unit}
+          onChange={(v) => updateFilter("unit", v)}
+          options={unitFilterOptions}
+        />
+        <RangeFilter
+          label={t.filter.priceRange}
+          idPrefix="products-price"
+          min={filters.minPrice}
+          onMinChange={(v) => updateFilter("minPrice", v, false)}
+          max={filters.maxPrice}
+          onMaxChange={(v) => updateFilter("maxPrice", v, false)}
+          minPlaceholder={t.filter.minPlaceholder}
+          maxPlaceholder={t.filter.maxPlaceholder}
+        />
+        <ActiveFilter
+          value={filters.active}
+          onChange={(v) => updateFilter("active", v)}
+        />
+      </FilterBar>
 
-      <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-700/50">
-                <th className="text-left py-3 px-4 font-medium text-gray-500">
-                  {t.products.sku}
-                </th>
-                <th className="text-left py-3 px-4 font-medium text-gray-500">
-                  {t.products.name}
-                </th>
-                <th className="text-left py-3 px-4 font-medium text-gray-500">
-                  {t.products.category}
-                </th>
-                <th className="text-left py-3 px-4 font-medium text-gray-500">
-                  {t.products.unit}
-                </th>
-                <th className="text-right py-3 px-4 font-medium text-gray-500">
-                  {t.products.price}
-                </th>
-                <th className="text-right py-3 px-4 font-medium text-gray-500">
-                  {t.products.bulkPrice}
-                </th>
-                <th className="text-right py-3 px-4 font-medium text-gray-500">
-                  {t.products.margin}
-                </th>
-                <th className="text-center py-3 px-4 font-medium text-gray-500">
-                  {t.products.status}
-                </th>
-                <th className="text-center py-3 px-4 font-medium text-gray-500">
-                  {t.products.actions}
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {products.map((product) => (
-                <tr
-                  key={product.id}
-                  className="border-b border-gray-50 dark:border-gray-700/50 hover:bg-gray-50 dark:hover:bg-gray-700/30"
-                >
-                  <td className="py-3 px-4 font-mono text-gray-700 dark:text-gray-300">
-                    {product.sku}
-                  </td>
-                  <td className="py-3 px-4 text-gray-900 dark:text-gray-100 font-medium">
-                    {product.name}
-                  </td>
-                  <td className="py-3 px-4 text-gray-600 dark:text-gray-400">
-                    {product.category || "—"}
-                  </td>
-                  <td className="py-3 px-4 text-gray-600 dark:text-gray-400">
-                    {product.unit}
-                  </td>
-                  <td className="py-3 px-4 text-right text-gray-900 dark:text-gray-100">
-                    {formatCurrency(product.selling_price)}
-                  </td>
-                  <td className="py-3 px-4 text-right text-gray-600 dark:text-gray-400">
-                    {product.bulk_price
-                      ? `${formatCurrency(product.bulk_price)} (≥${product.bulk_min_qty})`
-                      : "—"}
-                  </td>
-                  <td className="py-3 px-4 text-right">
-                    {product.latest_cost_price ? (
-                      <MarginBadge
-                        sellingPrice={product.selling_price}
-                        costPrice={product.latest_cost_price}
-                      />
-                    ) : (
-                      <span className="text-gray-400 text-xs">
-                        {t.products.noCostData}
-                      </span>
-                    )}
-                  </td>
-                  <td className="py-3 px-4 text-center">
-                    <span
-                      className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${
-                        product.is_active
-                          ? "bg-green-50 text-green-700"
-                          : "bg-gray-100 text-gray-500"
-                      }`}
-                    >
-                      {product.is_active
-                        ? t.products.active
-                        : t.products.inactive}
-                    </span>
-                  </td>
-                  <td className="py-3 px-4 text-center">
-                    <div className="flex items-center justify-center gap-1">
-                      <button
-                        type="button"
-                        onClick={() => openEdit(product)}
-                        className="p-1 rounded hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
-                        aria-label={`Edit ${product.name}`}
-                      >
-                        <Pencil
-                          className="h-4 w-4 text-gray-500"
-                          aria-hidden="true"
-                        />
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => downloadShareImage(product)}
-                        disabled={downloadingId === product.id}
-                        className="p-1 rounded hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                        aria-label={`Download image for ${product.name}`}
-                      >
-                        {downloadingId === product.id ? (
-                          <Loader2
-                            className="h-4 w-4 text-gray-500 animate-spin"
-                            aria-hidden="true"
-                          />
-                        ) : (
-                          <Download
-                            className="h-4 w-4 text-gray-500"
-                            aria-hidden="true"
-                          />
-                        )}
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-              {products.length === 0 && (
-                <tr>
-                  <td
-                    colSpan={9}
-                    className="py-8 text-center text-gray-400 dark:text-gray-500"
-                  >
-                    {t.products.noProductsFound}
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
-      </div>
+      <DataTable
+        columns={columns}
+        rows={products}
+        rowKey={(p) => p.id}
+        emptyMessage={t.products.noProductsFound}
+      />
 
       <Pagination
         page={page}

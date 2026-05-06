@@ -89,6 +89,22 @@ export interface Translations {
     to: string;
     filterByStatus: string;
     clear: string;
+    /** "All Status" — used by ActiveFilter and other status dropdowns */
+    allStatus: string;
+    /** "All Categories" — first option in a category dropdown */
+    allCategories: string;
+    /** "Filter by category" — accessible label for the category dropdown */
+    filterByCategory: string;
+    /** "All Units" — first option in a unit dropdown */
+    allUnits: string;
+    /** "Filter by unit" — accessible label for the unit dropdown */
+    filterByUnit: string;
+    /** "Price Range" — label for a min/max price filter */
+    priceRange: string;
+    /** "Min" placeholder shown in a numeric range input */
+    minPlaceholder: string;
+    /** "Max" placeholder shown in a numeric range input */
+    maxPlaceholder: string;
   };
 
   login: {
@@ -650,6 +666,14 @@ export const en: Translations = {
     to: "To",
     filterByStatus: "Filter by status",
     clear: "Clear",
+    allStatus: "All Status",
+    allCategories: "All Categories",
+    filterByCategory: "Filter by category",
+    allUnits: "All Units",
+    filterByUnit: "Filter by unit",
+    priceRange: "Price Range",
+    minPlaceholder: "Min",
+    maxPlaceholder: "Max",
   },
 
   login: {
@@ -1214,6 +1238,14 @@ export const id: Translations = {
     to: "Sampai",
     filterByStatus: "Filter berdasarkan status",
     clear: "Hapus",
+    allStatus: "Semua Status",
+    allCategories: "Semua Kategori",
+    filterByCategory: "Filter berdasarkan kategori",
+    allUnits: "Semua Satuan",
+    filterByUnit: "Filter berdasarkan satuan",
+    priceRange: "Rentang Harga",
+    minPlaceholder: "Min",
+    maxPlaceholder: "Maks",
   },
 
   login: {

@@ -28,11 +28,19 @@ const getCachedActiveProducts = unstable_cache(
   { revalidate: 60, tags: ["active-products"] },
 );
 
-export async function getProducts(options?: {
+export interface GetProductsOptions {
   search?: string;
   page?: number;
   limit?: number;
-}) {
+  category?: string;
+  unit?: string;
+  /** "true" = active only, "false" = inactive only, undefined = both */
+  isActive?: boolean;
+  minPrice?: number;
+  maxPrice?: number;
+}
+
+export async function getProducts(options?: GetProductsOptions) {
   const supabase = await createClient();
   const limit = options?.limit ?? 20;
   const page = Math.max(1, options?.page ?? 1);
@@ -50,6 +58,21 @@ export async function getProducts(options?: {
     query = query.or(
       `name.ilike.%${options.search}%,sku.ilike.%${options.search}%`,
     );
+  }
+  if (options?.category) {
+    query = query.eq("category", options.category);
+  }
+  if (options?.unit) {
+    query = query.eq("unit", options.unit);
+  }
+  if (options?.isActive !== undefined) {
+    query = query.eq("is_active", options.isActive);
+  }
+  if (options?.minPrice !== undefined) {
+    query = query.gte("selling_price", options.minPrice);
+  }
+  if (options?.maxPrice !== undefined) {
+    query = query.lte("selling_price", options.maxPrice);
   }
 
   query = query.range(offset, offset + limit - 1);
