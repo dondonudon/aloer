@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Toast } from "@/components/ui/toast";
 import { urlBase64ToUint8Array } from "@/lib/push";
@@ -17,11 +17,7 @@ export function NotificationsCard() {
     type: "success" | "error";
   } | null>(null);
 
-  useEffect(() => {
-    void refresh();
-  }, []);
-
-  async function refresh() {
+  const refresh = useCallback(async () => {
     if (typeof window === "undefined") return;
     if (
       !("serviceWorker" in navigator) ||
@@ -38,7 +34,11 @@ export function NotificationsCard() {
     const reg = await navigator.serviceWorker.ready;
     const sub = await reg.pushManager.getSubscription();
     setStatus(sub ? "on" : "off");
-  }
+  }, []);
+
+  useEffect(() => {
+    void refresh();
+  }, [refresh]);
 
   async function enable() {
     if (!PUBLIC_KEY) {
