@@ -76,11 +76,7 @@ export function InstallPrompt() {
     };
   }, []);
 
-  const mode: Mode = forceHidden
-    ? "hidden"
-    : event
-      ? "android"
-      : staticMode;
+  const mode: Mode = forceHidden ? "hidden" : event ? "android" : staticMode;
 
   function dismiss() {
     setForceHidden(true);
