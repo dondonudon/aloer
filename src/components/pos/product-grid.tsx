@@ -97,7 +97,9 @@ export function ProductGrid({
                   {product.sku}
                 </span>
                 {hasStock && (
-                  <span className={`text-[10px] mt-0.5 font-medium ${stockClass}`}>
+                  <span
+                    className={`text-[10px] mt-0.5 font-medium ${stockClass}`}
+                  >
                     {isOut
                       ? t.pos.outOfStock
                       : `${t.pos.stock}: ${stock} ${product.unit}`}
