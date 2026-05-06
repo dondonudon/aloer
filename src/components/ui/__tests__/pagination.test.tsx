@@ -24,6 +24,7 @@ vi.mock("next/link", () => ({
 vi.mock("lucide-react", () => ({
   ChevronLeft: () => <svg data-testid="icon-prev" />,
   ChevronRight: () => <svg data-testid="icon-next" />,
+  Loader2: () => <svg data-testid="icon-loader" />,
 }));
 
 const mockPush = vi.fn();
