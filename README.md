@@ -15,9 +15,9 @@ A lightweight Point-of-Sale system with FIFO inventory, double-entry accounting,
 ## Features
 
 - **POS** — product grid, cart, FIFO-based sale, cash/transfer/split/credit payment, percentage or fixed discounts, campaign discounts, reseller picker, receipt modal
-- **Sales** — filterable list by date range and status; sale detail with line items, COGS, profit; owner-only void
+- **Sales** — filterable list by date range and status; sale detail with line items, COGS, profit; owner-only void and partial return
 - **Inventory** — stock on hand + value per product per batch; adjustment history and creation
-- **Purchases** — create PO, receive PO (updates inventory + journals), cancel PO, pay supplier (AP flow)
+- **Purchases** — create PO, receive PO (updates inventory + journals), cancel PO, void received PO, partial return to supplier, pay supplier (AP flow)
 - **Credit (AR/AP)** — outstanding credit sales and credit POs, payment collection per record
 - **Catalog** — categories, suppliers, resellers, campaigns — full CRUD
 - **Reports** — Sales summary, Profit & Loss, Balance Sheet (all exportable to PDF)
@@ -32,9 +32,10 @@ Access is Google OAuth only. Users must exist in the `user_roles` table to enter
 | Action | Owner | Cashier |
 |---|---|---|
 | Create sale | ✅ | ✅ |
-| Void sale | ✅ | ❌ |
+| Void / return sale | ✅ | ❌ |
 | Manage products / catalog | ✅ | ❌ |
 | Create / receive purchase orders | ✅ | ❌ |
+| Void / return purchase orders | ✅ | ❌ |
 | Adjust inventory | ✅ | ❌ |
 | View reports | ✅ | ❌ |
 

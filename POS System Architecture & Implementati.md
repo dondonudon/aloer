@@ -1,6 +1,6 @@
 # Aloer — POS System Architecture & Implementation Plan
 
-> **Last updated:** April 23, 2026
+> **Last updated:** May 6, 2026
 
 ---
 
@@ -11,12 +11,13 @@
 | Area | Detail |
 |---|---|
 | **Tech stack** | Next.js 16.2.2 (App Router, TypeScript 5), React 19, Supabase (PostgreSQL + Auth + Storage), Tailwind CSS v4, Biome |
-| **Database** | All 23 tables + 8 RPC functions implemented. Base schema in `supabase/migrations/00001_schema.sql`; incremental migrations `00002` – `00011` extend it |
+| **Database** | All tables + 10 RPC functions implemented. Base schema in `supabase/migrations/00001_schema.sql`; incremental migrations `00002` – `00012` extend it |
 | **Idempotency (POS)** | `sales.idempotency_key` column + unique partial index. `create_sale_transaction` short-circuits and returns the existing sale when the same key is replayed. Frontend generates a UUID per checkout attempt and rotates it after a successful sale. Migration: `00008_idempotency_key.sql`. |
 | **Auth** | Google OAuth only. Whitelist-based: users must exist in `user_roles` to access the app |
 | **RBAC** | Owner and Cashier roles enforced at Server Action level (`ownerAction()` wrapper) and via RLS |
 | **POS screen** | `/pos` — product grid, cart, FIFO sale, cash/transfer/split/credit payment, discount (% or fixed), campaign discounts, reseller picker, delivery fee input, cost/margin display, receipt modal |
 | **Sales** | `/sales` — filterable by date range and status. `/sales/[id]` — line items, COGS, profit, void button (owner only), partial return flow (owner only) |
+| **Purchase order void / return** | Owner can void a received PO entirely or process partial returns to the supplier (`purchase_returns` + `purchase_return_items` tables). Void blocks when any `supplier_payments` exist or any batch from the PO has been touched. Partial return validates per-product returnable quantity and deducts FIFO from this PO's batches only. UI: `POVoidActions` + `POReturnActions` on `/purchases/[id]`. Migration: `00012_purchase_returns.sql`. |
 | **Products** | `/products` — CRUD, cost tracking, margin badge, category dropdown, drag-drop image upload, price history modal, unit management |
 | **Inventory** | `/inventory` — stock on hand + value per product, per-batch detail. `/inventory/adjustments` — history and create new |
 | **Purchases** | `/purchases` — create PO, receive PO (inventory + journal), cancel PO, pay supplier (AP flow) |
@@ -58,6 +59,8 @@ See [§17. Future Work](#17-future-work) for the full list.
 | **`insertAuditLog()` silent** | Audit logging failures are swallowed so they never block the primary mutation. Called at the end of every owner action handler. |
 | **Void on detail page only** | Void action placed on `/sales/[id]` only — requires navigating to the record first to prevent accidental clicks |
 | **Partial return on detail page only** | `SaleReturnActions` component on `/sales/[id]`; same reasoning as void — intentional navigation required |
+| **PO void / return on detail page only** | `POVoidActions` + `POReturnActions` rendered only on `/purchases/[id]`; mirrors the sales convention so destructive actions require navigating to the record first |
+| **PO void blocked when partially settled** | `void_purchase_order` refuses if any `supplier_payments` row exists or any batch from the PO has `quantity_remaining < quantity_in`. Reversing a partially-paid or partially-consumed PO is too tangled to auto-handle; the user must reverse those manually first. Partial returns have a looser guard — only need the PO's own batches to still hold enough remaining stock for the items being returned. |
 | **`pos-assets` Storage bucket** | Single public bucket for all images, organized under `products/` and `store/` folder prefixes |
 | **On-demand PNG generation** | `GET /api/products/[id]/share` uses `next/og` (`ImageResponse`) with `runtime = "nodejs"` — server fetches product images and store icon as base64 data URLs to avoid CORS canvas tainting. PNG is generated in-memory and streamed; never persisted to storage. Biome and ESLint `no-img-element` rules overridden for this route because Satori requires plain `<img>`. |
 | **Stock Report in Inventory** | Stock Report removed from `/reports` — Inventory page covers stock-on-hand, value, and batch detail |
@@ -168,7 +171,7 @@ Permissions by role:
 
 ### 4.5 Purchase Tables
 
-**purchase_orders** — po_number (seq), supplier_id, status ('draft'|'received'|'cancelled'), payment_method ('cash'|'transfer'|'credit'), total_amount, created_by, received_at  
+**purchase_orders** — po_number (seq), supplier_id, status ('draft'|'received'|'cancelled'|'voided'), payment_method ('cash'|'transfer'|'credit'), total_amount, created_by, received_at, voided_at, voided_by, void_reason  
 **purchase_order_items** — po_id, product_id, quantity, cost_price, expiry_date, subtotal  
 **supplier_payments** — PO AP payment records (amount, payment_method, notes, created_by)
 
@@ -186,7 +189,7 @@ Permissions by role:
 ### 4.7 Accounting Tables
 
 **accounts** — code, name, type ('asset'|'liability'|'equity'|'revenue'|'expense'), is_system (seeded, cannot delete)  
-**journal_entries** — reference_type ('sale'|'void'|'purchase_order'|'adjustment'|'credit_payment'|'supplier_payment'), reference_id, description  
+**journal_entries** — reference_type ('sale'|'void'|'sale_return'|'purchase_order'|'purchase_void'|'purchase_return'|'adjustment'|'credit_payment'|'supplier_payment'), reference_id, description  
 **journal_lines** — journal_entry_id, account_id, debit, credit
 
 Seeded chart of accounts:
@@ -253,6 +256,19 @@ On partial return: restores `inventory_batches.quantity_remaining`, inserts `inv
 Generated client-side as a `crypto.randomUUID()` per checkout attempt.  
 `create_sale_transaction` checks for an existing sale with the same key before doing any work; if found, returns the existing sale's data with `idempotent: true` — no duplicate inventory or journal entries are created.  
 The key is rotated after a confirmed successful sale response so accidental replays from network retries are safe.
+
+---
+
+### 4.14 Purchase Returns (`00012_purchase_returns.sql`)
+
+**purchase_returns** — id (uuid, pk), return_number (seq, format `PRET-YYYYMMDD-####`), purchase_order_id FK, refund_method ('cash'|'transfer'), total_refund, notes, created_by, created_at  
+**purchase_return_items** — return_id FK, product_id FK, quantity, unit_cost, refund_amount
+
+Also extends `purchase_orders` with `voided_at`, `voided_by`, `void_reason` columns and adds `'voided'` to the status check.
+
+On void: deducts each batch's `quantity_in` back to zero (only allowed when batch is untouched), inserts `inventory_movements` (type = 'OUT', reference_type = 'purchase_void'), creates reversing journal entry (DR Cash/Bank/AP, CR Inventory).
+
+On partial return: deducts FIFO from this PO's batches only, inserts `inventory_movements` (type = 'OUT', reference_type = 'purchase_return'), creates partial reversing journal entry for the returned amount.
 
 ---
 
@@ -383,6 +399,44 @@ Owner-only. Operates on an individual sale item selection (not the whole sale):
 
 ---
 
+## 9b. Purchase Order Void Flow
+
+Owner-only, all-or-nothing reversal of a received PO. All steps within ONE transaction:
+
+1. Validate PO exists and status = 'received'
+2. Reject if any `supplier_payments` exist for this PO
+3. Reject if any batch from this PO has `quantity_remaining < quantity_in` (stock has been used or sold)
+4. For each batch from this PO:
+   - Decrement `inventory_batches.quantity_remaining` by `quantity_in` (back to zero)
+   - Insert `inventory_movements` (type = 'OUT', reference_type = 'purchase_void')
+5. Update PO: status → 'voided', set `voided_at`, `voided_by`, `void_reason`
+6. Create reversing journal entry (swap of the original receive — DR Cash/Bank/AP, CR Inventory)
+
+Journal for PO void (mirror of receive — payment_method = 'cash'):
+| Account              | Debit  | Credit |
+| -------------------- | ------ | ------ |
+| Cash (1001)          | total  |        |
+| Inventory (1100)     |        | total  |
+
+---
+
+## 9c. Purchase Order Partial Return Flow
+
+Owner-only. Returns a subset of items to the supplier; PO stays 'received' and remains active. All steps within ONE transaction:
+
+1. Validate PO exists and status = 'received'
+2. For each returned item + quantity:
+   - Validate quantity ≤ original PO item quantity (minus any previously returned qty)
+   - Validate this PO's batches still have ≥ quantity remaining
+   - Deduct FIFO from this PO's batches only (oldest `created_at` first)
+   - Insert `inventory_movements` (type = 'OUT', reference_type = 'purchase_return')
+3. Insert `purchase_returns` + `purchase_return_items` rows (return_number format `PRET-YYYYMMDD-####`)
+4. Create partial reversing journal entry for the refunded amount (DR Cash/Bank, CR Inventory) — supplier refunds the buyer
+
+Per-product unit cost is computed as a weighted average across PO line items for that product (mirrors how `create_sale_return` averages original sale OUT movements).
+
+---
+
 ## 10. PostgreSQL RPC Functions
 
 All critical operations run as atomic PostgreSQL functions. Implementations live in `supabase/migrations/00001_schema.sql`.
@@ -391,7 +445,10 @@ All critical operations run as atomic PostgreSQL functions. Implementations live
 |---|---|
 | `create_sale_transaction(payload)` | Atomic: inserts sale + items, FIFO consumes batches, creates inventory movements, journal entries. Validates product existence and stock. Supports idempotency via `payload.idempotencyKey` — replays return the existing sale without re-processing. |
 | `void_sale(sale_id, reason)` | Reverses a completed sale: restores batch quantities, inserts RETURN movements, creates reversal journal entry. |
+| `create_sale_return(payload)` | Partial return on a completed sale: validates per-product returnable qty, restores FIFO stock, inserts RETURN movements, creates partial reversal journal entry. Lives in `00007_sale_returns.sql`. |
 | `receive_purchase_order(po_id)` | Marks PO received, creates inventory batches + IN movements, creates journal entry. Credit PO creates AP entry. |
+| `void_purchase_order(po_id, reason)` | Reverses a received PO entirely: blocks if any `supplier_payments` exist or any batch has been touched; deducts each batch back to zero, inserts OUT movements (reference_type = 'purchase_void'), creates reversing journal entry. Lives in `00012_purchase_returns.sql`. |
+| `create_purchase_return(payload)` | Partial return of received PO items to the supplier: validates per-product returnable qty, deducts FIFO from this PO's batches only, inserts OUT movements (reference_type = 'purchase_return'), creates partial reversing journal entry. Lives in `00012_purchase_returns.sql`. |
 | `create_inventory_adjustment(payload)` | Positive adj: new batch + journal debit Inventory. Negative: FIFO consume + journal debit Expense. |
 | `collect_sale_payment(payload)` | Records AR collection, reduces Accounts Receivable, journals cash/transfer debit. |
 | `pay_supplier(payload)` | Records AP payment, reduces Accounts Payable, journals cash/transfer debit. |
