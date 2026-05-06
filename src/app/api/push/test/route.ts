@@ -7,20 +7,25 @@ export const runtime = "nodejs";
 // Sends a test notification to every subscription belonging to the caller.
 // Useful for validating the wiring end-to-end from settings.
 export async function POST() {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) {
-    return NextResponse.json({ error: "Unauthenticated" }, { status: 401 });
+  try {
+    const supabase = await createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) {
+      return NextResponse.json({ error: "Unauthenticated" }, { status: 401 });
+    }
+
+    const result = await sendPushToUser(user.id, {
+      title: "Aloer",
+      body: "Notifications are working ✓",
+      url: "/dashboard",
+      tag: "aloer-test",
+    });
+    return NextResponse.json(result);
+  } catch (err) {
+    const message = err instanceof Error ? err.message : "Unknown error";
+    console.error("[push/test]", err);
+    return NextResponse.json({ error: message }, { status: 500 });
   }
-
-  const result = await sendPushToUser(user.id, {
-    title: "Aloer",
-    body: "Notifications are working ✓",
-    url: "/dashboard",
-    tag: "aloer-test",
-  });
-
-  return NextResponse.json(result);
 }
