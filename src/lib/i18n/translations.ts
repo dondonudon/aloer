@@ -180,6 +180,8 @@ export interface Translations {
     checkoutConfirmTitle: string;
     margin: string;
     deliveryFee: string;
+    stock: string;
+    outOfStock: string;
   };
 
   sales: {
@@ -735,6 +737,8 @@ export const en: Translations = {
     checkoutConfirmTitle: "Confirm Checkout",
     margin: "Margin",
     deliveryFee: "Delivery Fee",
+    stock: "Stock",
+    outOfStock: "Out of stock",
   },
 
   sales: {
@@ -1297,6 +1301,8 @@ export const id: Translations = {
     checkoutConfirmTitle: "Konfirmasi Pembayaran",
     margin: "Margin",
     deliveryFee: "Ongkos Kirim",
+    stock: "Stok",
+    outOfStock: "Stok habis",
   },
 
   sales: {

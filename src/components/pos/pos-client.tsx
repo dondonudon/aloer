@@ -27,6 +27,8 @@ interface POSClientProps {
   storeName: string;
   campaigns?: CampaignWithProducts[];
   resellers?: Reseller[];
+  stockByProductId?: Record<string, number>;
+  stockBySku?: Record<string, number>;
 }
 
 /**
@@ -41,6 +43,8 @@ export function POSClient({
   storeName,
   campaigns = [],
   resellers = [],
+  stockByProductId = {},
+  stockBySku = {},
 }: POSClientProps) {
   const { storeIconUrl } = useStore();
   const [loading, setLoading] = useState(false);
@@ -119,6 +123,8 @@ export function POSClient({
         products={products}
         getCampaignForProduct={getCampaignForProduct}
         onAddToCart={addToCart}
+        stockByProductId={stockByProductId}
+        stockBySku={stockBySku}
       />
       <CartPanel
         cart={cart}

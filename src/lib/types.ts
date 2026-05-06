@@ -344,8 +344,10 @@ export interface SalesSummaryRow {
 }
 
 export interface StockReportRow {
+  id?: string;
   sku: string;
   name: string;
+  category?: string | null;
   stock_on_hand: number;
   reserved_stock?: number;
   available_stock?: number;

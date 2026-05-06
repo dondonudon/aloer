@@ -12,6 +12,10 @@ interface ProductGridProps {
   /** Returns the active campaign for a product, if any. Provided by useCart. */
   getCampaignForProduct: (productId: string) => CampaignWithProducts | null;
   onAddToCart: (product: Product) => void;
+  /** Map of product id → stock on hand. */
+  stockByProductId?: Record<string, number>;
+  /** Fallback map of sku → stock on hand, used when id is unavailable. */
+  stockBySku?: Record<string, number>;
 }
 
 /**
@@ -26,6 +30,8 @@ export function ProductGrid({
   products,
   getCampaignForProduct,
   onAddToCart,
+  stockByProductId = {},
+  stockBySku = {},
 }: ProductGridProps) {
   const { t } = useI18n();
   const [search, setSearch] = useState("");
@@ -66,6 +72,16 @@ export function ProductGrid({
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
           {filtered.map((product) => {
             const campaign = getCampaignForProduct(product.id);
+            const stock =
+              stockByProductId[product.id] ?? stockBySku[product.sku];
+            const hasStock = stock !== undefined;
+            const isOut = hasStock && stock <= 0;
+            const isLow = hasStock && stock > 0 && stock <= 5;
+            const stockClass = isOut
+              ? "text-red-600 dark:text-red-400"
+              : isLow
+                ? "text-orange-600 dark:text-orange-400"
+                : "text-gray-500 dark:text-gray-400";
             return (
               <button
                 key={product.id}
@@ -80,6 +96,13 @@ export function ProductGrid({
                 <span className="text-xs text-gray-500 dark:text-gray-400 mt-1">
                   {product.sku}
                 </span>
+                {hasStock && (
+                  <span className={`text-[10px] mt-0.5 font-medium ${stockClass}`}>
+                    {isOut
+                      ? t.pos.outOfStock
+                      : `${t.pos.stock}: ${stock} ${product.unit}`}
+                  </span>
+                )}
                 <span className="text-sm font-semibold text-blue-600 mt-auto pt-2">
                   {formatCurrency(product.selling_price)}
                 </span>
