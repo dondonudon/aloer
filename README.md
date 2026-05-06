@@ -76,7 +76,8 @@ Aloer ships as an installable PWA (manifest + service worker at `public/`). To e
    Set the resulting public/private keys in `.env.local` as shown above.
 2. **Run the migration** for `push_subscriptions` (`supabase/migrations/00013_push_subscriptions.sql`).
 3. **Settings → Notifications** has an *Enable notifications* button users tap on each device. The `Send test` button verifies wiring.
-4. **iOS**: web push only works for installed PWAs (iOS 16.4+). Users must open Aloer in Safari, tap *Share → Add to Home Screen*, then open from the home screen before enabling.
+4. **Install banner**: Aloer auto-shows an "Install Aloer" banner via `<InstallPrompt>` (root layout). On Chrome / Edge / Android the banner has a one-tap install button (`beforeinstallprompt`). On iOS the banner shows the manual *Share → Add to Home Screen* steps because iOS Safari doesn't expose the install API. Dismissals are persisted in `localStorage` so the banner doesn't nag.
+5. **iOS specifics**: web push only works for *installed* PWAs (iOS 16.4+). Users must add Aloer to the home screen and open it from there before *Enable notifications* will succeed.
 
 To send a notification from your own server code:
 

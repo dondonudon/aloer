@@ -1,6 +1,7 @@
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
+import { InstallPrompt } from "@/components/pwa/install-prompt";
 import { ServiceWorkerRegister } from "@/components/pwa/service-worker-register";
 import { ThemeProvider } from "@/components/ui/theme-provider";
 import { I18nProvider } from "@/lib/i18n/context";
@@ -58,6 +59,7 @@ export default function RootLayout({
           <I18nProvider>{children}</I18nProvider>
         </ThemeProvider>
         <ServiceWorkerRegister />
+        <InstallPrompt />
         <SpeedInsights />
       </body>
     </html>
