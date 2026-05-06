@@ -37,6 +37,11 @@ export function NewPurchaseOrderClient({ products, suppliers }: Props) {
   const [notes, setNotes] = useState("");
   const [items, setItems] = useState<POItem[]>([]);
   const [loading, setLoading] = useState(false);
+  const todayIso = new Date().toISOString().slice(0, 10);
+  const defaultDueIso = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)
+    .toISOString()
+    .slice(0, 10);
+  const [dueDate, setDueDate] = useState<string>(defaultDueIso);
   const [toast, setToast] = useState<{
     message: string;
     type: "success" | "error";
@@ -70,6 +75,10 @@ export function NewPurchaseOrderClient({ products, suppliers }: Props) {
       setToast({ message: t.purchases.addAtLeastOne, type: "error" });
       return;
     }
+    if (paymentMethod === "credit" && !dueDate) {
+      setToast({ message: t.purchases.dueDateRequired, type: "error" });
+      return;
+    }
 
     setLoading(true);
 
@@ -77,6 +86,9 @@ export function NewPurchaseOrderClient({ products, suppliers }: Props) {
     formData.set("supplier_id", supplierId);
     formData.set("payment_method", paymentMethod);
     formData.set("notes", notes);
+    if (paymentMethod === "credit") {
+      formData.set("due_date", dueDate);
+    }
     formData.set(
       "items",
       JSON.stringify(
@@ -141,6 +153,16 @@ export function NewPurchaseOrderClient({ products, suppliers }: Props) {
             onChange={(e) => setPaymentMethod(e.target.value)}
           />
         </div>
+        {paymentMethod === "credit" ? (
+          <Input
+            label={t.purchases.dueDate}
+            type="date"
+            value={dueDate}
+            min={todayIso}
+            onChange={(e) => setDueDate(e.target.value)}
+            required
+          />
+        ) : null}
         <Input
           label={t.purchases.notesOptional}
           value={notes}

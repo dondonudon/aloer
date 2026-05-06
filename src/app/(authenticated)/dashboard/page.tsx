@@ -10,6 +10,7 @@ import {
 import { getStockReport } from "@/lib/actions/inventory";
 import { getSalesSummary, getTodaySales } from "@/lib/actions/reports";
 import { getCurrentUser } from "@/lib/auth";
+import { rollUpDueBreakdown } from "@/lib/credit-due";
 import { getServerTranslations } from "@/lib/i18n/server";
 import { formatCurrency } from "@/lib/utils";
 
@@ -255,6 +256,8 @@ async function DashboardCreditOverview({
     (sum, purchaseOrder) => sum + purchaseOrder.outstanding,
     0,
   );
+  const ar = rollUpDueBreakdown(creditSales);
+  const ap = rollUpDueBreakdown(creditPOs);
 
   if (totalAR === 0 && totalAP === 0) {
     return null;
@@ -281,6 +284,22 @@ async function DashboardCreditOverview({
           <p className="text-lg font-bold text-amber-700 dark:text-amber-300">
             {formatCurrency(totalAR)}
           </p>
+          {ar.pastDueCount + ar.dueSoonCount > 0 ? (
+            <div className="mt-1 space-y-0.5 text-xs">
+              {ar.pastDueCount > 0 ? (
+                <p className="text-red-700 dark:text-red-400">
+                  {t.credit.pastDue}: {formatCurrency(ar.pastDueAmount)} (
+                  {ar.pastDueCount})
+                </p>
+              ) : null}
+              {ar.dueSoonCount > 0 ? (
+                <p className="text-amber-700 dark:text-amber-400">
+                  {t.credit.dueSoon}: {formatCurrency(ar.dueSoonAmount)} (
+                  {ar.dueSoonCount})
+                </p>
+              ) : null}
+            </div>
+          ) : null}
         </div>
         <div>
           <p className="text-xs text-orange-600 dark:text-orange-400">
@@ -289,6 +308,22 @@ async function DashboardCreditOverview({
           <p className="text-lg font-bold text-red-700 dark:text-red-300">
             {formatCurrency(totalAP)}
           </p>
+          {ap.pastDueCount + ap.dueSoonCount > 0 ? (
+            <div className="mt-1 space-y-0.5 text-xs">
+              {ap.pastDueCount > 0 ? (
+                <p className="text-red-700 dark:text-red-400">
+                  {t.credit.pastDue}: {formatCurrency(ap.pastDueAmount)} (
+                  {ap.pastDueCount})
+                </p>
+              ) : null}
+              {ap.dueSoonCount > 0 ? (
+                <p className="text-amber-700 dark:text-amber-400">
+                  {t.credit.dueSoon}: {formatCurrency(ap.dueSoonAmount)} (
+                  {ap.dueSoonCount})
+                </p>
+              ) : null}
+            </div>
+          ) : null}
         </div>
       </div>
     </Link>

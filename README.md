@@ -99,10 +99,10 @@ Stale endpoints (404/410) are pruned automatically.
 
 The route runs two jobs from `src/lib/cron/notifications.ts`:
 
-- `notifyOutstandingCredit` — reminds owners about unpaid credit (stub — business rules pending)
-- `notifyExpiringProducts` — warns about batches near expiry (stub — needs `inventory_batches.expiry_date`)
+- `notifyOutstandingCredit` — **live**. Reminds every owner about credit sales and POs whose `due_date` is tomorrow and still have an outstanding balance. One push per record. Each owner receives the message in their preferred locale (resolved via `getTranslationsForLocale(user_roles.locale)`). Push tag is `credit-due-{type}-{id}` so accidental double-runs are deduplicated by the OS.
+- `notifyExpiringProducts` — still a stub. Plumbing wired to `sendPushToUser`; queries + business rules pending.
 
-Both are intentional no-ops for now. Replace the stubs once the business rules land — they already plug into `sendPushToUser`. Adjust the schedule in `vercel.json` to taste (cron syntax; UTC).
+Adjust the schedule in `vercel.json` to taste (cron syntax; UTC).
 
 ## Database Setup
 

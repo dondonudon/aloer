@@ -50,7 +50,11 @@ interface CartPanelProps {
   onDiscountTypeChange: (type: "percentage" | "fixed") => void;
   onDiscountValueChange: (value: string) => void;
   onDeliveryFeeChange: (value: string) => void;
-  onCheckout: (payments: SalePaymentInput[], isCreditSale?: boolean) => void;
+  onCheckout: (
+    payments: SalePaymentInput[],
+    isCreditSale?: boolean,
+    dueDate?: string,
+  ) => void;
   resellers?: Reseller[];
   selectedResellerId?: string;
   onResellerChange?: (id: string) => void;
@@ -102,6 +106,11 @@ export function CartPanel({
     isCredit?: boolean;
     methodLabel: string;
   } | null>(null);
+  const [creditDueDate, setCreditDueDate] = useState<string>(() => {
+    const d = new Date();
+    d.setDate(d.getDate() + 30);
+    return d.toISOString().slice(0, 10);
+  });
 
   function resetSplit() {
     setSplitMode(false);
@@ -137,7 +146,12 @@ export function CartPanel({
 
   function confirmCheckout() {
     if (!pendingCheckout) return;
-    onCheckout(pendingCheckout.payments, pendingCheckout.isCredit);
+    if (pendingCheckout.isCredit && !creditDueDate) return;
+    onCheckout(
+      pendingCheckout.payments,
+      pendingCheckout.isCredit,
+      pendingCheckout.isCredit ? creditDueDate : undefined,
+    );
     setPendingCheckout(null);
     resetSplit();
   }
@@ -565,11 +579,34 @@ export function CartPanel({
               {formatCurrency(finalTotal)}
             </span>
           </div>
+          {pendingCheckout?.isCredit ? (
+            <div className="border-t border-gray-100 dark:border-gray-700 pt-3">
+              <label
+                htmlFor="credit-due-date"
+                className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+              >
+                {t.pos.dueDate}
+              </label>
+              <input
+                id="credit-due-date"
+                type="date"
+                required
+                value={creditDueDate}
+                min={new Date().toISOString().slice(0, 10)}
+                onChange={(e) => setCreditDueDate(e.target.value)}
+                className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 px-3 py-2 text-sm text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+          ) : null}
           <div className="flex gap-2 justify-end pt-1">
             <Button variant="secondary" onClick={cancelCheckout}>
               {t.common.cancel}
             </Button>
-            <Button onClick={confirmCheckout} loading={loading}>
+            <Button
+              onClick={confirmCheckout}
+              loading={loading}
+              disabled={pendingCheckout?.isCredit ? !creditDueDate : false}
+            >
               {t.pos.confirm}
             </Button>
           </div>

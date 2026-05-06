@@ -1,6 +1,6 @@
 # Aloer — POS System Architecture & Implementation Plan
 
-> **Last updated:** May 6, 2026 (PWA + Web Push)
+> **Last updated:** May 6, 2026 (Credit due-date reminders)
 
 ---
 
@@ -44,7 +44,8 @@
 | **User profiles** | `00003_user_profiles.sql` migration adds a `user_profiles` view/table so `created_by` fields are enriched with display names throughout the app. |
 | **Shareable product image** | Share button (🔗) on each `/products` row downloads a 540×700 PNG product card on-demand. Generated server-side via `GET /api/products/[id]/share` using `next/og` (`ImageResponse` / Satori) — zero storage cost, streamed directly to the browser. Card includes: store logo + name (header), product photo, name, selling price, bulk price (if set), active campaign badge with date range + "Syarat & ketentuan berlaku" disclaimer (if applicable), generated timestamp, and footer disclaimer (footer). Filename format: `{product-slug}-{YYYYMMDD}-{HHmm}.png`. Uses `createAdminClient()` to bypass RLS. |
 | **PWA + Web Push** | Installable PWA — `public/manifest.webmanifest` + `public/sw.js` (push + notificationclick handlers, no precaching). Service worker registered via `<ServiceWorkerRegister>` in root layout. App icon served from `public/icon.png`. `<InstallPrompt>` mounted in root layout shows a dismissible banner: one-tap install on Chrome/Edge/Android via `beforeinstallprompt`, manual Share → Add to Home Screen instructions on iOS Safari (Apple doesn't expose the install API). Dismissals persisted in `localStorage`. Web Push pipeline: `push_subscriptions` table (migration `00013`, RLS scoped to `auth.uid()`), `/api/push/subscribe` + `/unsubscribe` + `/test` routes, `sendPushToUser()` helper in `src/lib/push-server.ts` (uses `web-push` npm lib + VAPID, prunes 404/410 endpoints automatically). Settings → Notifications card with Enable / Disable / Send-test buttons. iOS works only when the PWA is installed to home screen (16.4+); the install banner surfaces this. Env: `NEXT_PUBLIC_VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `VAPID_SUBJECT`. |
-| **Scheduled notifications (scaffold)** | `vercel.json` registers a daily cron at `01:00 UTC` hitting `GET /api/cron/notifications`. Auth via `Authorization: Bearer $CRON_SECRET` (Vercel attaches automatically). Two job stubs in `src/lib/cron/notifications.ts` — `notifyOutstandingCredit` and `notifyExpiringProducts` — both no-ops pending business rules. Plumbing is wired to `sendPushToUser`; only the queries + payloads are TODO. |
+| **Scheduled notifications** | `vercel.json` registers a daily cron at `01:00 UTC` hitting `GET /api/cron/notifications`. Auth via `Authorization: Bearer $CRON_SECRET` (Vercel attaches automatically). `notifyOutstandingCredit` is **live** (see Credit due-date reminders); `notifyExpiringProducts` is still a stub pending business rules. |
+| **Credit due-date reminders** | Migration `00014_credit_due_dates.sql` adds nullable `due_date date` to `sales` and `purchase_orders`. POS cart confirm modal and `new-po-client.tsx` show a date input when a credit method is picked (default today + 30, required, `min=today`). `create_sale_transaction` raises if `dueDate` is missing on a credit sale; `createPurchaseOrder` does the equivalent guard for credit POs. Cron job `notifyOutstandingCredit` finds rows with `due_date = current_date + 1` and outstanding > 0, then sends one push per record to every owner. Notifications are localised per recipient via the new `getTranslationsForLocale(locale)` helper — owners see the message in their `user_roles.locale` preference. Push tag `credit-due-{type}-{id}` deduplicates accidental double-runs. Credit page sorts by due-date urgency (past-due first, NULL last) and highlights past-due in red, due-soon (≤7 days) in amber. AR/AP cards on the credit page and the dashboard credit overview show past-due + due-soon roll-ups via `rollUpDueBreakdown` in `src/lib/credit-due.ts`. Existing rows without a due_date are excluded from reminders and shown as "—". |
 
 ### ⏳ Future Work
 
@@ -621,7 +622,7 @@ src/lib/
 | Item | Status | Notes |
 |---|---|---|
 | Expiry alerts | 🟡 Scaffolded | Cron route + `notifyExpiringProducts` stub exist. Blocked on adding `expiry_date` to `inventory_batches` and finalising the warning window. |
-| Outstanding credit reminder | 🟡 Scaffolded | Cron route + `notifyOutstandingCredit` stub exist. Blocked on business rules (threshold, audience, cadence). |
+| Outstanding credit reminder | ✅ Done | Implemented as Credit due-date reminders — see the Completed section. |
 | Barcode/QR scanning | ⏳ Pending | Scan to add items to POS cart or PO |
 | Multi-store support | ⏳ Pending | Single store only |
 

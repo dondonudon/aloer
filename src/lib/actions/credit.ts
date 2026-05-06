@@ -101,7 +101,7 @@ export async function getOutstandingCreditSales() {
   const { data, error } = await supabase
     .from("sales")
     .select(
-      "id, invoice_number, total_amount, created_at, created_by, reseller_id, resellers(name), sale_credit_payments(amount)",
+      "id, invoice_number, total_amount, created_at, created_by, reseller_id, due_date, resellers(name), sale_credit_payments(amount)",
     )
     .eq("payment_method", "credit")
     .eq("status", "completed")
@@ -120,6 +120,7 @@ export async function getOutstandingCreditSales() {
       created_at: sale.created_at,
       created_by: sale.created_by,
       reseller_id: sale.reseller_id,
+      due_date: sale.due_date as string | null,
       resellers: sale.resellers,
       collected,
       outstanding: sale.total_amount - collected,
@@ -139,7 +140,7 @@ export async function getOutstandingCreditPOs() {
   const { data, error } = await supabase
     .from("purchase_orders")
     .select(
-      "id, po_number, total_amount, created_at, suppliers(name), supplier_payments(amount)",
+      "id, po_number, total_amount, created_at, due_date, suppliers(name), supplier_payments(amount)",
     )
     .eq("payment_method", "credit")
     .eq("status", "received")
@@ -156,6 +157,7 @@ export async function getOutstandingCreditPOs() {
       po_number: po.po_number,
       total_amount: po.total_amount,
       created_at: po.created_at,
+      due_date: po.due_date as string | null,
       suppliers: po.suppliers,
       paid,
       outstanding: po.total_amount - paid,

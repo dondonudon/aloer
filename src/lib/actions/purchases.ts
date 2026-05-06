@@ -106,13 +106,20 @@ export async function createPurchaseOrder(formData: FormData) {
       "-" +
       crypto.randomUUID().slice(0, 8).toUpperCase();
 
+    const paymentMethod = formData.get("payment_method") as POPaymentMethod;
+    const dueDateRaw = (formData.get("due_date") as string | null)?.trim();
+    if (paymentMethod === "credit" && !dueDateRaw) {
+      return { error: "A due date is required for credit purchases" };
+    }
+
     const { data: po, error: poError } = await supabase
       .from("purchase_orders")
       .insert({
         po_number: poNumber,
         supplier_id: (formData.get("supplier_id") as string) || null,
-        payment_method: formData.get("payment_method") as POPaymentMethod,
+        payment_method: paymentMethod,
         notes: (formData.get("notes") as string) || null,
+        due_date: paymentMethod === "credit" ? dueDateRaw : null,
         created_by: user.id,
       })
       .select()

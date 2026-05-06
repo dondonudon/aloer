@@ -279,6 +279,8 @@ export interface CreateSaleInput {
   deliveryFee?: number;
   idempotencyKey?: string;
   reservationReference?: string;
+  /** ISO date (YYYY-MM-DD). Required when isCreditSale is true. */
+  dueDate?: string;
 }
 
 export interface ReserveStockItemInput {

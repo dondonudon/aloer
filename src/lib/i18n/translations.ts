@@ -198,6 +198,7 @@ export interface Translations {
     deliveryFee: string;
     stock: string;
     outOfStock: string;
+    dueDate: string;
   };
 
   sales: {
@@ -411,6 +412,8 @@ export interface Translations {
     returnNotesPlaceholder: string;
     confirmReturn: string;
     returnCreatedSuccess: string;
+    dueDate: string;
+    dueDateRequired: string;
   };
 
   reports: {
@@ -574,6 +577,22 @@ export interface Translations {
     noPOPayments: string;
     recordSupplierPayment: string;
     paymentRecorded: string;
+    dueDate: string;
+    pastDue: string;
+    dueSoon: string;
+    dueTomorrow: string;
+    noDueDate: string;
+  };
+
+  notifications: {
+    creditDue: {
+      salesTitle: string;
+      /** Placeholders: {name}, {amount} */
+      salesBody: string;
+      purchaseTitle: string;
+      /** Placeholders: {name}, {amount} */
+      purchaseBody: string;
+    };
   };
 
   /**
@@ -763,6 +782,7 @@ export const en: Translations = {
     deliveryFee: "Delivery Fee",
     stock: "Stock",
     outOfStock: "Out of stock",
+    dueDate: "Due Date",
   },
 
   sales: {
@@ -976,6 +996,8 @@ export const en: Translations = {
     returnNotesPlaceholder: "e.g. Damaged on arrival",
     confirmReturn: "Confirm Return",
     returnCreatedSuccess: "Return processed successfully",
+    dueDate: "Due Date",
+    dueDateRequired: "A due date is required for credit purchases",
   },
 
   reports: {
@@ -1141,6 +1163,20 @@ export const en: Translations = {
     noPOPayments: "No payments recorded yet.",
     recordSupplierPayment: "Record Supplier Payment",
     paymentRecorded: "Payment recorded",
+    dueDate: "Due Date",
+    pastDue: "Past due",
+    dueSoon: "Due in 7 days",
+    dueTomorrow: "Due tomorrow",
+    noDueDate: "—",
+  },
+
+  notifications: {
+    creditDue: {
+      salesTitle: "Credit due tomorrow",
+      salesBody: "{name} still owes Rp {amount}",
+      purchaseTitle: "Supplier payment due tomorrow",
+      purchaseBody: "Pay {name} Rp {amount}",
+    },
   },
 
   // System-seeded chart of accounts (keyed by account code)
@@ -1335,6 +1371,7 @@ export const id: Translations = {
     deliveryFee: "Ongkos Kirim",
     stock: "Stok",
     outOfStock: "Stok habis",
+    dueDate: "Tanggal Jatuh Tempo",
   },
 
   sales: {
@@ -1548,6 +1585,8 @@ export const id: Translations = {
     returnNotesPlaceholder: "mis. Rusak saat tiba",
     confirmReturn: "Konfirmasi Retur",
     returnCreatedSuccess: "Retur berhasil diproses",
+    dueDate: "Tanggal Jatuh Tempo",
+    dueDateRequired: "Tanggal jatuh tempo wajib diisi untuk pembelian kredit",
   },
 
   reports: {
@@ -1714,6 +1753,20 @@ export const id: Translations = {
     noPOPayments: "Belum ada pembayaran yang dicatat.",
     recordSupplierPayment: "Catat Pembayaran Pemasok",
     paymentRecorded: "Pembayaran dicatat",
+    dueDate: "Jatuh Tempo",
+    pastDue: "Lewat Jatuh Tempo",
+    dueSoon: "Jatuh Tempo ≤7 Hari",
+    dueTomorrow: "Jatuh tempo besok",
+    noDueDate: "—",
+  },
+
+  notifications: {
+    creditDue: {
+      salesTitle: "Kredit jatuh tempo besok",
+      salesBody: "{name} masih berutang Rp {amount}",
+      purchaseTitle: "Pembayaran pemasok jatuh tempo besok",
+      purchaseBody: "Bayar {name} Rp {amount}",
+    },
   },
 
   // System-seeded chart of accounts (keyed by account code)

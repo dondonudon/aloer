@@ -90,6 +90,7 @@ export function POSClient({
   async function handleCheckout(
     payments: SalePaymentInput[],
     isCreditSale?: boolean,
+    dueDate?: string,
   ) {
     if (cart.length === 0) return;
     setLoading(true);
@@ -104,6 +105,7 @@ export function POSClient({
         cartCampaignDiscount > 0 ? cartCampaignDiscount : undefined,
       deliveryFee: deliveryFeeAmount > 0 ? deliveryFeeAmount : undefined,
       idempotencyKey,
+      dueDate: isCreditSale ? dueDate : undefined,
     });
     if (result.error) {
       showToast(result.error, "error");

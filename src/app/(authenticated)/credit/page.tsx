@@ -6,6 +6,12 @@ import {
   getOutstandingCreditPOs,
   getOutstandingCreditSales,
 } from "@/lib/actions/credit";
+import {
+  categorizeDueDate,
+  formatDueDate,
+  rollUpDueBreakdown,
+  sortByDueUrgency,
+} from "@/lib/credit-due";
 import { getServerTranslations } from "@/lib/i18n/server";
 import { paginate, parsePage, parsePageSize } from "@/lib/pagination";
 import { formatCurrency, formatDateTime } from "@/lib/utils";
@@ -21,11 +27,14 @@ export default async function CreditPage({ searchParams }: Props) {
   const arPageSize = parsePageSize(params.arLimit);
   const apPageSize = parsePageSize(params.apLimit);
 
-  const [creditSales, creditPOs, t] = await Promise.all([
+  const [creditSalesRaw, creditPOsRaw, t] = await Promise.all([
     getOutstandingCreditSales(),
     getOutstandingCreditPOs(),
     getServerTranslations(),
   ]);
+
+  const creditSales = sortByDueUrgency(creditSalesRaw);
+  const creditPOs = sortByDueUrgency(creditPOsRaw);
 
   const { items: arItems, totalPages: arTotalPages } = paginate(
     creditSales,
@@ -40,9 +49,23 @@ export default async function CreditPage({ searchParams }: Props) {
 
   const totalAR = creditSales.reduce((sum, s) => sum + s.outstanding, 0);
   const totalAP = creditPOs.reduce((sum, p) => sum + p.outstanding, 0);
+  const arBreakdown = rollUpDueBreakdown(creditSales);
+  const apBreakdown = rollUpDueBreakdown(creditPOs);
 
   type ARRow = (typeof creditSales)[number];
   type APRow = (typeof creditPOs)[number];
+
+  function dueDateClass(bucket: ReturnType<typeof categorizeDueDate>): string {
+    switch (bucket) {
+      case "past_due":
+        return "text-red-600 dark:text-red-400 font-medium";
+      case "due_tomorrow":
+      case "due_soon":
+        return "text-amber-600 dark:text-amber-400 font-medium";
+      default:
+        return "text-gray-600 dark:text-gray-400";
+    }
+  }
 
   const arColumns: DataTableColumn<ARRow>[] = [
     {
@@ -93,6 +116,18 @@ export default async function CreditPage({ searchParams }: Props) {
           {formatCurrency(s.outstanding)}
         </span>
       ),
+    },
+    {
+      id: "due",
+      header: t.credit.dueDate,
+      cell: (s) => {
+        const bucket = categorizeDueDate(s.due_date);
+        return (
+          <span className={dueDateClass(bucket)}>
+            {formatDueDate(s.due_date)}
+          </span>
+        );
+      },
     },
     {
       id: "actions",
@@ -161,6 +196,18 @@ export default async function CreditPage({ searchParams }: Props) {
       ),
     },
     {
+      id: "due",
+      header: t.credit.dueDate,
+      cell: (po) => {
+        const bucket = categorizeDueDate(po.due_date);
+        return (
+          <span className={dueDateClass(bucket)}>
+            {formatDueDate(po.due_date)}
+          </span>
+        );
+      },
+    },
+    {
       id: "actions",
       header: "",
       align: "right",
@@ -194,6 +241,30 @@ export default async function CreditPage({ searchParams }: Props) {
               ? "s"
               : ""}
           </p>
+          {arBreakdown.pastDueCount + arBreakdown.dueSoonCount > 0 ? (
+            <div className="mt-3 pt-3 border-t border-amber-200/70 dark:border-amber-700/40 space-y-1 text-xs">
+              {arBreakdown.pastDueCount > 0 ? (
+                <div className="flex justify-between text-red-700 dark:text-red-400">
+                  <span>
+                    {t.credit.pastDue} ({arBreakdown.pastDueCount})
+                  </span>
+                  <span className="font-semibold">
+                    {formatCurrency(arBreakdown.pastDueAmount)}
+                  </span>
+                </div>
+              ) : null}
+              {arBreakdown.dueSoonCount > 0 ? (
+                <div className="flex justify-between text-amber-700 dark:text-amber-400">
+                  <span>
+                    {t.credit.dueSoon} ({arBreakdown.dueSoonCount})
+                  </span>
+                  <span className="font-semibold">
+                    {formatCurrency(arBreakdown.dueSoonAmount)}
+                  </span>
+                </div>
+              ) : null}
+            </div>
+          ) : null}
         </div>
 
         <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-700/50 rounded-xl p-5">
@@ -207,6 +278,30 @@ export default async function CreditPage({ searchParams }: Props) {
             {creditPOs.filter((p) => p.outstanding > 0).length} outstanding PO
             {creditPOs.filter((p) => p.outstanding > 0).length !== 1 ? "s" : ""}
           </p>
+          {apBreakdown.pastDueCount + apBreakdown.dueSoonCount > 0 ? (
+            <div className="mt-3 pt-3 border-t border-red-200/70 dark:border-red-700/40 space-y-1 text-xs">
+              {apBreakdown.pastDueCount > 0 ? (
+                <div className="flex justify-between text-red-700 dark:text-red-400">
+                  <span>
+                    {t.credit.pastDue} ({apBreakdown.pastDueCount})
+                  </span>
+                  <span className="font-semibold">
+                    {formatCurrency(apBreakdown.pastDueAmount)}
+                  </span>
+                </div>
+              ) : null}
+              {apBreakdown.dueSoonCount > 0 ? (
+                <div className="flex justify-between text-amber-700 dark:text-amber-400">
+                  <span>
+                    {t.credit.dueSoon} ({apBreakdown.dueSoonCount})
+                  </span>
+                  <span className="font-semibold">
+                    {formatCurrency(apBreakdown.dueSoonAmount)}
+                  </span>
+                </div>
+              ) : null}
+            </div>
+          ) : null}
         </div>
       </div>
 
