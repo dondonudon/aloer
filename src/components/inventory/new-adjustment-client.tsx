@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { NumericInput } from "@/components/ui/numeric-input";
 import { PageHeader } from "@/components/ui/page-header";
+import { SearchableSelect } from "@/components/ui/searchable-select";
 import { Select } from "@/components/ui/select";
 import { Toast } from "@/components/ui/toast";
 import { createAdjustment } from "@/lib/actions/inventory";
@@ -99,13 +100,10 @@ export function NewAdjustmentClient({ products }: Props) {
     setLoading(false);
   }
 
-  const productOptions = [
-    { value: "", label: t.inventory.selectProduct },
-    ...products.map((p) => ({
-      value: p.id,
-      label: `${p.name} (${p.sku})`,
-    })),
-  ];
+  const productOptions = products.map((p) => ({
+    value: p.id,
+    label: `${p.name} (${p.sku})`,
+  }));
 
   return (
     <div className="max-w-3xl space-y-6">
@@ -151,13 +149,14 @@ export function NewAdjustmentClient({ products }: Props) {
               className="grid grid-cols-1 sm:grid-cols-5 gap-3 p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg"
             >
               <div className="sm:col-span-2">
-                <Select
+                <SearchableSelect
                   label={t.inventory.selectProduct}
                   options={productOptions}
                   value={item.productId}
-                  onChange={(e) =>
-                    updateItem(index, "productId", e.target.value)
-                  }
+                  onChange={(value) => updateItem(index, "productId", value)}
+                  placeholder={t.inventory.selectProduct}
+                  searchPlaceholder={t.common.searchPlaceholder}
+                  noResultsLabel={t.common.noDataFound}
                 />
               </div>
               <Input

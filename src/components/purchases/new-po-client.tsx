@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { NumericInput } from "@/components/ui/numeric-input";
 import { PageHeader } from "@/components/ui/page-header";
+import { SearchableSelect } from "@/components/ui/searchable-select";
 import { Select } from "@/components/ui/select";
 import { Toast } from "@/components/ui/toast";
 import { createPurchaseOrder } from "@/lib/actions/purchases";
@@ -99,13 +100,10 @@ export function NewPurchaseOrderClient({ products, suppliers }: Props) {
     setLoading(false);
   }
 
-  const productOptions = [
-    { value: "", label: t.purchases.selectProduct },
-    ...products.map((p) => ({
-      value: p.id,
-      label: `${p.name} (${p.sku})`,
-    })),
-  ];
+  const productOptions = products.map((p) => ({
+    value: p.id,
+    label: `${p.name} (${p.sku})`,
+  }));
 
   const supplierOptions = [
     { value: "", label: t.purchases.noSupplier },
@@ -172,13 +170,14 @@ export function NewPurchaseOrderClient({ products, suppliers }: Props) {
               className="grid grid-cols-1 sm:grid-cols-5 gap-3 p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg"
             >
               <div className="sm:col-span-2">
-                <Select
+                <SearchableSelect
                   label={t.purchases.product}
                   options={productOptions}
                   value={item.product_id}
-                  onChange={(e) =>
-                    updateItem(index, "product_id", e.target.value)
-                  }
+                  onChange={(value) => updateItem(index, "product_id", value)}
+                  placeholder={t.purchases.selectProduct}
+                  searchPlaceholder={t.common.searchPlaceholder}
+                  noResultsLabel={t.common.noDataFound}
                 />
               </div>
               <Input
