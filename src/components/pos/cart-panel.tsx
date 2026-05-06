@@ -12,6 +12,7 @@ import {
   Tag,
   Trash2,
   Truck,
+  X,
 } from "lucide-react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
@@ -53,6 +54,8 @@ interface CartPanelProps {
   resellers?: Reseller[];
   selectedResellerId?: string;
   onResellerChange?: (id: string) => void;
+  /** When provided, renders a close button visible on mobile (drawer mode). */
+  onClose?: () => void;
 }
 
 /**
@@ -88,6 +91,7 @@ export function CartPanel({
   resellers = [],
   selectedResellerId = "",
   onResellerChange,
+  onClose,
 }: CartPanelProps) {
   const { t } = useI18n();
   const [splitMode, setSplitMode] = useState(false);
@@ -149,17 +153,27 @@ export function CartPanel({
     splitRemaining === 0 && (splitCash > 0 || splitTransfer > 0);
 
   return (
-    <div className="w-full lg:w-96 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl flex flex-col">
-      <div className="p-4 border-b border-gray-200 dark:border-gray-700">
-        <div className="flex items-center gap-2">
+    <div className="flex h-full w-full flex-col overflow-y-auto border-l border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800 lg:overflow-hidden lg:rounded-xl lg:border">
+      <div className="flex items-center justify-between gap-2 border-b border-gray-200 p-4 dark:border-gray-700">
+        <div className="flex min-w-0 items-center gap-2">
           <ShoppingCart
             className="h-5 w-5 text-gray-600 dark:text-gray-400"
             aria-hidden="true"
           />
-          <h2 className="font-semibold text-gray-900 dark:text-white">
+          <h2 className="truncate font-semibold text-gray-900 dark:text-white">
             {t.pos.cart} ({cart.length})
           </h2>
         </div>
+        {onClose && (
+          <button
+            type="button"
+            onClick={onClose}
+            className="-mr-1 rounded p-1 text-gray-500 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-700 lg:hidden"
+            aria-label="Close cart"
+          >
+            <X className="h-5 w-5" aria-hidden="true" />
+          </button>
+        )}
       </div>
 
       {/* Reseller / customer picker */}
@@ -188,7 +202,7 @@ export function CartPanel({
         </div>
       )}
 
-      <div className="flex-1 overflow-y-auto p-4 space-y-3">
+      <div className="space-y-3 p-4 lg:min-h-0 lg:flex-1 lg:overflow-y-auto">
         {cart.length === 0 && (
           <p className="text-center text-gray-400 py-8 text-sm">
             {t.pos.cartEmpty}

@@ -1,5 +1,6 @@
 "use client";
 
+import { ChevronUp, ShoppingCart } from "lucide-react";
 import dynamic from "next/dynamic";
 import { useState } from "react";
 import { CartPanel } from "@/components/pos/cart-panel";
@@ -9,12 +10,14 @@ import { Toast } from "@/components/ui/toast";
 import { createSale } from "@/lib/actions/sales";
 import { type ReceiptData, useCart } from "@/lib/hooks/use-cart";
 import { useToast } from "@/lib/hooks/use-toast";
+import { useI18n } from "@/lib/i18n/context";
 import type {
   CampaignWithProducts,
   Product,
   Reseller,
   SalePaymentInput,
 } from "@/lib/types";
+import { formatCurrency } from "@/lib/utils";
 
 const ReceiptModal = dynamic(
   () =>
@@ -46,10 +49,12 @@ export function POSClient({
   stockByProductId = {},
   stockBySku = {},
 }: POSClientProps) {
+  const { t } = useI18n();
   const { storeIconUrl } = useStore();
   const [loading, setLoading] = useState(false);
   const [receipt, setReceipt] = useState<ReceiptData | null>(null);
   const [selectedResellerId, setSelectedResellerId] = useState("");
+  const [cartOpen, setCartOpen] = useState(false);
   const [idempotencyKey, setIdempotencyKey] = useState(() =>
     crypto.randomUUID(),
   );
@@ -112,47 +117,94 @@ export function POSClient({
       );
       clearCart();
       setSelectedResellerId("");
+      setCartOpen(false);
       setIdempotencyKey(crypto.randomUUID());
     }
     setLoading(false);
   }
 
   return (
-    <div className="flex flex-col lg:flex-row gap-4 h-[calc(100vh-6rem)]">
-      <ProductGrid
-        products={products}
-        getCampaignForProduct={getCampaignForProduct}
-        onAddToCart={addToCart}
-        stockByProductId={stockByProductId}
-        stockBySku={stockBySku}
-      />
-      <CartPanel
-        cart={cart}
-        discountType={discountType}
-        discountValue={discountValue}
-        deliveryFee={deliveryFee}
-        deliveryFeeAmount={deliveryFeeAmount}
-        subtotal={subtotal}
-        campaignSavings={campaignSavings}
-        cartCampaignDiscount={cartCampaignDiscount}
-        discountAmount={discountAmount}
-        finalTotal={finalTotal}
-        hasCostData={hasCostData}
-        grossProfit={grossProfit}
-        marginPercent={marginPercent}
-        loading={loading}
-        getCampaignForProduct={getCampaignForProduct}
-        getEffectivePrice={getEffectivePrice}
-        onUpdateQuantity={updateQuantity}
-        onRemove={removeFromCart}
-        onDiscountTypeChange={setDiscountType}
-        onDiscountValueChange={setDiscountValue}
-        onDeliveryFeeChange={setDeliveryFee}
-        onCheckout={handleCheckout}
-        resellers={resellers}
-        selectedResellerId={selectedResellerId}
-        onResellerChange={setSelectedResellerId}
-      />
+    <>
+      <div className="flex flex-col lg:flex-row gap-4 h-[calc(100vh-9.5rem)] lg:h-[calc(100vh-4rem)]">
+        <ProductGrid
+          products={products}
+          getCampaignForProduct={getCampaignForProduct}
+          onAddToCart={addToCart}
+          stockByProductId={stockByProductId}
+          stockBySku={stockBySku}
+        />
+
+        {/* Cart: inline panel on desktop, slide-in drawer on mobile */}
+        <aside
+          className={`fixed inset-y-0 right-0 z-50 w-full max-w-sm transform shadow-2xl transition-transform duration-200 ease-out lg:relative lg:inset-auto lg:z-auto lg:w-96 lg:max-w-none lg:flex-shrink-0 lg:translate-x-0 lg:shadow-none lg:transition-none ${
+            cartOpen ? "translate-x-0" : "translate-x-full"
+          }`}
+          aria-hidden={!cartOpen}
+        >
+          <CartPanel
+            cart={cart}
+            discountType={discountType}
+            discountValue={discountValue}
+            deliveryFee={deliveryFee}
+            deliveryFeeAmount={deliveryFeeAmount}
+            subtotal={subtotal}
+            campaignSavings={campaignSavings}
+            cartCampaignDiscount={cartCampaignDiscount}
+            discountAmount={discountAmount}
+            finalTotal={finalTotal}
+            hasCostData={hasCostData}
+            grossProfit={grossProfit}
+            marginPercent={marginPercent}
+            loading={loading}
+            getCampaignForProduct={getCampaignForProduct}
+            getEffectivePrice={getEffectivePrice}
+            onUpdateQuantity={updateQuantity}
+            onRemove={removeFromCart}
+            onDiscountTypeChange={setDiscountType}
+            onDiscountValueChange={setDiscountValue}
+            onDeliveryFeeChange={setDeliveryFee}
+            onCheckout={handleCheckout}
+            resellers={resellers}
+            selectedResellerId={selectedResellerId}
+            onResellerChange={setSelectedResellerId}
+            onClose={() => setCartOpen(false)}
+          />
+        </aside>
+
+        {cartOpen && (
+          <button
+            type="button"
+            aria-label={t.pos.cart}
+            className="fixed inset-0 z-40 bg-black/40 lg:hidden"
+            onClick={() => setCartOpen(false)}
+          />
+        )}
+      </div>
+
+      {/* Mobile cart trigger — sticks to the bottom of the viewport */}
+      <button
+        type="button"
+        onClick={() => setCartOpen(true)}
+        className="fixed inset-x-0 bottom-0 z-30 flex h-16 items-center justify-between gap-3 border-t border-blue-700/40 bg-blue-600 px-4 text-white shadow-lg active:bg-blue-700 lg:hidden"
+        aria-label={`${t.pos.cart} (${cart.length})`}
+      >
+        <span className="flex items-center gap-3 font-medium">
+          <span className="relative">
+            <ShoppingCart className="h-5 w-5" aria-hidden="true" />
+            {cart.length > 0 && (
+              <span className="absolute -right-2 -top-1.5 flex h-4 min-w-[1rem] items-center justify-center rounded-full bg-amber-400 px-1 text-[10px] font-bold text-gray-900">
+                {cart.length}
+              </span>
+            )}
+          </span>
+          <span>{t.pos.cart}</span>
+        </span>
+        <span className="flex items-center gap-2 font-semibold">
+          {formatCurrency(finalTotal)}
+          <ChevronUp className="h-4 w-4" aria-hidden="true" />
+        </span>
+      </button>
+
       {receipt && (
         <ReceiptModal
           receipt={receipt}
@@ -164,6 +216,6 @@ export function POSClient({
       {toast && (
         <Toast message={toast.message} type={toast.type} onClose={clearToast} />
       )}
-    </div>
+    </>
   );
 }
