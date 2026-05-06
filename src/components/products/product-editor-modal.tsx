@@ -4,6 +4,7 @@ import Link from "next/link";
 import type { Dispatch, SetStateAction } from "react";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
+import { DataTable, type DataTableColumn } from "@/components/ui/data-table";
 import { ImageUpload } from "@/components/ui/image-upload";
 import { Input } from "@/components/ui/input";
 import { Modal } from "@/components/ui/modal";
@@ -205,39 +206,41 @@ export function ProductEditorModal({
                   {labels.noPriceHistory}
                 </p>
               ) : (
-                <table className="w-full">
-                  <thead>
-                    <tr className="bg-gray-50 dark:bg-gray-700/50 text-gray-500">
-                      <th className="text-left py-2 px-3 font-medium">Date</th>
-                      <th className="text-right py-2 px-3 font-medium">
-                        Price
-                      </th>
-                      <th className="text-right py-2 px-3 font-medium">
-                        Bulk price
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {priceHistory.map((row) => (
-                      <tr
-                        key={row.id}
-                        className="border-t border-gray-50 dark:border-gray-700/50"
-                      >
-                        <td className="py-2 px-3 text-gray-600 dark:text-gray-400">
-                          {new Date(row.effective_from).toLocaleString()}
-                        </td>
-                        <td className="py-2 px-3 text-right text-gray-900 dark:text-gray-100">
-                          {formatCurrency(row.price)}
-                        </td>
-                        <td className="py-2 px-3 text-right text-gray-500 dark:text-gray-400">
-                          {row.bulk_price
+                <DataTable
+                  columns={
+                    [
+                      {
+                        id: "date",
+                        header: "Date",
+                        cellClassName: "text-gray-600 dark:text-gray-400",
+                        cell: (row) =>
+                          new Date(row.effective_from).toLocaleString(),
+                      },
+                      {
+                        id: "price",
+                        header: "Price",
+                        align: "right",
+                        cellClassName: "text-gray-900 dark:text-gray-100",
+                        cell: (row) => formatCurrency(row.price),
+                      },
+                      {
+                        id: "bulkPrice",
+                        header: "Bulk price",
+                        align: "right",
+                        cellClassName: "text-gray-500 dark:text-gray-400",
+                        cell: (row) =>
+                          row.bulk_price
                             ? `${formatCurrency(row.bulk_price)} (≥${row.bulk_min_qty})`
-                            : "—"}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+                            : "—",
+                      },
+                    ] as DataTableColumn<ProductPrice>[]
+                  }
+                  rows={priceHistory}
+                  rowKey={(row) => row.id}
+                  emptyMessage={labels.noPriceHistory}
+                  density="compact"
+                  unstyled
+                />
               )}
             </div>
           </details>
@@ -252,41 +255,40 @@ export function ProductEditorModal({
                 {productUnits.length === 0 ? (
                   <p className="py-3 px-4 text-gray-400">{labels.noUnitsYet}</p>
                 ) : (
-                  <table className="w-full">
-                    <thead>
-                      <tr className="bg-gray-50 dark:bg-gray-700/50 text-gray-500">
-                        <th className="text-left py-2 px-3 font-medium">
-                          {labels.unitName}
-                        </th>
-                        <th className="text-right py-2 px-3 font-medium">
-                          {labels.conversionToBase}
-                        </th>
-                        <th className="text-center py-2 px-3 font-medium">
-                          {labels.isBaseUnit}
-                        </th>
-                        <th className="py-2 px-3" aria-label="Actions" />
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {productUnits.map((u) => (
-                        <tr
-                          key={u.id}
-                          className="border-t border-gray-50 dark:border-gray-700/50"
-                        >
-                          <td className="py-2 px-3 text-gray-900 dark:text-gray-100 font-medium">
-                            {u.unit_name}
-                          </td>
-                          <td className="py-2 px-3 text-right text-gray-600 dark:text-gray-400">
-                            {u.is_base ? "1" : `${u.conversion_to_base}`}
-                          </td>
-                          <td className="py-2 px-3 text-center">
-                            {u.is_base && (
+                  <DataTable
+                    columns={
+                      [
+                        {
+                          id: "unitName",
+                          header: labels.unitName,
+                          cellClassName:
+                            "text-gray-900 dark:text-gray-100 font-medium",
+                          cell: (u) => u.unit_name,
+                        },
+                        {
+                          id: "conversion",
+                          header: labels.conversionToBase,
+                          align: "right",
+                          cellClassName: "text-gray-600 dark:text-gray-400",
+                          cell: (u) =>
+                            u.is_base ? "1" : `${u.conversion_to_base}`,
+                        },
+                        {
+                          id: "isBase",
+                          header: labels.isBaseUnit,
+                          align: "center",
+                          cell: (u) =>
+                            u.is_base ? (
                               <span className="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300">
                                 {labels.baseLabel}
                               </span>
-                            )}
-                          </td>
-                          <td className="py-2 px-3 text-right">
+                            ) : null,
+                        },
+                        {
+                          id: "actions",
+                          header: "",
+                          align: "right",
+                          cell: (u) => (
                             <button
                               type="button"
                               onClick={() => onDeleteUnit(u.id)}
@@ -296,11 +298,16 @@ export function ProductEditorModal({
                             >
                               ✕
                             </button>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
+                          ),
+                        },
+                      ] as DataTableColumn<ProductUnit>[]
+                    }
+                    rows={productUnits}
+                    rowKey={(u) => u.id}
+                    emptyMessage={labels.noUnitsYet}
+                    density="compact"
+                    unstyled
+                  />
                 )}
               </div>
               <div className="flex items-end gap-2 flex-wrap">

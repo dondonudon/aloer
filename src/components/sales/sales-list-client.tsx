@@ -4,6 +4,7 @@ import { Download } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { DataTable, type DataTableColumn } from "@/components/ui/data-table";
 import { ListFilter } from "@/components/ui/list-filter";
 import { Pagination } from "@/components/ui/pagination";
 import { exportCsv, exportXlsx } from "@/lib/export";
@@ -206,96 +207,87 @@ export function SalesListClient({
         </div>
       </div>
 
-      <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-700/50">
-                <th className="text-left py-3 px-4 font-medium text-gray-500 dark:text-gray-400">
-                  {t.sales.invoice}
-                </th>
-                <th className="text-left py-3 px-4 font-medium text-gray-500 dark:text-gray-400">
-                  {t.sales.payment}
-                </th>
-                <th className="text-right py-3 px-4 font-medium text-gray-500 dark:text-gray-400">
-                  {t.sales.total}
-                </th>
-                <th className="text-right py-3 px-4 font-medium text-gray-500 dark:text-gray-400">
-                  {t.sales.cogs}
-                </th>
-                <th className="text-right py-3 px-4 font-medium text-gray-500 dark:text-gray-400">
-                  {t.sales.profit}
-                </th>
-                <th className="text-center py-3 px-4 font-medium text-gray-500 dark:text-gray-400">
-                  {t.sales.status}
-                </th>
-                <th className="text-left py-3 px-4 font-medium text-gray-500 dark:text-gray-400">
-                  {t.sales.date}
-                </th>
-                <th className="text-center py-3 px-4 font-medium text-gray-500 dark:text-gray-400">
-                  {t.sales.actions}
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {sales.map((sale) => (
-                <tr
-                  key={sale.id}
-                  className="border-b border-gray-50 dark:border-gray-700/50 hover:bg-gray-50 dark:hover:bg-gray-700/30"
-                >
-                  <td className="py-3 px-4 font-mono text-gray-700 dark:text-gray-300">
-                    {sale.invoice_number}
-                  </td>
-                  <td className="py-3 px-4 text-gray-600 dark:text-gray-400 capitalize">
-                    {sale.payment_method}
-                  </td>
-                  <td className="py-3 px-4 text-right text-gray-900 dark:text-gray-100">
-                    {formatCurrency(sale.total_amount)}
-                  </td>
-                  <td className="py-3 px-4 text-right text-gray-500 dark:text-gray-400">
-                    {formatCurrency(sale.total_cogs)}
-                  </td>
-                  <td className="py-3 px-4 text-right font-medium text-gray-900 dark:text-gray-100">
-                    {sale.status === "completed"
-                      ? formatCurrency(sale.total_amount - sale.total_cogs)
-                      : "—"}
-                  </td>
-                  <td className="py-3 px-4 text-center">
-                    <span
-                      className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium capitalize ${
-                        statusColors[sale.status] ?? ""
-                      }`}
-                    >
-                      {sale.status}
-                    </span>
-                  </td>
-                  <td className="py-3 px-4 text-gray-600 dark:text-gray-400">
-                    {formatDateTime(sale.created_at)}
-                  </td>
-                  <td className="py-3 px-4 text-center">
-                    <Link
-                      href={`/sales/${sale.id}`}
-                      className="text-blue-600 hover:text-blue-700 text-sm font-medium"
-                    >
-                      {t.sales.view}
-                    </Link>
-                  </td>
-                </tr>
-              ))}
-              {sales.length === 0 && (
-                <tr>
-                  <td
-                    colSpan={8}
-                    className="py-8 text-center text-gray-400 dark:text-gray-500"
-                  >
-                    {t.sales.noSalesFound}
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
-      </div>
+      {(() => {
+        const columns: DataTableColumn<Sale>[] = [
+          {
+            id: "invoice",
+            header: t.sales.invoice,
+            cellClassName: "font-mono text-gray-700 dark:text-gray-300",
+            cell: (s) => s.invoice_number,
+          },
+          {
+            id: "payment",
+            header: t.sales.payment,
+            cellClassName: "text-gray-600 dark:text-gray-400 capitalize",
+            cell: (s) => s.payment_method,
+          },
+          {
+            id: "total",
+            header: t.sales.total,
+            align: "right",
+            cellClassName: "text-gray-900 dark:text-gray-100",
+            cell: (s) => formatCurrency(s.total_amount),
+          },
+          {
+            id: "cogs",
+            header: t.sales.cogs,
+            align: "right",
+            cellClassName: "text-gray-500 dark:text-gray-400",
+            cell: (s) => formatCurrency(s.total_cogs),
+          },
+          {
+            id: "profit",
+            header: t.sales.profit,
+            align: "right",
+            cellClassName: "font-medium text-gray-900 dark:text-gray-100",
+            cell: (s) =>
+              s.status === "completed"
+                ? formatCurrency(s.total_amount - s.total_cogs)
+                : "—",
+          },
+          {
+            id: "status",
+            header: t.sales.status,
+            align: "center",
+            cell: (s) => (
+              <span
+                className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium capitalize ${
+                  statusColors[s.status] ?? ""
+                }`}
+              >
+                {s.status}
+              </span>
+            ),
+          },
+          {
+            id: "date",
+            header: t.sales.date,
+            cellClassName: "text-gray-600 dark:text-gray-400",
+            cell: (s) => formatDateTime(s.created_at),
+          },
+          {
+            id: "actions",
+            header: t.sales.actions,
+            align: "center",
+            cell: (s) => (
+              <Link
+                href={`/sales/${s.id}`}
+                className="text-blue-600 hover:text-blue-700 text-sm font-medium"
+              >
+                {t.sales.view}
+              </Link>
+            ),
+          },
+        ];
+        return (
+          <DataTable
+            columns={columns}
+            rows={sales}
+            rowKey={(s) => s.id}
+            emptyMessage={t.sales.noSalesFound}
+          />
+        );
+      })()}
 
       <Pagination
         page={page}

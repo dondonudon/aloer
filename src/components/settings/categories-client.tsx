@@ -4,9 +4,12 @@ import { Pencil, Plus } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
+import { DataTable, type DataTableColumn } from "@/components/ui/data-table";
+import { ActiveFilter } from "@/components/ui/filters";
 import { Input } from "@/components/ui/input";
 import { Modal } from "@/components/ui/modal";
 import { Select } from "@/components/ui/select";
+import { StatusBadge } from "@/components/ui/status-badge";
 import { Toast } from "@/components/ui/toast";
 import { createCategory, updateCategory } from "@/lib/actions/categories";
 import { useI18n } from "@/lib/i18n/context";
@@ -25,10 +28,17 @@ export function CategoriesClient({ categories }: CategoriesClientProps) {
   const [modalOpen, setModalOpen] = useState(false);
   const [editing, setEditing] = useState<Category | null>(null);
   const [loading, setLoading] = useState(false);
+  const [activeFilter, setActiveFilter] = useState("");
   const [toast, setToast] = useState<{
     message: string;
     type: "success" | "error";
   } | null>(null);
+
+  const visibleCategories = categories.filter((c) => {
+    if (activeFilter === "true") return c.is_active;
+    if (activeFilter === "false") return !c.is_active;
+    return true;
+  });
 
   function openCreate() {
     setEditing(null);
@@ -76,60 +86,47 @@ export function CategoriesClient({ categories }: CategoriesClientProps) {
         </Button>
       </div>
 
-      {categories.length === 0 ? (
-        <p className="text-sm text-gray-400">{t.settings.noCategoriesYet}</p>
-      ) : (
-        <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl overflow-hidden">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-700/50">
-                <th className="text-left py-3 px-4 font-medium text-gray-500 dark:text-gray-400">
-                  {t.common.name}
-                </th>
-                <th className="text-center py-3 px-4 font-medium text-gray-500 dark:text-gray-400">
-                  {t.common.status}
-                </th>
-                <th className="text-center py-3 px-4 font-medium text-gray-500 dark:text-gray-400">
-                  {t.common.actions}
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {categories.map((cat) => (
-                <tr
-                  key={cat.id}
-                  className="border-b border-gray-50 dark:border-gray-700/50 hover:bg-gray-50 dark:hover:bg-gray-700/30"
-                >
-                  <td className="py-3 px-4 text-gray-900 dark:text-gray-100 font-medium">
-                    {cat.name}
-                  </td>
-                  <td className="py-3 px-4 text-center">
-                    <span
-                      className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${
-                        cat.is_active
-                          ? "bg-green-50 text-green-700"
-                          : "bg-gray-100 text-gray-500"
-                      }`}
-                    >
-                      {cat.is_active ? t.common.active : t.common.inactive}
-                    </span>
-                  </td>
-                  <td className="py-3 px-4 text-center">
-                    <button
-                      type="button"
-                      onClick={() => openEdit(cat)}
-                      className="text-blue-600 hover:text-blue-700"
-                      aria-label={`Edit ${cat.name}`}
-                    >
-                      <Pencil className="h-4 w-4" aria-hidden="true" />
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
+      <ActiveFilter value={activeFilter} onChange={setActiveFilter} />
+
+      {(() => {
+        const columns: DataTableColumn<Category>[] = [
+          {
+            id: "name",
+            header: t.common.name,
+            cellClassName: "text-gray-900 dark:text-gray-100 font-medium",
+            cell: (c) => c.name,
+          },
+          {
+            id: "status",
+            header: t.common.status,
+            align: "center",
+            cell: (c) => <StatusBadge active={c.is_active} />,
+          },
+          {
+            id: "actions",
+            header: t.common.actions,
+            align: "center",
+            cell: (c) => (
+              <button
+                type="button"
+                onClick={() => openEdit(c)}
+                className="text-blue-600 hover:text-blue-700"
+                aria-label={`Edit ${c.name}`}
+              >
+                <Pencil className="h-4 w-4" aria-hidden="true" />
+              </button>
+            ),
+          },
+        ];
+        return (
+          <DataTable
+            columns={columns}
+            rows={visibleCategories}
+            rowKey={(c) => c.id}
+            emptyMessage={t.settings.noCategoriesYet}
+          />
+        );
+      })()}
 
       <Modal
         open={modalOpen}

@@ -2,6 +2,7 @@
 
 import { Download } from "lucide-react";
 import { useMemo, useState } from "react";
+import { DataTable, type DataTableColumn } from "@/components/ui/data-table";
 import { Input } from "@/components/ui/input";
 import { Pagination } from "@/components/ui/pagination";
 import { exportPdf } from "@/lib/export";
@@ -147,101 +148,92 @@ export function SalesReportClient({ summary }: SalesReportClientProps) {
         )}
       </div>
 
-      <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-700/50">
-                <th className="text-left py-3 px-4 font-medium text-gray-500">
-                  {t.reports.date}
-                </th>
-                <th className="text-right py-3 px-4 font-medium text-gray-500">
-                  {t.reports.transactions}
-                </th>
-                <th className="text-right py-3 px-4 font-medium text-gray-500">
-                  {t.reports.revenue}
-                </th>
-                <th className="text-right py-3 px-4 font-medium text-gray-500">
-                  {t.reports.cogs}
-                </th>
-                <th className="text-right py-3 px-4 font-medium text-gray-500">
-                  {t.reports.grossProfit}
-                </th>
-                <th className="text-right py-3 px-4 font-medium text-gray-500">
-                  {t.reports.margin}
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {visibleRows.map((row) => {
-                const margin =
-                  row.total_revenue > 0
-                    ? ((row.gross_profit / row.total_revenue) * 100).toFixed(1)
-                    : "0.0";
-                return (
-                  <tr
-                    key={row.sale_date}
-                    className="border-b border-gray-50 dark:border-gray-700/50 hover:bg-gray-50 dark:hover:bg-gray-700/30"
-                  >
-                    <td className="py-3 px-4 text-gray-900 dark:text-gray-100">
-                      {row.sale_date}
-                    </td>
-                    <td className="py-3 px-4 text-right text-gray-700 dark:text-gray-300">
-                      {row.total_transactions}
-                    </td>
-                    <td className="py-3 px-4 text-right text-gray-700 dark:text-gray-300">
-                      {formatCurrency(row.total_revenue)}
-                    </td>
-                    <td className="py-3 px-4 text-right text-gray-700 dark:text-gray-300">
-                      {formatCurrency(row.total_cogs)}
-                    </td>
-                    <td className="py-3 px-4 text-right font-medium text-green-700 dark:text-green-400">
-                      {formatCurrency(row.gross_profit)}
-                    </td>
-                    <td className="py-3 px-4 text-right text-gray-600 dark:text-gray-400">
-                      {margin}%
-                    </td>
-                  </tr>
-                );
-              })}
-              {filtered.length === 0 && (
-                <tr>
-                  <td colSpan={6} className="py-8 text-center text-gray-400">
-                    {t.reports.noSalesData}
-                  </td>
-                </tr>
-              )}
-            </tbody>
-            {filtered.length > 0 && (
-              <tfoot>
-                <tr className="bg-gray-50 dark:bg-gray-700/50 font-medium">
-                  <td className="py-3 px-4 text-gray-900 dark:text-gray-100">
-                    {t.reports.total}
-                  </td>
-                  <td className="py-3 px-4 text-right text-gray-900 dark:text-gray-100">
-                    {totals.transactions}
-                  </td>
-                  <td className="py-3 px-4 text-right text-gray-900 dark:text-gray-100">
-                    {formatCurrency(totals.revenue)}
-                  </td>
-                  <td className="py-3 px-4 text-right text-gray-900 dark:text-gray-100">
-                    {formatCurrency(totals.cogs)}
-                  </td>
-                  <td className="py-3 px-4 text-right text-green-700 dark:text-green-400">
-                    {formatCurrency(totals.profit)}
-                  </td>
-                  <td className="py-3 px-4 text-right text-gray-600 dark:text-gray-400">
-                    {totals.revenue > 0
-                      ? ((totals.profit / totals.revenue) * 100).toFixed(1)
-                      : "0.0"}
-                    %
-                  </td>
-                </tr>
-              </tfoot>
-            )}
-          </table>
-        </div>
-      </div>
+      {(() => {
+        const columns: DataTableColumn<SalesSummaryRow>[] = [
+          {
+            id: "date",
+            header: t.reports.date,
+            cellClassName: "text-gray-900 dark:text-gray-100",
+            cell: (row) => row.sale_date,
+          },
+          {
+            id: "transactions",
+            header: t.reports.transactions,
+            align: "right",
+            cellClassName: "text-gray-700 dark:text-gray-300",
+            cell: (row) => row.total_transactions,
+          },
+          {
+            id: "revenue",
+            header: t.reports.revenue,
+            align: "right",
+            cellClassName: "text-gray-700 dark:text-gray-300",
+            cell: (row) => formatCurrency(row.total_revenue),
+          },
+          {
+            id: "cogs",
+            header: t.reports.cogs,
+            align: "right",
+            cellClassName: "text-gray-700 dark:text-gray-300",
+            cell: (row) => formatCurrency(row.total_cogs),
+          },
+          {
+            id: "grossProfit",
+            header: t.reports.grossProfit,
+            align: "right",
+            cellClassName: "font-medium text-green-700 dark:text-green-400",
+            cell: (row) => formatCurrency(row.gross_profit),
+          },
+          {
+            id: "margin",
+            header: t.reports.margin,
+            align: "right",
+            cellClassName: "text-gray-600 dark:text-gray-400",
+            cell: (row) => {
+              const margin =
+                row.total_revenue > 0
+                  ? ((row.gross_profit / row.total_revenue) * 100).toFixed(1)
+                  : "0.0";
+              return `${margin}%`;
+            },
+          },
+        ];
+        const footer =
+          filtered.length > 0 ? (
+            <tr className="bg-gray-50 dark:bg-gray-700/50 font-medium">
+              <td className="py-3 px-4 text-gray-900 dark:text-gray-100">
+                {t.reports.total}
+              </td>
+              <td className="py-3 px-4 text-right text-gray-900 dark:text-gray-100">
+                {totals.transactions}
+              </td>
+              <td className="py-3 px-4 text-right text-gray-900 dark:text-gray-100">
+                {formatCurrency(totals.revenue)}
+              </td>
+              <td className="py-3 px-4 text-right text-gray-900 dark:text-gray-100">
+                {formatCurrency(totals.cogs)}
+              </td>
+              <td className="py-3 px-4 text-right text-green-700 dark:text-green-400">
+                {formatCurrency(totals.profit)}
+              </td>
+              <td className="py-3 px-4 text-right text-gray-600 dark:text-gray-400">
+                {totals.revenue > 0
+                  ? ((totals.profit / totals.revenue) * 100).toFixed(1)
+                  : "0.0"}
+                %
+              </td>
+            </tr>
+          ) : undefined;
+        return (
+          <DataTable
+            columns={columns}
+            rows={visibleRows}
+            rowKey={(row) => row.sale_date}
+            emptyMessage={t.reports.noSalesData}
+            footer={footer}
+          />
+        );
+      })()}
 
       <Pagination
         page={currentPage}

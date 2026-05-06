@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import { SaleCreditPaymentsClient } from "@/components/sales/sale-credit-payments-client";
 import { SaleReturnActions } from "@/components/sales/sale-return-actions";
 import { SaleVoidActions } from "@/components/sales/sale-void-actions";
+import { DataTable, type DataTableColumn } from "@/components/ui/data-table";
 import { PageHeader } from "@/components/ui/page-header";
 import { getSaleCreditPayments } from "@/lib/actions/credit";
 import { getSaleReturns, getSaleWithItems } from "@/lib/actions/sales";
@@ -41,6 +42,65 @@ export default async function SaleDetailPage({ params }: Props) {
     sale.payment_method === "credit" && sale.status === "completed"
       ? creditPaymentsData
       : [];
+
+  type Item = (typeof items)[number];
+  const itemColumns: DataTableColumn<Item>[] = [
+    {
+      id: "product",
+      header: t.sales.product,
+      cell: (item) => {
+        const product = item.products as {
+          name: string;
+          sku: string;
+        } | null;
+        return (
+          <>
+            <p className="text-gray-900 dark:text-gray-100 font-medium">
+              {product?.name ?? "Unknown"}
+            </p>
+            <p className="text-xs text-gray-500 dark:text-gray-400">
+              {product?.sku ?? ""}
+            </p>
+          </>
+        );
+      },
+    },
+    {
+      id: "price",
+      header: t.sales.price,
+      align: "right",
+      cellClassName: "text-gray-600 dark:text-gray-400",
+      cell: (item) => formatCurrency(item.price),
+    },
+    {
+      id: "qty",
+      header: t.sales.qty,
+      align: "right",
+      cellClassName: "text-gray-600 dark:text-gray-400",
+      cell: (item) => item.quantity,
+    },
+    {
+      id: "subtotal",
+      header: t.sales.subtotal,
+      align: "right",
+      cellClassName: "font-medium text-gray-900 dark:text-gray-100",
+      cell: (item) => formatCurrency(item.subtotal),
+    },
+  ];
+
+  const itemsFooter = (
+    <tr className="border-t border-gray-200 dark:border-gray-700">
+      <td
+        colSpan={3}
+        className="py-3 px-4 text-right font-semibold text-gray-900 dark:text-white"
+      >
+        {t.sales.total}
+      </td>
+      <td className="py-3 px-4 text-right font-bold text-gray-900 dark:text-white">
+        {formatCurrency(sale.total_amount)}
+      </td>
+    </tr>
+  );
 
   return (
     <div className="max-w-3xl space-y-6">
@@ -193,71 +253,14 @@ export default async function SaleDetailPage({ params }: Props) {
             {t.sales.items} ({items.length})
           </h2>
         </div>
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-700/50">
-                <th className="text-left py-3 px-6 font-medium text-gray-500 dark:text-gray-400">
-                  {t.sales.product}
-                </th>
-                <th className="text-right py-3 px-6 font-medium text-gray-500 dark:text-gray-400">
-                  {t.sales.price}
-                </th>
-                <th className="text-right py-3 px-6 font-medium text-gray-500 dark:text-gray-400">
-                  {t.sales.qty}
-                </th>
-                <th className="text-right py-3 px-6 font-medium text-gray-500 dark:text-gray-400">
-                  {t.sales.subtotal}
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {items.map((item) => {
-                const product = item.products as {
-                  name: string;
-                  sku: string;
-                } | null;
-                return (
-                  <tr
-                    key={item.id}
-                    className="border-b border-gray-50 dark:border-gray-700/50 hover:bg-gray-50 dark:hover:bg-gray-700/30"
-                  >
-                    <td className="py-3 px-6">
-                      <p className="text-gray-900 dark:text-gray-100 font-medium">
-                        {product?.name ?? "Unknown"}
-                      </p>
-                      <p className="text-xs text-gray-500 dark:text-gray-400">
-                        {product?.sku ?? ""}
-                      </p>
-                    </td>
-                    <td className="py-3 px-6 text-right text-gray-600 dark:text-gray-400">
-                      {formatCurrency(item.price)}
-                    </td>
-                    <td className="py-3 px-6 text-right text-gray-600 dark:text-gray-400">
-                      {item.quantity}
-                    </td>
-                    <td className="py-3 px-6 text-right font-medium text-gray-900 dark:text-gray-100">
-                      {formatCurrency(item.subtotal)}
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-            <tfoot>
-              <tr className="border-t border-gray-200 dark:border-gray-700">
-                <td
-                  colSpan={3}
-                  className="py-3 px-6 text-right font-semibold text-gray-900 dark:text-white"
-                >
-                  {t.sales.total}
-                </td>
-                <td className="py-3 px-6 text-right font-bold text-gray-900 dark:text-white">
-                  {formatCurrency(sale.total_amount)}
-                </td>
-              </tr>
-            </tfoot>
-          </table>
-        </div>
+        <DataTable
+          columns={itemColumns}
+          rows={items}
+          rowKey={(i) => i.id}
+          emptyMessage={t.sales.noSalesFound}
+          footer={itemsFooter}
+          unstyled
+        />
       </div>
 
       {sale.payment_method === "credit" && sale.status === "completed" && (

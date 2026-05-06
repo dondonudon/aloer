@@ -4,6 +4,7 @@ import { Download } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { DataTable, type DataTableColumn } from "@/components/ui/data-table";
 import { ListFilter } from "@/components/ui/list-filter";
 import { Pagination } from "@/components/ui/pagination";
 import { exportCsv, exportXlsx } from "@/lib/export";
@@ -211,85 +212,76 @@ export function PurchasesListClient({
         </div>
       </div>
 
-      <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-700/50">
-                <th className="text-left py-3 px-4 font-medium text-gray-500 dark:text-gray-400">
-                  {t.purchases.poNumber}
-                </th>
-                <th className="text-left py-3 px-4 font-medium text-gray-500 dark:text-gray-400">
-                  {t.purchases.supplier}
-                </th>
-                <th className="text-left py-3 px-4 font-medium text-gray-500 dark:text-gray-400">
-                  {t.purchases.payment}
-                </th>
-                <th className="text-right py-3 px-4 font-medium text-gray-500 dark:text-gray-400">
-                  {t.purchases.total}
-                </th>
-                <th className="text-center py-3 px-4 font-medium text-gray-500 dark:text-gray-400">
-                  {t.purchases.status}
-                </th>
-                <th className="text-left py-3 px-4 font-medium text-gray-500 dark:text-gray-400">
-                  {t.purchases.date}
-                </th>
-                <th className="text-center py-3 px-4 font-medium text-gray-500 dark:text-gray-400">
-                  {t.purchases.actions}
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {orders.map((po) => (
-                <tr
-                  key={po.id}
-                  className="border-b border-gray-50 dark:border-gray-700/50 hover:bg-gray-50 dark:hover:bg-gray-700/30"
-                >
-                  <td className="py-3 px-4 font-mono text-gray-700 dark:text-gray-300">
-                    {po.po_number}
-                  </td>
-                  <td className="py-3 px-4 text-gray-900 dark:text-gray-100">
-                    {po.suppliers?.name || "—"}
-                  </td>
-                  <td className="py-3 px-4 text-gray-600 dark:text-gray-400 capitalize">
-                    {po.payment_method}
-                  </td>
-                  <td className="py-3 px-4 text-right text-gray-900 dark:text-gray-100">
-                    {formatCurrency(po.total_amount)}
-                  </td>
-                  <td className="py-3 px-4 text-center">
-                    <span
-                      className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium capitalize ${
-                        statusColors[po.status] ?? ""
-                      }`}
-                    >
-                      {po.status}
-                    </span>
-                  </td>
-                  <td className="py-3 px-4 text-gray-600 dark:text-gray-400">
-                    {formatDateTime(po.created_at)}
-                  </td>
-                  <td className="py-3 px-4 text-center">
-                    <Link
-                      href={`/purchases/${po.id}`}
-                      className="text-blue-600 hover:text-blue-700 text-sm font-medium"
-                    >
-                      {t.purchases.view}
-                    </Link>
-                  </td>
-                </tr>
-              ))}
-              {orders.length === 0 && (
-                <tr>
-                  <td colSpan={7} className="py-8 text-center text-gray-400">
-                    {t.purchases.noPOFound}
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
-      </div>
+      {(() => {
+        const columns: DataTableColumn<PurchaseOrderRow>[] = [
+          {
+            id: "poNumber",
+            header: t.purchases.poNumber,
+            cellClassName: "font-mono text-gray-700 dark:text-gray-300",
+            cell: (po) => po.po_number,
+          },
+          {
+            id: "supplier",
+            header: t.purchases.supplier,
+            cellClassName: "text-gray-900 dark:text-gray-100",
+            cell: (po) => po.suppliers?.name || "—",
+          },
+          {
+            id: "payment",
+            header: t.purchases.payment,
+            cellClassName: "text-gray-600 dark:text-gray-400 capitalize",
+            cell: (po) => po.payment_method,
+          },
+          {
+            id: "total",
+            header: t.purchases.total,
+            align: "right",
+            cellClassName: "text-gray-900 dark:text-gray-100",
+            cell: (po) => formatCurrency(po.total_amount),
+          },
+          {
+            id: "status",
+            header: t.purchases.status,
+            align: "center",
+            cell: (po) => (
+              <span
+                className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium capitalize ${
+                  statusColors[po.status] ?? ""
+                }`}
+              >
+                {po.status}
+              </span>
+            ),
+          },
+          {
+            id: "date",
+            header: t.purchases.date,
+            cellClassName: "text-gray-600 dark:text-gray-400",
+            cell: (po) => formatDateTime(po.created_at),
+          },
+          {
+            id: "actions",
+            header: t.purchases.actions,
+            align: "center",
+            cell: (po) => (
+              <Link
+                href={`/purchases/${po.id}`}
+                className="text-blue-600 hover:text-blue-700 text-sm font-medium"
+              >
+                {t.purchases.view}
+              </Link>
+            ),
+          },
+        ];
+        return (
+          <DataTable
+            columns={columns}
+            rows={orders}
+            rowKey={(po) => po.id}
+            emptyMessage={t.purchases.noPOFound}
+          />
+        );
+      })()}
 
       <Pagination
         page={page}

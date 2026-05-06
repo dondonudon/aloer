@@ -4,6 +4,7 @@ import { Search } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { DataTable, type DataTableColumn } from "@/components/ui/data-table";
 import { Input } from "@/components/ui/input";
 import { Pagination } from "@/components/ui/pagination";
 import { useI18n } from "@/lib/i18n/context";
@@ -147,80 +148,67 @@ export function InventoryListClient({
         {formatCurrency(totalValue)} value
       </p>
 
-      <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-700/50">
-                <th className="text-left py-3 px-4 font-medium text-gray-500 dark:text-gray-400">
-                  SKU
-                </th>
-                <th className="text-left py-3 px-4 font-medium text-gray-500 dark:text-gray-400">
-                  {t.inventory.product}
-                </th>
-                <th className="text-right py-3 px-4 font-medium text-gray-500 dark:text-gray-400">
-                  {t.inventory.stockOnHand}
-                </th>
-                <th className="text-right py-3 px-4 font-medium text-gray-500 dark:text-gray-400">
-                  {t.inventory.stockValue}
-                </th>
-                <th className="text-center py-3 px-4 font-medium text-gray-500 dark:text-gray-400">
-                  {t.inventory.batches}
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {visibleItems.map((item) => (
-                <tr
-                  key={item.sku}
-                  className="border-b border-gray-50 dark:border-gray-700/50 hover:bg-gray-50 dark:hover:bg-gray-700/30"
+      {(() => {
+        const columns: DataTableColumn<StockItem>[] = [
+          {
+            id: "sku",
+            header: "SKU",
+            cellClassName: "font-mono text-gray-700 dark:text-gray-300",
+            cell: (item) => item.sku,
+          },
+          {
+            id: "name",
+            header: t.inventory.product,
+            cellClassName: "text-gray-900 dark:text-gray-100 font-medium",
+            cell: (item) => item.name,
+          },
+          {
+            id: "stockOnHand",
+            header: t.inventory.stockOnHand,
+            align: "right",
+            cell: (item) => (
+              <span
+                className={`font-medium ${
+                  item.stock_on_hand <= 5
+                    ? "text-red-600"
+                    : "text-gray-900 dark:text-gray-100"
+                }`}
+              >
+                {item.stock_on_hand}
+              </span>
+            ),
+          },
+          {
+            id: "stockValue",
+            header: t.inventory.stockValue,
+            align: "right",
+            cellClassName: "text-gray-900 dark:text-gray-100",
+            cell: (item) => formatCurrency(item.stock_value),
+          },
+          {
+            id: "batches",
+            header: t.inventory.batches,
+            align: "center",
+            cell: (item) =>
+              item.id ? (
+                <Link
+                  href={`/inventory/${item.id}`}
+                  className="text-blue-600 hover:text-blue-700 text-sm font-medium"
                 >
-                  <td className="py-3 px-4 font-mono text-gray-700 dark:text-gray-300">
-                    {item.sku}
-                  </td>
-                  <td className="py-3 px-4 text-gray-900 dark:text-gray-100 font-medium">
-                    {item.name}
-                  </td>
-                  <td className="py-3 px-4 text-right">
-                    <span
-                      className={`font-medium ${
-                        item.stock_on_hand <= 5
-                          ? "text-red-600"
-                          : "text-gray-900 dark:text-gray-100"
-                      }`}
-                    >
-                      {item.stock_on_hand}
-                    </span>
-                  </td>
-                  <td className="py-3 px-4 text-right text-gray-900 dark:text-gray-100">
-                    {formatCurrency(item.stock_value)}
-                  </td>
-                  <td className="py-3 px-4 text-center">
-                    {item.id && (
-                      <Link
-                        href={`/inventory/${item.id}`}
-                        className="text-blue-600 hover:text-blue-700 text-sm font-medium"
-                      >
-                        {t.common.view}
-                      </Link>
-                    )}
-                  </td>
-                </tr>
-              ))}
-              {filtered.length === 0 && (
-                <tr>
-                  <td
-                    colSpan={5}
-                    className="py-8 text-center text-gray-400 dark:text-gray-500"
-                  >
-                    {t.inventory.noInventoryFound}
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
-      </div>
+                  {t.common.view}
+                </Link>
+              ) : null,
+          },
+        ];
+        return (
+          <DataTable
+            columns={columns}
+            rows={visibleItems}
+            rowKey={(item) => item.sku}
+            emptyMessage={t.inventory.noInventoryFound}
+          />
+        );
+      })()}
 
       <Pagination
         page={currentPage}

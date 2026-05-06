@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { DataTable, type DataTableColumn } from "@/components/ui/data-table";
 import { Select } from "@/components/ui/select";
 import { Toast } from "@/components/ui/toast";
 import type { ManagedUser } from "@/lib/actions/users";
@@ -53,78 +54,70 @@ export function UsersClient({ users, currentUserId }: UsersClientProps) {
         {t.settings.userAccess}
       </h2>
 
-      <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl overflow-hidden">
-        <table className="w-full text-sm">
-          <thead>
-            <tr className="border-b border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-700/50">
-              <th className="text-left py-3 px-4 font-medium text-gray-500 dark:text-gray-400">
-                {t.settings.user}
-              </th>
-              <th className="text-left py-3 px-4 font-medium text-gray-500 dark:text-gray-400">
-                {t.settings.signedUp}
-              </th>
-              <th className="text-left py-3 px-4 font-medium text-gray-500 dark:text-gray-400 w-44">
-                {t.settings.role}
-              </th>
-            </tr>
-          </thead>
-          <tbody>
-            {users.map((user) => {
+      {(() => {
+        const columns: DataTableColumn<ManagedUser>[] = [
+          {
+            id: "user",
+            header: t.settings.user,
+            cell: (user) => {
               const isMe = user.id === currentUserId;
               return (
-                <tr
-                  key={user.id}
-                  className="border-b border-gray-50 dark:border-gray-700/50 last:border-0"
-                >
-                  <td className="py-3 px-4">
-                    <p className="font-medium text-gray-900 dark:text-gray-100">
-                      {user.name}
-                      {isMe && (
-                        <span className="ml-2 text-xs text-blue-600 dark:text-blue-400 font-normal">
-                          ({t.settings.you})
-                        </span>
-                      )}
-                    </p>
-                    <p className="text-xs text-gray-500 dark:text-gray-400">
-                      {user.email}
-                    </p>
-                  </td>
-                  <td className="py-3 px-4 text-gray-500 dark:text-gray-400">
-                    {formatDateTime(user.created_at)}
-                  </td>
-                  <td className="py-3 px-4">
-                    {isMe ? (
-                      <span className="text-sm font-medium text-gray-700 dark:text-gray-300 capitalize">
-                        {user.role}
+                <>
+                  <p className="font-medium text-gray-900 dark:text-gray-100">
+                    {user.name}
+                    {isMe && (
+                      <span className="ml-2 text-xs text-blue-600 dark:text-blue-400 font-normal">
+                        ({t.settings.you})
                       </span>
-                    ) : (
-                      <Select
-                        options={roleOptions}
-                        value={user.role ?? ""}
-                        onChange={(e) =>
-                          handleRoleChange(user.id, e.target.value)
-                        }
-                        disabled={loading === user.id}
-                        aria-label={`Role for ${user.name}`}
-                      />
                     )}
-                  </td>
-                </tr>
+                  </p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">
+                    {user.email}
+                  </p>
+                </>
               );
-            })}
-            {users.length === 0 && (
-              <tr>
-                <td
-                  colSpan={3}
-                  className="py-8 text-center text-gray-400 dark:text-gray-500"
-                >
-                  {t.settings.noUsersFound}
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </table>
-      </div>
+            },
+          },
+          {
+            id: "signedUp",
+            header: t.settings.signedUp,
+            cellClassName: "text-gray-500 dark:text-gray-400",
+            cell: (user) => formatDateTime(user.created_at),
+          },
+          {
+            id: "role",
+            header: t.settings.role,
+            headerClassName: "w-44",
+            cell: (user) => {
+              const isMe = user.id === currentUserId;
+              if (isMe) {
+                return (
+                  <span className="text-sm font-medium text-gray-700 dark:text-gray-300 capitalize">
+                    {user.role}
+                  </span>
+                );
+              }
+              return (
+                <Select
+                  options={roleOptions}
+                  value={user.role ?? ""}
+                  onChange={(e) => handleRoleChange(user.id, e.target.value)}
+                  disabled={loading === user.id}
+                  aria-label={`Role for ${user.name}`}
+                />
+              );
+            },
+          },
+        ];
+        return (
+          <DataTable
+            columns={columns}
+            rows={users}
+            rowKey={(u) => u.id}
+            emptyMessage={t.settings.noUsersFound}
+          />
+        );
+      })()}
 
       <p className="text-xs text-gray-400 dark:text-gray-500">
         {t.settings.userAccessNote}

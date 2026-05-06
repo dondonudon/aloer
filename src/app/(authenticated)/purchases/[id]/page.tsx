@@ -2,6 +2,7 @@ import { PODetailActions } from "@/components/purchases/po-detail-actions";
 import { POReturnActions } from "@/components/purchases/po-return-actions";
 import { POVoidActions } from "@/components/purchases/po-void-actions";
 import { SupplierPaymentsClient } from "@/components/purchases/supplier-payments-client";
+import { DataTable, type DataTableColumn } from "@/components/ui/data-table";
 import { PageHeader } from "@/components/ui/page-header";
 import {
   getPurchaseOrderWithItems,
@@ -46,6 +47,44 @@ export default async function PurchaseOrderDetailPage({ params }: Props) {
     (sum, item) => sum + item.quantity * item.cost_price,
     0,
   );
+
+  type Item = (typeof items)[number];
+  const itemColumns: DataTableColumn<Item>[] = [
+    {
+      id: "product",
+      header: t.purchases.product,
+      cellClassName: "text-gray-900 dark:text-gray-100",
+      cell: (i) =>
+        (i.products as { name: string; sku: string } | null)?.name ?? "—",
+    },
+    {
+      id: "quantity",
+      header: t.purchases.quantity,
+      align: "right",
+      cellClassName: "text-gray-700 dark:text-gray-300",
+      cell: (i) => i.quantity,
+    },
+    {
+      id: "costPrice",
+      header: t.purchases.costPrice,
+      align: "right",
+      cellClassName: "text-gray-700 dark:text-gray-300",
+      cell: (i) => formatCurrency(i.cost_price),
+    },
+    {
+      id: "expiry",
+      header: t.purchases.expiry,
+      cellClassName: "text-gray-600 dark:text-gray-400",
+      cell: (i) => i.expiry_date || "—",
+    },
+    {
+      id: "subtotal",
+      header: t.purchases.subtotal,
+      align: "right",
+      cellClassName: "font-medium text-gray-900 dark:text-gray-100",
+      cell: (i) => formatCurrency(i.subtotal),
+    },
+  ];
 
   return (
     <div className="max-w-3xl space-y-6">
@@ -158,54 +197,13 @@ export default async function PurchaseOrderDetailPage({ params }: Props) {
             {t.purchases.items}
           </h2>
         </div>
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-700/50">
-                <th className="text-left py-3 px-4 font-medium text-gray-500 dark:text-gray-400">
-                  {t.purchases.product}
-                </th>
-                <th className="text-right py-3 px-4 font-medium text-gray-500 dark:text-gray-400">
-                  {t.purchases.quantity}
-                </th>
-                <th className="text-right py-3 px-4 font-medium text-gray-500 dark:text-gray-400">
-                  {t.purchases.costPrice}
-                </th>
-                <th className="text-left py-3 px-4 font-medium text-gray-500 dark:text-gray-400">
-                  {t.purchases.expiry}
-                </th>
-                <th className="text-right py-3 px-4 font-medium text-gray-500 dark:text-gray-400">
-                  {t.purchases.subtotal}
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {items.map((item) => (
-                <tr
-                  key={item.id}
-                  className="border-b border-gray-50 dark:border-gray-700/50 hover:bg-gray-50 dark:hover:bg-gray-700/30"
-                >
-                  <td className="py-3 px-4 text-gray-900 dark:text-gray-100">
-                    {(item.products as { name: string; sku: string })?.name ??
-                      "—"}
-                  </td>
-                  <td className="py-3 px-4 text-right text-gray-700 dark:text-gray-300">
-                    {item.quantity}
-                  </td>
-                  <td className="py-3 px-4 text-right text-gray-700 dark:text-gray-300">
-                    {formatCurrency(item.cost_price)}
-                  </td>
-                  <td className="py-3 px-4 text-gray-600 dark:text-gray-400">
-                    {item.expiry_date || "—"}
-                  </td>
-                  <td className="py-3 px-4 text-right font-medium text-gray-900 dark:text-gray-100">
-                    {formatCurrency(item.subtotal)}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+        <DataTable
+          columns={itemColumns}
+          rows={items}
+          rowKey={(i) => i.id}
+          emptyMessage={t.purchases.noItemsAdded}
+          unstyled
+        />
       </div>
 
       {po.payment_method === "credit" && po.status === "received" && (

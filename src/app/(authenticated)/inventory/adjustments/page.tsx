@@ -1,6 +1,7 @@
 import { Plus } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
+import { DataTable, type DataTableColumn } from "@/components/ui/data-table";
 import { PageHeader } from "@/components/ui/page-header";
 import { RoutePagination } from "@/components/ui/route-pagination";
 import { getAdjustments } from "@/lib/actions/inventory";
@@ -22,6 +23,40 @@ export default async function AdjustmentsPage({ searchParams }: Props) {
   ]);
   const { items, totalPages } = paginate(adjustments, page, pageSize);
 
+  type Adjustment = (typeof items)[number];
+  const columns: DataTableColumn<Adjustment>[] = [
+    {
+      id: "number",
+      header: t.inventory.number,
+      cellClassName: "font-mono text-gray-700 dark:text-gray-300",
+      cell: (adj) => adj.adjustment_number,
+    },
+    {
+      id: "reason",
+      header: t.inventory.reason,
+      cellClassName: "text-gray-900 dark:text-gray-100 capitalize",
+      cell: (adj) => adj.reason,
+    },
+    {
+      id: "notes",
+      header: t.inventory.notes,
+      cellClassName: "text-gray-600 dark:text-gray-400",
+      cell: (adj) => adj.notes || "—",
+    },
+    {
+      id: "createdBy",
+      header: t.common.createdBy,
+      cellClassName: "text-gray-600 dark:text-gray-400",
+      cell: (adj) => adj.created_by_name || "—",
+    },
+    {
+      id: "date",
+      header: t.common.date,
+      cellClassName: "text-gray-600 dark:text-gray-400",
+      cell: (adj) => formatDateTime(adj.created_at),
+    },
+  ];
+
   return (
     <div className="space-y-4">
       <PageHeader
@@ -37,65 +72,12 @@ export default async function AdjustmentsPage({ searchParams }: Props) {
         </Link>
       </PageHeader>
 
-      <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-700/50">
-                <th className="text-left py-3 px-4 font-medium text-gray-500 dark:text-gray-400">
-                  {t.inventory.number}
-                </th>
-                <th className="text-left py-3 px-4 font-medium text-gray-500 dark:text-gray-400">
-                  {t.inventory.reason}
-                </th>
-                <th className="text-left py-3 px-4 font-medium text-gray-500 dark:text-gray-400">
-                  {t.inventory.notes}
-                </th>
-                <th className="text-left py-3 px-4 font-medium text-gray-500 dark:text-gray-400">
-                  {t.common.createdBy}
-                </th>
-                <th className="text-left py-3 px-4 font-medium text-gray-500 dark:text-gray-400">
-                  {t.common.date}
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {items.map((adj) => (
-                <tr
-                  key={adj.id}
-                  className="border-b border-gray-50 dark:border-gray-700/50 hover:bg-gray-50 dark:hover:bg-gray-700/30"
-                >
-                  <td className="py-3 px-4 font-mono text-gray-700 dark:text-gray-300">
-                    {adj.adjustment_number}
-                  </td>
-                  <td className="py-3 px-4 text-gray-900 dark:text-gray-100 capitalize">
-                    {adj.reason}
-                  </td>
-                  <td className="py-3 px-4 text-gray-600 dark:text-gray-400">
-                    {adj.notes || "—"}
-                  </td>
-                  <td className="py-3 px-4 text-gray-600 dark:text-gray-400">
-                    {adj.created_by_name || "—"}
-                  </td>
-                  <td className="py-3 px-4 text-gray-600 dark:text-gray-400">
-                    {formatDateTime(adj.created_at)}
-                  </td>
-                </tr>
-              ))}
-              {items.length === 0 && (
-                <tr>
-                  <td
-                    colSpan={5}
-                    className="py-8 text-center text-gray-400 dark:text-gray-500"
-                  >
-                    {t.inventory.noAdjustmentsYet}
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
-      </div>
+      <DataTable
+        columns={columns}
+        rows={items}
+        rowKey={(adj) => adj.id}
+        emptyMessage={t.inventory.noAdjustmentsYet}
+      />
 
       <RoutePagination
         pathname="/inventory/adjustments"

@@ -4,6 +4,7 @@ import { RotateCcw } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
+import { DataTable, type DataTableColumn } from "@/components/ui/data-table";
 import { Modal } from "@/components/ui/modal";
 import { Select } from "@/components/ui/select";
 import { Toast } from "@/components/ui/toast";
@@ -163,35 +164,39 @@ export function POReturnActions({
                   {ret.notes}
                 </p>
               )}
-              <table className="w-full text-xs mt-1">
-                <thead>
-                  <tr className="text-gray-400 dark:text-gray-500">
-                    <th className="text-left py-1">{t.purchases.product}</th>
-                    <th className="text-right py-1">{t.purchases.quantity}</th>
-                    <th className="text-right py-1">
-                      {t.purchases.refundAmount}
-                    </th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {ret.items.map((ri) => (
-                    <tr
-                      key={ri.id}
-                      className="border-t border-gray-100 dark:border-gray-700"
-                    >
-                      <td className="py-1 text-gray-700 dark:text-gray-300">
-                        {ri.products?.name ?? ri.product_id}
-                      </td>
-                      <td className="py-1 text-right text-gray-600 dark:text-gray-400">
-                        {ri.quantity}
-                      </td>
-                      <td className="py-1 text-right font-medium text-gray-900 dark:text-white">
-                        {formatCurrency(ri.refund_amount)}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+              <DataTable
+                columns={
+                  [
+                    {
+                      id: "product",
+                      header: t.purchases.product,
+                      cellClassName: "text-gray-700 dark:text-gray-300",
+                      cell: (ri) => ri.products?.name ?? ri.product_id,
+                    },
+                    {
+                      id: "quantity",
+                      header: t.purchases.quantity,
+                      align: "right",
+                      cellClassName: "text-gray-600 dark:text-gray-400",
+                      cell: (ri) => ri.quantity,
+                    },
+                    {
+                      id: "refund",
+                      header: t.purchases.refundAmount,
+                      align: "right",
+                      cellClassName:
+                        "font-medium text-gray-900 dark:text-white",
+                      cell: (ri) => formatCurrency(ri.refund_amount),
+                    },
+                  ] as DataTableColumn<PurchaseReturnItem>[]
+                }
+                rows={ret.items}
+                rowKey={(ri) => ri.id}
+                emptyMessage=""
+                density="compact"
+                textSize="text-xs"
+                unstyled
+              />
               {ret.created_by_name && (
                 <p className="text-xs text-gray-400 dark:text-gray-500">
                   {t.common.by} {ret.created_by_name}
@@ -212,74 +217,75 @@ export function POReturnActions({
             {t.purchases.returnConfirmNote}
           </p>
 
-          <div className="overflow-x-auto rounded-lg border border-gray-200 dark:border-gray-700">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="bg-gray-50 dark:bg-gray-700/50 border-b border-gray-200 dark:border-gray-700">
-                  <th className="text-left py-2 px-3 font-medium text-gray-500 dark:text-gray-400 whitespace-nowrap">
-                    {t.purchases.product}
-                  </th>
-                  <th className="text-right py-2 px-3 font-medium text-gray-500 dark:text-gray-400">
-                    {t.purchases.costPrice}
-                  </th>
-                  <th className="text-right py-2 px-3 font-medium text-gray-500 dark:text-gray-400 whitespace-nowrap">
-                    {t.purchases.maxReturn}
-                  </th>
-                  <th className="text-right py-2 px-3 font-medium text-gray-500 dark:text-gray-400">
-                    {t.purchases.returnQty}
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                {poItems.map((item) => {
-                  const max = maxReturnable(item);
-                  return (
-                    <tr
-                      key={item.product_id}
-                      className="border-b border-gray-100 dark:border-gray-700/50"
-                    >
-                      <td className="py-2 px-3 text-gray-900 dark:text-gray-100">
-                        <div>{item.products?.name ?? "—"}</div>
-                        <div className="text-xs text-gray-400 font-mono">
-                          {item.products?.sku}
-                        </div>
-                      </td>
-                      <td className="py-2 px-3 text-right text-gray-600 dark:text-gray-400">
-                        {formatCurrency(item.cost_price)}
-                      </td>
-                      <td className="py-2 px-3 text-right text-gray-600 dark:text-gray-400">
-                        {max}
-                      </td>
-                      <td className="py-2 px-3 text-right">
-                        {max > 0 ? (
-                          <input
-                            type="number"
-                            min={0}
-                            max={max}
-                            step={1}
-                            value={returnQty[item.product_id] ?? 0}
-                            onChange={(e) => {
-                              const v = Math.min(
-                                Math.max(0, Number(e.target.value)),
-                                max,
-                              );
-                              setReturnQty((prev) => ({
-                                ...prev,
-                                [item.product_id]: v,
-                              }));
-                            }}
-                            className="w-20 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 px-2 py-1 text-sm text-right text-gray-900 dark:text-gray-100 focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
-                          />
-                        ) : (
-                          <span className="text-xs text-gray-400">—</span>
-                        )}
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
+          <DataTable
+            columns={
+              [
+                {
+                  id: "product",
+                  header: t.purchases.product,
+                  headerClassName: "whitespace-nowrap",
+                  cellClassName: "text-gray-900 dark:text-gray-100",
+                  cell: (item) => (
+                    <>
+                      <div>{item.products?.name ?? "—"}</div>
+                      <div className="text-xs text-gray-400 font-mono">
+                        {item.products?.sku}
+                      </div>
+                    </>
+                  ),
+                },
+                {
+                  id: "costPrice",
+                  header: t.purchases.costPrice,
+                  align: "right",
+                  cellClassName: "text-gray-600 dark:text-gray-400",
+                  cell: (item) => formatCurrency(item.cost_price),
+                },
+                {
+                  id: "maxReturn",
+                  header: t.purchases.maxReturn,
+                  headerClassName: "whitespace-nowrap",
+                  align: "right",
+                  cellClassName: "text-gray-600 dark:text-gray-400",
+                  cell: (item) => maxReturnable(item),
+                },
+                {
+                  id: "returnQty",
+                  header: t.purchases.returnQty,
+                  align: "right",
+                  cell: (item) => {
+                    const max = maxReturnable(item);
+                    if (max <= 0)
+                      return <span className="text-xs text-gray-400">—</span>;
+                    return (
+                      <input
+                        type="number"
+                        min={0}
+                        max={max}
+                        step={1}
+                        value={returnQty[item.product_id] ?? 0}
+                        onChange={(e) => {
+                          const v = Math.min(
+                            Math.max(0, Number(e.target.value)),
+                            max,
+                          );
+                          setReturnQty((prev) => ({
+                            ...prev,
+                            [item.product_id]: v,
+                          }));
+                        }}
+                        className="w-20 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 px-2 py-1 text-sm text-right text-gray-900 dark:text-gray-100 focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+                      />
+                    );
+                  },
+                },
+              ] as DataTableColumn<POItem>[]
+            }
+            rows={poItems}
+            rowKey={(item) => item.product_id}
+            emptyMessage=""
+            density="compact"
+          />
 
           <Select
             label={t.purchases.refundMethod}

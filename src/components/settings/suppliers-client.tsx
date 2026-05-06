@@ -4,9 +4,12 @@ import { Pencil, Plus } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
+import { DataTable, type DataTableColumn } from "@/components/ui/data-table";
+import { ActiveFilter } from "@/components/ui/filters";
 import { Input } from "@/components/ui/input";
 import { Modal } from "@/components/ui/modal";
 import { Select } from "@/components/ui/select";
+import { StatusBadge } from "@/components/ui/status-badge";
 import { Toast } from "@/components/ui/toast";
 import { createSupplier, updateSupplier } from "@/lib/actions/suppliers";
 import { useI18n } from "@/lib/i18n/context";
@@ -22,10 +25,17 @@ export function SuppliersClient({ suppliers }: Props) {
   const [modalOpen, setModalOpen] = useState(false);
   const [editing, setEditing] = useState<Supplier | null>(null);
   const [loading, setLoading] = useState(false);
+  const [activeFilter, setActiveFilter] = useState("");
   const [toast, setToast] = useState<{
     message: string;
     type: "success" | "error";
   } | null>(null);
+
+  const visibleSuppliers = suppliers.filter((s) => {
+    if (activeFilter === "true") return s.is_active;
+    if (activeFilter === "false") return !s.is_active;
+    return true;
+  });
 
   function openCreate() {
     setEditing(null);
@@ -69,80 +79,59 @@ export function SuppliersClient({ suppliers }: Props) {
         </Button>
       </div>
 
-      <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-700/50">
-                <th className="text-left py-3 px-4 font-medium text-gray-500 dark:text-gray-400">
-                  {t.common.name}
-                </th>
-                <th className="text-left py-3 px-4 font-medium text-gray-500 dark:text-gray-400">
-                  {t.common.phone}
-                </th>
-                <th className="text-left py-3 px-4 font-medium text-gray-500 dark:text-gray-400">
-                  {t.common.address}
-                </th>
-                <th className="text-center py-3 px-4 font-medium text-gray-500 dark:text-gray-400">
-                  {t.common.status}
-                </th>
-                <th className="text-center py-3 px-4 font-medium text-gray-500 dark:text-gray-400">
-                  {t.common.actions}
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {suppliers.map((supplier) => (
-                <tr
-                  key={supplier.id}
-                  className="border-b border-gray-50 dark:border-gray-700/50 hover:bg-gray-50 dark:hover:bg-gray-700/30"
-                >
-                  <td className="py-3 px-4 text-gray-900 dark:text-gray-100 font-medium">
-                    {supplier.name}
-                  </td>
-                  <td className="py-3 px-4 text-gray-600 dark:text-gray-400">
-                    {supplier.phone || "—"}
-                  </td>
-                  <td className="py-3 px-4 text-gray-600 dark:text-gray-400">
-                    {supplier.address || "—"}
-                  </td>
-                  <td className="py-3 px-4 text-center">
-                    <span
-                      className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${
-                        supplier.is_active
-                          ? "bg-green-50 text-green-700"
-                          : "bg-gray-100 text-gray-500"
-                      }`}
-                    >
-                      {supplier.is_active ? t.common.active : t.common.inactive}
-                    </span>
-                  </td>
-                  <td className="py-3 px-4 text-center">
-                    <button
-                      type="button"
-                      onClick={() => openEdit(supplier)}
-                      className="text-blue-600 hover:text-blue-700"
-                      aria-label={`Edit ${supplier.name}`}
-                    >
-                      <Pencil className="h-4 w-4" aria-hidden="true" />
-                    </button>
-                  </td>
-                </tr>
-              ))}
-              {suppliers.length === 0 && (
-                <tr>
-                  <td
-                    colSpan={5}
-                    className="py-8 text-center text-gray-400 dark:text-gray-500"
-                  >
-                    {t.settings.noSuppliersYet}
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
-      </div>
+      <ActiveFilter value={activeFilter} onChange={setActiveFilter} />
+
+      {(() => {
+        const columns: DataTableColumn<Supplier>[] = [
+          {
+            id: "name",
+            header: t.common.name,
+            cellClassName: "text-gray-900 dark:text-gray-100 font-medium",
+            cell: (s) => s.name,
+          },
+          {
+            id: "phone",
+            header: t.common.phone,
+            cellClassName: "text-gray-600 dark:text-gray-400",
+            cell: (s) => s.phone || "—",
+          },
+          {
+            id: "address",
+            header: t.common.address,
+            cellClassName: "text-gray-600 dark:text-gray-400",
+            cell: (s) => s.address || "—",
+          },
+          {
+            id: "status",
+            header: t.common.status,
+            align: "center",
+            cell: (s) => <StatusBadge active={s.is_active} />,
+          },
+          {
+            id: "actions",
+            header: t.common.actions,
+            align: "center",
+            cell: (s) => (
+              <button
+                type="button"
+                onClick={() => openEdit(s)}
+                className="text-blue-600 hover:text-blue-700"
+                aria-label={`Edit ${s.name}`}
+              >
+                <Pencil className="h-4 w-4" aria-hidden="true" />
+              </button>
+            ),
+          },
+        ];
+        return (
+          <DataTable
+            columns={columns}
+            rows={visibleSuppliers}
+            rowKey={(s) => s.id}
+            emptyMessage={t.settings.noSuppliersYet}
+          />
+        );
+      })()}
 
       <Modal
         open={modalOpen}

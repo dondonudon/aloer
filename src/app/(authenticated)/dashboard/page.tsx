@@ -2,6 +2,7 @@ import { DollarSign, Package, ShoppingCart, TrendingUp } from "lucide-react";
 import Link from "next/link";
 import { Suspense } from "react";
 import { LowStockAlert } from "@/components/dashboard/low-stock-alert";
+import { DataTable, type DataTableColumn } from "@/components/ui/data-table";
 import {
   getOutstandingCreditPOs,
   getOutstandingCreditSales,
@@ -178,68 +179,58 @@ async function DashboardSalesSummary({
     salesSummaryPromise,
   ]);
 
+  type SummaryRow = (typeof salesSummary)[number];
+  const columns: DataTableColumn<SummaryRow>[] = [
+    {
+      id: "date",
+      header: t.dashboard.date,
+      cellClassName: "text-gray-900 dark:text-gray-100",
+      cell: (row) => row.sale_date,
+    },
+    {
+      id: "transactions",
+      header: t.dashboard.transactions,
+      align: "right",
+      cellClassName: "text-gray-700 dark:text-gray-300",
+      cell: (row) => row.total_transactions,
+    },
+    {
+      id: "revenue",
+      header: t.dashboard.revenue,
+      align: "right",
+      cellClassName: "text-gray-700 dark:text-gray-300",
+      cell: (row) => formatCurrency(row.total_revenue),
+    },
+    {
+      id: "cogs",
+      header: t.dashboard.cogs,
+      align: "right",
+      cellClassName: "text-gray-700 dark:text-gray-300",
+      cell: (row) => formatCurrency(row.total_cogs),
+    },
+    {
+      id: "grossProfit",
+      header: t.dashboard.grossProfit,
+      align: "right",
+      cellClassName: "font-medium text-green-700 dark:text-green-400",
+      cell: (row) => formatCurrency(row.gross_profit),
+    },
+  ];
+
   return (
-    <div className="overflow-x-auto rounded-xl border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800">
+    <div className="rounded-xl border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800">
       <div className="border-b border-gray-200 p-5 dark:border-gray-700">
         <h2 className="text-base font-semibold text-gray-900 dark:text-white">
           {t.dashboard.last7Days}
         </h2>
       </div>
-      <table className="w-full text-sm">
-        <thead>
-          <tr className="border-b border-gray-100 dark:border-gray-700">
-            <th className="px-5 py-3 text-left font-medium text-gray-500 dark:text-gray-400">
-              {t.dashboard.date}
-            </th>
-            <th className="px-5 py-3 text-right font-medium text-gray-500 dark:text-gray-400">
-              {t.dashboard.transactions}
-            </th>
-            <th className="px-5 py-3 text-right font-medium text-gray-500 dark:text-gray-400">
-              {t.dashboard.revenue}
-            </th>
-            <th className="px-5 py-3 text-right font-medium text-gray-500 dark:text-gray-400">
-              {t.dashboard.cogs}
-            </th>
-            <th className="px-5 py-3 text-right font-medium text-gray-500 dark:text-gray-400">
-              {t.dashboard.grossProfit}
-            </th>
-          </tr>
-        </thead>
-        <tbody>
-          {salesSummary.map((row) => (
-            <tr
-              key={row.sale_date}
-              className="border-b border-gray-50 hover:bg-gray-50 dark:border-gray-700/50 dark:hover:bg-gray-700/30"
-            >
-              <td className="px-5 py-3 text-gray-900 dark:text-gray-100">
-                {row.sale_date}
-              </td>
-              <td className="px-5 py-3 text-right text-gray-700 dark:text-gray-300">
-                {row.total_transactions}
-              </td>
-              <td className="px-5 py-3 text-right text-gray-700 dark:text-gray-300">
-                {formatCurrency(row.total_revenue)}
-              </td>
-              <td className="px-5 py-3 text-right text-gray-700 dark:text-gray-300">
-                {formatCurrency(row.total_cogs)}
-              </td>
-              <td className="px-5 py-3 text-right font-medium text-green-700 dark:text-green-400">
-                {formatCurrency(row.gross_profit)}
-              </td>
-            </tr>
-          ))}
-          {salesSummary.length === 0 && (
-            <tr>
-              <td
-                colSpan={5}
-                className="py-8 text-center text-gray-400 dark:text-gray-500"
-              >
-                {t.dashboard.noSalesData}
-              </td>
-            </tr>
-          )}
-        </tbody>
-      </table>
+      <DataTable
+        columns={columns}
+        rows={salesSummary}
+        rowKey={(row) => row.sale_date}
+        emptyMessage={t.dashboard.noSalesData}
+        unstyled
+      />
     </div>
   );
 }

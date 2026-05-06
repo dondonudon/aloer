@@ -4,6 +4,7 @@ import { CreditCard, Plus } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
+import { DataTable, type DataTableColumn } from "@/components/ui/data-table";
 import { Input } from "@/components/ui/input";
 import { Modal } from "@/components/ui/modal";
 import { NumericInput } from "@/components/ui/numeric-input";
@@ -114,59 +115,57 @@ export function SaleCreditPaymentsClient({
             {t.credit.noCollections}
           </p>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-700/50">
-                  <th className="text-left py-2 px-4 font-medium text-gray-500 dark:text-gray-400">
-                    {t.credit.date}
-                  </th>
-                  <th className="text-left py-2 px-4 font-medium text-gray-500 dark:text-gray-400">
-                    {t.credit.method}
-                  </th>
-                  <th className="text-right py-2 px-4 font-medium text-gray-500 dark:text-gray-400">
-                    {t.common.amount}
-                  </th>
-                  <th className="text-left py-2 px-4 font-medium text-gray-500 dark:text-gray-400">
-                    {t.credit.notes}
-                  </th>
-                  <th className="text-left py-2 px-4 font-medium text-gray-500 dark:text-gray-400">
-                    {t.common.createdBy}
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                {payments.map((p) => (
-                  <tr
-                    key={p.id}
-                    className="border-b border-gray-50 dark:border-gray-700/50"
-                  >
-                    <td className="py-2 px-4 text-gray-600 dark:text-gray-400">
-                      {formatDateTime(p.created_at)}
-                    </td>
-                    <td className="py-2 px-4">
-                      <span className="inline-flex items-center gap-1 text-gray-700 dark:text-gray-300 capitalize">
-                        <CreditCard
-                          className="h-3.5 w-3.5 text-gray-400"
-                          aria-hidden="true"
-                        />
-                        {p.payment_method}
-                      </span>
-                    </td>
-                    <td className="py-2 px-4 text-right font-medium text-gray-900 dark:text-gray-100">
-                      {formatCurrency(p.amount)}
-                    </td>
-                    <td className="py-2 px-4 text-gray-500 dark:text-gray-400">
-                      {p.notes || "—"}
-                    </td>
-                    <td className="py-2 px-4 text-gray-500 dark:text-gray-400">
-                      {p.created_by_name || "—"}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+          (() => {
+            const columns: DataTableColumn<SaleCreditPayment>[] = [
+              {
+                id: "date",
+                header: t.credit.date,
+                cellClassName: "text-gray-600 dark:text-gray-400",
+                cell: (p) => formatDateTime(p.created_at),
+              },
+              {
+                id: "method",
+                header: t.credit.method,
+                cell: (p) => (
+                  <span className="inline-flex items-center gap-1 text-gray-700 dark:text-gray-300 capitalize">
+                    <CreditCard
+                      className="h-3.5 w-3.5 text-gray-400"
+                      aria-hidden="true"
+                    />
+                    {p.payment_method}
+                  </span>
+                ),
+              },
+              {
+                id: "amount",
+                header: t.common.amount,
+                align: "right",
+                cellClassName: "font-medium text-gray-900 dark:text-gray-100",
+                cell: (p) => formatCurrency(p.amount),
+              },
+              {
+                id: "notes",
+                header: t.credit.notes,
+                cellClassName: "text-gray-500 dark:text-gray-400",
+                cell: (p) => p.notes || "—",
+              },
+              {
+                id: "createdBy",
+                header: t.common.createdBy,
+                cellClassName: "text-gray-500 dark:text-gray-400",
+                cell: (p) => p.created_by_name || "—",
+              },
+            ];
+            return (
+              <DataTable
+                columns={columns}
+                rows={payments}
+                rowKey={(p) => p.id}
+                emptyMessage={t.credit.noCollections}
+                unstyled
+              />
+            );
+          })()
         )}
       </div>
 

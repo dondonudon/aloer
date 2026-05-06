@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { DataTable, type DataTableColumn } from "@/components/ui/data-table";
 import { PageHeader } from "@/components/ui/page-header";
 import { RoutePagination } from "@/components/ui/route-pagination";
 import {
@@ -39,6 +40,140 @@ export default async function CreditPage({ searchParams }: Props) {
 
   const totalAR = creditSales.reduce((sum, s) => sum + s.outstanding, 0);
   const totalAP = creditPOs.reduce((sum, p) => sum + p.outstanding, 0);
+
+  type ARRow = (typeof creditSales)[number];
+  type APRow = (typeof creditPOs)[number];
+
+  const arColumns: DataTableColumn<ARRow>[] = [
+    {
+      id: "invoice",
+      header: t.credit.invoice,
+      cellClassName: "font-mono text-xs text-gray-700 dark:text-gray-300",
+      cell: (s) => s.invoice_number,
+    },
+    {
+      id: "reseller",
+      header: t.credit.reseller,
+      cellClassName: "text-gray-600 dark:text-gray-400",
+      cell: (s) => (s.resellers as { name: string }[] | null)?.[0]?.name || "—",
+    },
+    {
+      id: "date",
+      header: t.credit.date,
+      cellClassName: "text-gray-600 dark:text-gray-400",
+      cell: (s) => formatDateTime(s.created_at),
+    },
+    {
+      id: "total",
+      header: t.credit.total,
+      align: "right",
+      cellClassName: "text-gray-700 dark:text-gray-300",
+      cell: (s) => formatCurrency(s.total_amount),
+    },
+    {
+      id: "collected",
+      header: t.credit.collected,
+      align: "right",
+      cellClassName: "text-green-600 dark:text-green-400",
+      cell: (s) => formatCurrency(s.collected),
+    },
+    {
+      id: "outstanding",
+      header: t.credit.outstanding,
+      align: "right",
+      cellClassName: "font-semibold",
+      cell: (s) => (
+        <span
+          className={
+            s.outstanding > 0
+              ? "text-amber-600 dark:text-amber-400"
+              : "text-green-600 dark:text-green-400"
+          }
+        >
+          {formatCurrency(s.outstanding)}
+        </span>
+      ),
+    },
+    {
+      id: "actions",
+      header: "",
+      align: "right",
+      cell: (s) => (
+        <Link
+          href={`/sales/${s.id}`}
+          className="text-xs text-blue-600 dark:text-blue-400 hover:underline"
+        >
+          {t.credit.view}
+        </Link>
+      ),
+    },
+  ];
+
+  const apColumns: DataTableColumn<APRow>[] = [
+    {
+      id: "po",
+      header: t.credit.poNumber,
+      cellClassName: "font-mono text-xs text-gray-700 dark:text-gray-300",
+      cell: (po) => po.po_number,
+    },
+    {
+      id: "supplier",
+      header: t.credit.supplier,
+      cellClassName: "text-gray-600 dark:text-gray-400",
+      cell: (po) =>
+        (po.suppliers as { name: string }[] | null)?.[0]?.name || "—",
+    },
+    {
+      id: "date",
+      header: t.credit.date,
+      cellClassName: "text-gray-600 dark:text-gray-400",
+      cell: (po) => formatDateTime(po.created_at),
+    },
+    {
+      id: "total",
+      header: t.credit.total,
+      align: "right",
+      cellClassName: "text-gray-700 dark:text-gray-300",
+      cell: (po) => formatCurrency(po.total_amount),
+    },
+    {
+      id: "paid",
+      header: t.credit.paid,
+      align: "right",
+      cellClassName: "text-green-600 dark:text-green-400",
+      cell: (po) => formatCurrency(po.paid),
+    },
+    {
+      id: "outstanding",
+      header: t.credit.outstanding,
+      align: "right",
+      cellClassName: "font-semibold",
+      cell: (po) => (
+        <span
+          className={
+            po.outstanding > 0
+              ? "text-red-600 dark:text-red-400"
+              : "text-green-600 dark:text-green-400"
+          }
+        >
+          {formatCurrency(po.outstanding)}
+        </span>
+      ),
+    },
+    {
+      id: "actions",
+      header: "",
+      align: "right",
+      cell: (po) => (
+        <Link
+          href={`/purchases/${po.id}`}
+          className="text-xs text-blue-600 dark:text-blue-400 hover:underline"
+        >
+          {t.credit.view}
+        </Link>
+      ),
+    },
+  ];
 
   return (
     <div className="space-y-6">
@@ -87,77 +222,13 @@ export default async function CreditPage({ searchParams }: Props) {
             {t.credit.noOutstandingCredit}
           </p>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-700/50">
-                  <th className="text-left py-3 px-4 font-medium text-gray-500 dark:text-gray-400">
-                    {t.credit.invoice}
-                  </th>
-                  <th className="text-left py-3 px-4 font-medium text-gray-500 dark:text-gray-400">
-                    {t.credit.reseller}
-                  </th>
-                  <th className="text-left py-3 px-4 font-medium text-gray-500 dark:text-gray-400">
-                    {t.credit.date}
-                  </th>
-                  <th className="text-right py-3 px-4 font-medium text-gray-500 dark:text-gray-400">
-                    {t.credit.total}
-                  </th>
-                  <th className="text-right py-3 px-4 font-medium text-gray-500 dark:text-gray-400">
-                    {t.credit.collected}
-                  </th>
-                  <th className="text-right py-3 px-4 font-medium text-gray-500 dark:text-gray-400">
-                    {t.credit.outstanding}
-                  </th>
-                  <th className="py-3 px-4" />
-                </tr>
-              </thead>
-              <tbody>
-                {arItems.map((sale) => (
-                  <tr
-                    key={sale.id}
-                    className="border-b border-gray-50 dark:border-gray-700/50 hover:bg-gray-50 dark:hover:bg-gray-700/30"
-                  >
-                    <td className="py-3 px-4 font-mono text-xs text-gray-700 dark:text-gray-300">
-                      {sale.invoice_number}
-                    </td>
-                    <td className="py-3 px-4 text-gray-600 dark:text-gray-400">
-                      {(sale.resellers as { name: string }[] | null)?.[0]
-                        ?.name || "—"}
-                    </td>
-                    <td className="py-3 px-4 text-gray-600 dark:text-gray-400">
-                      {formatDateTime(sale.created_at)}
-                    </td>
-                    <td className="py-3 px-4 text-right text-gray-700 dark:text-gray-300">
-                      {formatCurrency(sale.total_amount)}
-                    </td>
-                    <td className="py-3 px-4 text-right text-green-600 dark:text-green-400">
-                      {formatCurrency(sale.collected)}
-                    </td>
-                    <td className="py-3 px-4 text-right font-semibold">
-                      <span
-                        className={
-                          sale.outstanding > 0
-                            ? "text-amber-600 dark:text-amber-400"
-                            : "text-green-600 dark:text-green-400"
-                        }
-                      >
-                        {formatCurrency(sale.outstanding)}
-                      </span>
-                    </td>
-                    <td className="py-3 px-4 text-right">
-                      <Link
-                        href={`/sales/${sale.id}`}
-                        className="text-xs text-blue-600 dark:text-blue-400 hover:underline"
-                      >
-                        {t.credit.view}
-                      </Link>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+          <DataTable
+            columns={arColumns}
+            rows={arItems}
+            rowKey={(s) => s.id}
+            emptyMessage={t.credit.noOutstandingCredit}
+            unstyled
+          />
         )}
 
         <RoutePagination
@@ -182,77 +253,13 @@ export default async function CreditPage({ searchParams }: Props) {
             {t.credit.noOutstandingPO}
           </p>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-700/50">
-                  <th className="text-left py-3 px-4 font-medium text-gray-500 dark:text-gray-400">
-                    {t.credit.poNumber}
-                  </th>
-                  <th className="text-left py-3 px-4 font-medium text-gray-500 dark:text-gray-400">
-                    {t.credit.supplier}
-                  </th>
-                  <th className="text-left py-3 px-4 font-medium text-gray-500 dark:text-gray-400">
-                    {t.credit.date}
-                  </th>
-                  <th className="text-right py-3 px-4 font-medium text-gray-500 dark:text-gray-400">
-                    {t.credit.total}
-                  </th>
-                  <th className="text-right py-3 px-4 font-medium text-gray-500 dark:text-gray-400">
-                    {t.credit.paid}
-                  </th>
-                  <th className="text-right py-3 px-4 font-medium text-gray-500 dark:text-gray-400">
-                    {t.credit.outstanding}
-                  </th>
-                  <th className="py-3 px-4" />
-                </tr>
-              </thead>
-              <tbody>
-                {apItems.map((po) => (
-                  <tr
-                    key={po.id}
-                    className="border-b border-gray-50 dark:border-gray-700/50 hover:bg-gray-50 dark:hover:bg-gray-700/30"
-                  >
-                    <td className="py-3 px-4 font-mono text-xs text-gray-700 dark:text-gray-300">
-                      {po.po_number}
-                    </td>
-                    <td className="py-3 px-4 text-gray-600 dark:text-gray-400">
-                      {(po.suppliers as { name: string }[] | null)?.[0]?.name ||
-                        "—"}
-                    </td>
-                    <td className="py-3 px-4 text-gray-600 dark:text-gray-400">
-                      {formatDateTime(po.created_at)}
-                    </td>
-                    <td className="py-3 px-4 text-right text-gray-700 dark:text-gray-300">
-                      {formatCurrency(po.total_amount)}
-                    </td>
-                    <td className="py-3 px-4 text-right text-green-600 dark:text-green-400">
-                      {formatCurrency(po.paid)}
-                    </td>
-                    <td className="py-3 px-4 text-right font-semibold">
-                      <span
-                        className={
-                          po.outstanding > 0
-                            ? "text-red-600 dark:text-red-400"
-                            : "text-green-600 dark:text-green-400"
-                        }
-                      >
-                        {formatCurrency(po.outstanding)}
-                      </span>
-                    </td>
-                    <td className="py-3 px-4 text-right">
-                      <Link
-                        href={`/purchases/${po.id}`}
-                        className="text-xs text-blue-600 dark:text-blue-400 hover:underline"
-                      >
-                        {t.credit.view}
-                      </Link>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+          <DataTable
+            columns={apColumns}
+            rows={apItems}
+            rowKey={(po) => po.id}
+            emptyMessage={t.credit.noOutstandingPO}
+            unstyled
+          />
         )}
 
         <RoutePagination

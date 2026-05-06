@@ -23,6 +23,22 @@ interface DataTableProps<T> {
   emptyMessage: ReactNode;
   /** Optional per-row className (e.g. for selection highlighting). */
   rowClassName?: (row: T) => string;
+  /**
+   * Optional `<tfoot>` content. Pass one or more `<tr>` elements (e.g. a
+   * totals row). The colspan and styling are the caller's responsibility so
+   * the footer can deliberately differ from the body cells.
+   */
+  footer?: ReactNode;
+  /** Drop the outer card wrapper — useful when nested inside a card already. */
+  unstyled?: boolean;
+  /**
+   * Cell padding density:
+   * - `"default"` (py-3 px-4) — standalone list pages
+   * - `"compact"` (py-2 px-3) — small tables nested in modals or detail cards
+   */
+  density?: "default" | "compact";
+  /** Override default text size — defaults to "text-sm". */
+  textSize?: "text-xs" | "text-sm";
 }
 
 const alignClass: Record<ColumnAlign, string> = {
@@ -43,52 +59,64 @@ export function DataTable<T>({
   rowKey,
   emptyMessage,
   rowClassName,
+  footer,
+  unstyled = false,
+  density = "default",
+  textSize = "text-sm",
 }: DataTableProps<T>) {
-  return (
-    <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl overflow-hidden">
-      <div className="overflow-x-auto">
-        <table className="w-full text-sm">
-          <thead>
-            <tr className="border-b border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-700/50">
+  const cellPad = density === "compact" ? "py-2 px-3" : "py-3 px-4";
+  const headerPad = density === "compact" ? "py-2 px-3" : "py-3 px-4";
+  const inner = (
+    <div className="overflow-x-auto">
+      <table className={`w-full ${textSize}`}>
+        <thead>
+          <tr className="border-b border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-700/50">
+            {columns.map((col) => (
+              <th
+                key={col.id}
+                className={`${headerPad} font-medium text-gray-500 dark:text-gray-400 ${alignClass[col.align ?? "left"]} ${col.headerClassName ?? ""}`.trim()}
+              >
+                {col.header}
+              </th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map((row) => (
+            <tr
+              key={rowKey(row)}
+              className={`border-b border-gray-50 dark:border-gray-700/50 hover:bg-gray-50 dark:hover:bg-gray-700/30 ${rowClassName?.(row) ?? ""}`.trim()}
+            >
               {columns.map((col) => (
-                <th
+                <td
                   key={col.id}
-                  className={`py-3 px-4 font-medium text-gray-500 dark:text-gray-400 ${alignClass[col.align ?? "left"]} ${col.headerClassName ?? ""}`.trim()}
+                  className={`${cellPad} ${alignClass[col.align ?? "left"]} ${col.cellClassName ?? ""}`.trim()}
                 >
-                  {col.header}
-                </th>
+                  {col.cell(row)}
+                </td>
               ))}
             </tr>
-          </thead>
-          <tbody>
-            {rows.map((row) => (
-              <tr
-                key={rowKey(row)}
-                className={`border-b border-gray-50 dark:border-gray-700/50 hover:bg-gray-50 dark:hover:bg-gray-700/30 ${rowClassName?.(row) ?? ""}`.trim()}
+          ))}
+          {rows.length === 0 && (
+            <tr>
+              <td
+                colSpan={columns.length}
+                className="py-8 text-center text-gray-400 dark:text-gray-500"
               >
-                {columns.map((col) => (
-                  <td
-                    key={col.id}
-                    className={`py-3 px-4 ${alignClass[col.align ?? "left"]} ${col.cellClassName ?? ""}`.trim()}
-                  >
-                    {col.cell(row)}
-                  </td>
-                ))}
-              </tr>
-            ))}
-            {rows.length === 0 && (
-              <tr>
-                <td
-                  colSpan={columns.length}
-                  className="py-8 text-center text-gray-400 dark:text-gray-500"
-                >
-                  {emptyMessage}
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </table>
-      </div>
+                {emptyMessage}
+              </td>
+            </tr>
+          )}
+        </tbody>
+        {footer && <tfoot>{footer}</tfoot>}
+      </table>
+    </div>
+  );
+
+  if (unstyled) return inner;
+  return (
+    <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl overflow-hidden">
+      {inner}
     </div>
   );
 }
