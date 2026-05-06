@@ -53,9 +53,55 @@ Create a `.env.local` file at the project root:
 NEXT_PUBLIC_SUPABASE_URL=https://<project>.supabase.co
 NEXT_PUBLIC_SUPABASE_ANON_KEY=<anon-key>
 SUPABASE_SERVICE_ROLE_KEY=<service-role-key>
+
+# Web Push (PWA notifications) — optional, only required if you want push
+NEXT_PUBLIC_VAPID_PUBLIC_KEY=<vapid-public-key>
+VAPID_PRIVATE_KEY=<vapid-private-key>
+VAPID_SUBJECT=mailto:you@example.com
+
+# Vercel Cron secret — required if scheduled notification jobs are enabled
+CRON_SECRET=<random-string>
 ```
 
 > `SUPABASE_SERVICE_ROLE_KEY` is only used in Server Actions and never sent to the browser.
+
+## PWA & Push Notifications
+
+Aloer ships as an installable PWA (manifest + service worker at `public/`). To enable push:
+
+1. **Generate VAPID keys** (one-time, per environment):
+   ```bash
+   npx web-push generate-vapid-keys
+   ```
+   Set the resulting public/private keys in `.env.local` as shown above.
+2. **Run the migration** for `push_subscriptions` (`supabase/migrations/00013_push_subscriptions.sql`).
+3. **Settings → Notifications** has an *Enable notifications* button users tap on each device. The `Send test` button verifies wiring.
+4. **iOS**: web push only works for installed PWAs (iOS 16.4+). Users must open Aloer in Safari, tap *Share → Add to Home Screen*, then open from the home screen before enabling.
+
+To send a notification from your own server code:
+
+```ts
+import { sendPushToUser } from "@/lib/push-server";
+
+await sendPushToUser(userId, {
+  title: "Sale completed",
+  body: "Order #1234 — Rp 250,000",
+  url: "/sales/1234",
+});
+```
+
+Stale endpoints (404/410) are pruned automatically.
+
+## Scheduled Notifications (Vercel Cron)
+
+`vercel.json` registers a daily cron at `01:00 UTC` hitting `GET /api/cron/notifications`. Vercel automatically attaches `Authorization: Bearer $CRON_SECRET` when the env var is present, and the route rejects requests without it.
+
+The route runs two jobs from `src/lib/cron/notifications.ts`:
+
+- `notifyOutstandingCredit` — reminds owners about unpaid credit (stub — business rules pending)
+- `notifyExpiringProducts` — warns about batches near expiry (stub — needs `inventory_batches.expiry_date`)
+
+Both are intentional no-ops for now. Replace the stubs once the business rules land — they already plug into `sendPushToUser`. Adjust the schedule in `vercel.json` to taste (cron syntax; UTC).
 
 ## Database Setup
 

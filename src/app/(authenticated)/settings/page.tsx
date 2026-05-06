@@ -1,3 +1,4 @@
+import { NotificationsCard } from "@/components/settings/notifications-card";
 import { StoreSettingsForm } from "@/components/settings/store-settings-form";
 import { UsersClient } from "@/components/settings/users-client";
 import { RoutePagination } from "@/components/ui/route-pagination";
@@ -32,6 +33,7 @@ export default async function SettingsPage({ searchParams }: Props) {
         storeName={storeSettings.store_name}
         storeIconUrl={storeSettings.store_icon_url}
       />
+      <NotificationsCard />
       <UsersClient users={items} currentUserId={currentUser?.id ?? ""} />
       <RoutePagination
         pathname="/settings"

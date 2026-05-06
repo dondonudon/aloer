@@ -1,6 +1,6 @@
 # Aloer — POS System Architecture & Implementation Plan
 
-> **Last updated:** May 6, 2026
+> **Last updated:** May 6, 2026 (PWA + Web Push)
 
 ---
 
@@ -43,6 +43,8 @@
 | **Partial sale return** | Owner can select individual line items and quantities to return from a completed sale (`sale_returns` + `sale_return_items` tables). Return restores FIFO batch stock, inserts RETURN inventory movements, creates reversal journal entries, and records a `partial_return` status on the sale. UI: `SaleReturnActions` component on `/sales/[id]`. Migration: `00007_sale_returns.sql`. |
 | **User profiles** | `00003_user_profiles.sql` migration adds a `user_profiles` view/table so `created_by` fields are enriched with display names throughout the app. |
 | **Shareable product image** | Share button (🔗) on each `/products` row downloads a 540×700 PNG product card on-demand. Generated server-side via `GET /api/products/[id]/share` using `next/og` (`ImageResponse` / Satori) — zero storage cost, streamed directly to the browser. Card includes: store logo + name (header), product photo, name, selling price, bulk price (if set), active campaign badge with date range + "Syarat & ketentuan berlaku" disclaimer (if applicable), generated timestamp, and footer disclaimer (footer). Filename format: `{product-slug}-{YYYYMMDD}-{HHmm}.png`. Uses `createAdminClient()` to bypass RLS. |
+| **PWA + Web Push** | Installable PWA — `public/manifest.webmanifest` + `public/sw.js` (push + notificationclick handlers, no precaching). Service worker registered via `<ServiceWorkerRegister>` in root layout. App icon served from `public/icon.png`. Web Push pipeline: `push_subscriptions` table (migration `00013`, RLS scoped to `auth.uid()`), `/api/push/subscribe` + `/unsubscribe` + `/test` routes, `sendPushToUser()` helper in `src/lib/push-server.ts` (uses `web-push` npm lib + VAPID, prunes 404/410 endpoints automatically). Settings → Notifications card with Enable / Disable / Send-test buttons. iOS works only when the PWA is installed to home screen (16.4+); UI surfaces this. Env: `NEXT_PUBLIC_VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `VAPID_SUBJECT`. |
+| **Scheduled notifications (scaffold)** | `vercel.json` registers a daily cron at `01:00 UTC` hitting `GET /api/cron/notifications`. Auth via `Authorization: Bearer $CRON_SECRET` (Vercel attaches automatically). Two job stubs in `src/lib/cron/notifications.ts` — `notifyOutstandingCredit` and `notifyExpiringProducts` — both no-ops pending business rules. Plumbing is wired to `sendPushToUser`; only the queries + payloads are TODO. |
 
 ### ⏳ Future Work
 
@@ -618,7 +620,8 @@ src/lib/
 
 | Item | Status | Notes |
 |---|---|---|
-| Expiry alerts | ⏳ Pending | Notify when batches near expiry date |
+| Expiry alerts | 🟡 Scaffolded | Cron route + `notifyExpiringProducts` stub exist. Blocked on adding `expiry_date` to `inventory_batches` and finalising the warning window. |
+| Outstanding credit reminder | 🟡 Scaffolded | Cron route + `notifyOutstandingCredit` stub exist. Blocked on business rules (threshold, audience, cadence). |
 | Barcode/QR scanning | ⏳ Pending | Scan to add items to POS cart or PO |
 | Multi-store support | ⏳ Pending | Single store only |
 
