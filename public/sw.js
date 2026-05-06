@@ -10,6 +10,12 @@ self.addEventListener("activate", (event) => {
   event.waitUntil(self.clients.claim());
 });
 
+// No-op fetch handler. Some Chrome versions on Android refuse to fire
+// `beforeinstallprompt` (i.e. mark the site installable) unless the active
+// service worker has a fetch handler. We don't cache anything — letting the
+// event fall through to the network — but the listener has to exist.
+self.addEventListener("fetch", () => {});
+
 self.addEventListener("push", (event) => {
   let data = {};
   try {
