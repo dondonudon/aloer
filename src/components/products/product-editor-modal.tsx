@@ -311,7 +311,7 @@ export function ProductEditorModal({
                 )}
               </div>
               <div className="flex items-end gap-2 flex-wrap">
-                <div className="flex-1 min-w-[100px]">
+                <div className="flex-1 min-w-25">
                   <label
                     htmlFor="new-unit-name"
                     className="block text-gray-500 dark:text-gray-400 mb-1"
@@ -332,7 +332,7 @@ export function ProductEditorModal({
                     aria-label={labels.unitName}
                   />
                 </div>
-                <div className="flex-1 min-w-[80px]">
+                <div className="flex-1 min-w-20">
                   <label
                     htmlFor="new-unit-conversion"
                     className="block text-gray-500 dark:text-gray-400 mb-1"

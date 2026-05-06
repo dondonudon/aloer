@@ -16,8 +16,73 @@ interface ImageUploadProps {
   folder?: string;
 }
 
-const ALLOWED_TYPES = ["image/jpeg", "image/png", "image/webp", "image/gif"];
-const MAX_BYTES = 2 * 1024 * 1024; // 2 MB
+const ALLOWED_TYPES = ["image/jpeg", "image/png", "image/webp"];
+const HARD_MAX_BYTES = 10 * 1024 * 1024; // 10 MB safety cap to avoid OOM
+const MAX_DIMENSION = 1600;
+const TARGET_BYTES = 1.5 * 1024 * 1024;
+
+function loadImage(file: File): Promise<HTMLImageElement> {
+  return new Promise((resolve, reject) => {
+    const url = URL.createObjectURL(file);
+    const img = new window.Image();
+    img.onload = () => {
+      URL.revokeObjectURL(url);
+      resolve(img);
+    };
+    img.onerror = () => {
+      URL.revokeObjectURL(url);
+      reject(new Error("Failed to load image"));
+    };
+    img.src = url;
+  });
+}
+
+function canvasToBlob(
+  canvas: HTMLCanvasElement,
+  type: string,
+  quality?: number,
+): Promise<Blob> {
+  return new Promise((resolve, reject) => {
+    canvas.toBlob(
+      (blob) => (blob ? resolve(blob) : reject(new Error("Canvas encode failed"))),
+      type,
+      quality,
+    );
+  });
+}
+
+async function resizeImage(file: File): Promise<{ blob: Blob; type: string }> {
+  const img = await loadImage(file);
+  const scale = Math.min(1, MAX_DIMENSION / Math.max(img.width, img.height));
+  const fitsDimensions = scale === 1;
+  const fitsBytes = file.size <= TARGET_BYTES;
+  if (fitsDimensions && fitsBytes) return { blob: file, type: file.type };
+
+  const width = Math.round(img.width * scale);
+  const height = Math.round(img.height * scale);
+  const canvas = document.createElement("canvas");
+  canvas.width = width;
+  canvas.height = height;
+  const ctx = canvas.getContext("2d");
+  if (!ctx) throw new Error("Canvas not supported");
+  ctx.drawImage(img, 0, 0, width, height);
+
+  let outType = file.type === "image/webp" ? "image/webp" : "image/jpeg";
+  if (file.type === "image/png") outType = "image/png";
+
+  let quality = 0.9;
+  let blob = await canvasToBlob(canvas, outType, quality);
+  while (blob.size > TARGET_BYTES && quality > 0.5) {
+    quality -= 0.1;
+    blob = await canvasToBlob(canvas, outType, quality);
+  }
+  // PNG ignores quality — fall back to JPEG if still too large.
+  if (blob.size > TARGET_BYTES && outType === "image/png") {
+    blob = await canvasToBlob(canvas, "image/jpeg", 0.85);
+    outType = "image/jpeg";
+  }
+  return { blob, type: outType };
+}
 
 /**
  * Drag-and-drop image uploader backed by Supabase Storage.
@@ -39,22 +104,40 @@ export function ImageUpload({
     setError(null);
 
     if (!ALLOWED_TYPES.includes(file.type)) {
-      setError("Only JPG, PNG, WebP, or GIF files are allowed.");
+      setError("Only JPG, PNG, or WebP files are allowed.");
       return;
     }
-    if (file.size > MAX_BYTES) {
-      setError("File must be smaller than 2 MB.");
+    if (file.size > HARD_MAX_BYTES) {
+      setError("File must be smaller than 10 MB.");
       return;
     }
 
     setUploading(true);
-    const ext = file.name.split(".").pop() ?? "jpg";
+
+    let blob: Blob;
+    let contentType: string;
+    try {
+      const resized = await resizeImage(file);
+      blob = resized.blob;
+      contentType = resized.type;
+    } catch {
+      setError("Failed to process image.");
+      setUploading(false);
+      return;
+    }
+
+    const extByType: Record<string, string> = {
+      "image/jpeg": "jpg",
+      "image/png": "png",
+      "image/webp": "webp",
+    };
+    const ext = extByType[contentType] ?? "jpg";
     const path = `${folder}/${crypto.randomUUID()}.${ext}`;
 
     const supabase = createClient();
     const { error: uploadError } = await supabase.storage
       .from(bucket)
-      .upload(path, file, { upsert: false, contentType: file.type });
+      .upload(path, blob, { upsert: false, contentType });
 
     if (uploadError) {
       setError(uploadError.message);
@@ -152,7 +235,7 @@ export function ImageUpload({
                 </span>
               </p>
               <p className="text-xs text-gray-400 dark:text-gray-500">
-                JPG, PNG, WebP · max 2 MB
+                JPG, PNG, WebP · auto-resized
               </p>
             </>
           )}
@@ -163,7 +246,7 @@ export function ImageUpload({
         ref={inputRef}
         id={`image-upload-input-${folder}`}
         type="file"
-        accept="image/jpeg,image/png,image/webp,image/gif"
+        accept="image/jpeg,image/png,image/webp"
         className="sr-only"
         tabIndex={-1}
         onChange={(e) => handleFiles(e.target.files)}

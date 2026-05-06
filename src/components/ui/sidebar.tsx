@@ -64,7 +64,7 @@ const NavLink = memo(function NavLink({
       aria-current={isActive ? "page" : undefined}
       aria-label={collapsed ? label : undefined}
     >
-      <Icon className="h-5 w-5 flex-shrink-0" />
+      <Icon className="h-5 w-5 shrink-0" />
       {!collapsed && label}
     </Link>
   );
@@ -113,7 +113,7 @@ function SidebarFooter({
             className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400 hover:text-red-600 transition-colors"
             aria-label={collapsed ? "Sign out" : undefined}
           >
-            <LogOut className="h-4 w-4 flex-shrink-0" />
+            <LogOut className="h-4 w-4 shrink-0" />
             {!collapsed && "Sign out"}
           </button>
         </form>
@@ -129,7 +129,7 @@ function SidebarFooter({
               locale === "en" ? "Switch to Indonesia" : "Switch to English"
             }
           >
-            <Globe className="h-3.5 w-3.5 flex-shrink-0" />
+            <Globe className="h-3.5 w-3.5 shrink-0" />
             <span
               className={`uppercase tracking-wide ${collapsed ? "text-[10px]" : ""}`}
             >
@@ -205,7 +205,7 @@ export function Sidebar({
                 width={32}
                 height={32}
                 priority
-                className="h-8 w-8 rounded-lg object-cover flex-shrink-0"
+                className="h-8 w-8 rounded-lg object-cover shrink-0"
               />
             )}
             {!collapsed && (
@@ -217,7 +217,7 @@ export function Sidebar({
           <button
             type="button"
             onClick={() => setMinimized((v) => !v)}
-            className="hidden lg:flex flex-shrink-0 p-1.5 rounded-md text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+            className="hidden lg:flex shrink-0 p-1.5 rounded-md text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
             aria-label={collapsed ? t.nav.expandSidebar : t.nav.collapseSidebar}
           >
             {collapsed ? (
@@ -310,7 +310,7 @@ export function Sidebar({
             width={28}
             height={28}
             priority
-            className="h-7 w-7 rounded-md object-cover flex-shrink-0"
+            className="h-7 w-7 rounded-md object-cover shrink-0"
           />
         )}
         <span className="text-base font-semibold text-gray-900 dark:text-white truncate">
