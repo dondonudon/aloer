@@ -320,7 +320,7 @@ export function CartPanel({
                 aria-pressed={discountType === "percentage"}
                 aria-label="Percentage discount"
               >
-                <Percent className="h-3 w-3" aria-hidden="true" />%
+                <Percent className="h-3 w-3" aria-hidden="true" />
               </button>
               <button
                 type="button"
