@@ -1,6 +1,6 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
+import { revalidatePath, revalidateTag } from "next/cache";
 import { getCurrentUser } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import type {
@@ -23,6 +23,9 @@ export async function createSale(input: CreateSaleInput) {
   if (error) return { error: await formatDbError(error) };
 
   await insertAuditLog(supabase, user.id, "CREATE_SALE", "sales");
+  revalidateTag("stock-report", { expire: 0 });
+  revalidateTag("today-sales", { expire: 0 });
+  revalidateTag("credit-sales", { expire: 0 });
   revalidatePath("/pos");
   revalidatePath("/inventory");
   revalidatePath("/reports");

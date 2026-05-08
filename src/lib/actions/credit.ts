@@ -1,6 +1,7 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
+import { revalidatePath, revalidateTag, unstable_cache } from "next/cache";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 import { formatDbError, insertAuditLog, ownerAction } from "./action-utils";
 
@@ -85,6 +86,7 @@ export async function collectSalePayment(saleId: string, formData: FormData) {
     revalidatePath(`/sales/${saleId}`);
     revalidatePath("/sales");
     revalidatePath("/credit");
+    revalidateTag("credit-sales", { expire: 0 });
     return { data };
   });
 }
@@ -94,38 +96,44 @@ export async function collectSalePayment(saleId: string, formData: FormData) {
  * along with how much has been collected so far.
  * Used by the Credit overview page.
  */
+const _getCachedOutstandingCreditSales = unstable_cache(
+  async () => {
+    const admin = createAdminClient();
+    const { data, error } = await admin
+      .from("sales")
+      .select(
+        "id, invoice_number, total_amount, created_at, created_by, reseller_id, due_date, resellers(name), sale_credit_payments(amount)",
+      )
+      .eq("payment_method", "credit")
+      .eq("status", "completed")
+      .order("created_at", { ascending: false });
+
+    if (error) throw new Error(error.message);
+
+    return (data ?? []).map((sale) => {
+      const payments =
+        (sale.sale_credit_payments as { amount: number }[] | null) ?? [];
+      const collected = payments.reduce((sum, p) => sum + p.amount, 0);
+      return {
+        id: sale.id,
+        invoice_number: sale.invoice_number,
+        total_amount: sale.total_amount,
+        created_at: sale.created_at,
+        created_by: sale.created_by,
+        reseller_id: sale.reseller_id,
+        due_date: sale.due_date as string | null,
+        resellers: sale.resellers,
+        collected,
+        outstanding: sale.total_amount - collected,
+      };
+    });
+  },
+  ["outstanding-credit-sales"],
+  { revalidate: 60, tags: ["credit-sales"] },
+);
+
 export async function getOutstandingCreditSales() {
-  const supabase = await createClient();
-
-  // Single query: join sale_credit_payments inline to avoid a second roundtrip.
-  const { data, error } = await supabase
-    .from("sales")
-    .select(
-      "id, invoice_number, total_amount, created_at, created_by, reseller_id, due_date, resellers(name), sale_credit_payments(amount)",
-    )
-    .eq("payment_method", "credit")
-    .eq("status", "completed")
-    .order("created_at", { ascending: false });
-
-  if (error) throw new Error(error.message);
-
-  return (data ?? []).map((sale) => {
-    const payments =
-      (sale.sale_credit_payments as { amount: number }[] | null) ?? [];
-    const collected = payments.reduce((sum, p) => sum + p.amount, 0);
-    return {
-      id: sale.id,
-      invoice_number: sale.invoice_number,
-      total_amount: sale.total_amount,
-      created_at: sale.created_at,
-      created_by: sale.created_by,
-      reseller_id: sale.reseller_id,
-      due_date: sale.due_date as string | null,
-      resellers: sale.resellers,
-      collected,
-      outstanding: sale.total_amount - collected,
-    };
-  });
+  return _getCachedOutstandingCreditSales();
 }
 
 /**
@@ -133,34 +141,40 @@ export async function getOutstandingCreditSales() {
  * along with how much has been paid so far.
  * Used by the Credit overview page.
  */
+const _getCachedOutstandingCreditPOs = unstable_cache(
+  async () => {
+    const admin = createAdminClient();
+    const { data, error } = await admin
+      .from("purchase_orders")
+      .select(
+        "id, po_number, total_amount, created_at, due_date, suppliers(name), supplier_payments(amount)",
+      )
+      .eq("payment_method", "credit")
+      .eq("status", "received")
+      .order("created_at", { ascending: false });
+
+    if (error) throw new Error(error.message);
+
+    return (data ?? []).map((po) => {
+      const payments =
+        (po.supplier_payments as { amount: number }[] | null) ?? [];
+      const paid = payments.reduce((sum, p) => sum + p.amount, 0);
+      return {
+        id: po.id,
+        po_number: po.po_number,
+        total_amount: po.total_amount,
+        created_at: po.created_at,
+        due_date: po.due_date as string | null,
+        suppliers: po.suppliers,
+        paid,
+        outstanding: po.total_amount - paid,
+      };
+    });
+  },
+  ["outstanding-credit-pos"],
+  { revalidate: 60, tags: ["credit-pos"] },
+);
+
 export async function getOutstandingCreditPOs() {
-  const supabase = await createClient();
-
-  // Single query: join supplier_payments inline to avoid a second roundtrip.
-  const { data, error } = await supabase
-    .from("purchase_orders")
-    .select(
-      "id, po_number, total_amount, created_at, due_date, suppliers(name), supplier_payments(amount)",
-    )
-    .eq("payment_method", "credit")
-    .eq("status", "received")
-    .order("created_at", { ascending: false });
-
-  if (error) throw new Error(error.message);
-
-  return (data ?? []).map((po) => {
-    const payments =
-      (po.supplier_payments as { amount: number }[] | null) ?? [];
-    const paid = payments.reduce((sum, p) => sum + p.amount, 0);
-    return {
-      id: po.id,
-      po_number: po.po_number,
-      total_amount: po.total_amount,
-      created_at: po.created_at,
-      due_date: po.due_date as string | null,
-      suppliers: po.suppliers,
-      paid,
-      outstanding: po.total_amount - paid,
-    };
-  });
+  return _getCachedOutstandingCreditPOs();
 }

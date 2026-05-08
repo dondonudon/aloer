@@ -1,6 +1,6 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
+import { revalidatePath, revalidateTag } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { formatDbError, insertAuditLog, ownerAction } from "./action-utils";
 
@@ -74,6 +74,7 @@ export async function paySupplier(poId: string, formData: FormData) {
     );
     revalidatePath(`/purchases/${poId}`);
     revalidatePath("/purchases");
+    revalidateTag("credit-pos", { expire: 0 });
     return { data };
   });
 }

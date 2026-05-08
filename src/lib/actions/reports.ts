@@ -1,6 +1,8 @@
 "use server";
 
+import { unstable_cache } from "next/cache";
 import { getCurrentUser, isOwner } from "@/lib/auth";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 
 export async function getBalanceSheet(period?: string) {
@@ -94,11 +96,71 @@ export async function getProfitLoss(startDate: string, endDate: string) {
  * Returns today's sales stats using the configured APP_TIMEZONE.
  * Converts "today" in local time to UTC start/end for the Supabase query.
  */
+
+// Helper: compute UTC ISO boundaries for a given local date string and timezone.
+function localMidnight(
+  dateStr: string,
+  tz: string,
+  endOfDay = false,
+): string {
+  const wallClock = endOfDay
+    ? `${dateStr}T23:59:59.999`
+    : `${dateStr}T00:00:00.000`;
+
+  const naive = new Date(`${wallClock}Z`);
+
+  const parts = new Intl.DateTimeFormat("en-US", {
+    timeZone: tz,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+    hour12: false,
+  }).formatToParts(naive);
+
+  const get = (t: string) => parts.find((p) => p.type === t)?.value ?? "00";
+  const localStr = `${get("year")}-${get("month")}-${get("day")}T${get("hour").padStart(2, "0")}:${get("minute")}:${get("second")}Z`;
+  const localAtUTC = new Date(localStr);
+
+  const offsetMs = localAtUTC.getTime() - naive.getTime();
+  return new Date(naive.getTime() - offsetMs).toISOString();
+}
+
+// Cached fetcher — keyed per day so the cache naturally expires at midnight.
+// Arguments are included in the cache key automatically by unstable_cache.
+const _getCachedTodaySales = unstable_cache(
+  async (utcStart: string, utcEnd: string, localToday: string) => {
+    const admin = createAdminClient();
+    const { data, error } = await admin
+      .from("sales")
+      .select("total_amount, total_cogs")
+      .eq("status", "completed")
+      .gte("created_at", utcStart)
+      .lte("created_at", utcEnd);
+
+    if (error) throw new Error(error.message);
+
+    const rows = data ?? [];
+    return {
+      date: localToday,
+      total_transactions: rows.length,
+      total_revenue: rows.reduce((s, r) => s + r.total_amount, 0),
+      total_cogs: rows.reduce((s, r) => s + r.total_cogs, 0),
+      gross_profit: rows.reduce(
+        (s, r) => s + (r.total_amount - r.total_cogs),
+        0,
+      ),
+    };
+  },
+  ["today-sales"],
+  { revalidate: 30, tags: ["today-sales"] },
+);
+
 export async function getTodaySales() {
   const tz = process.env.APP_TIMEZONE ?? "UTC";
-  const supabase = await createClient();
 
-  // "Today" as local date string e.g. "2026-04-09"
   const localToday = new Intl.DateTimeFormat("sv-SE", {
     timeZone: tz,
     year: "numeric",
@@ -106,60 +168,10 @@ export async function getTodaySales() {
     day: "2-digit",
   }).format(new Date());
 
-  // Midnight and end-of-day in local timezone → convert to UTC ISO strings
-  // by constructing a Date from the local wall-clock time representation
-  function localMidnight(dateStr: string, endOfDay = false): string {
-    // Construct the local time string and parse it as if it were UTC,
-    // then subtract the tz offset to get the actual UTC equivalent.
-    // Reliable cross-platform approach: use Intl to get the UTC offset at that moment.
-    const wallClock = endOfDay
-      ? `${dateStr}T23:59:59.999`
-      : `${dateStr}T00:00:00.000`;
+  const utcStart = localMidnight(localToday, tz, false);
+  const utcEnd = localMidnight(localToday, tz, true);
 
-    // Parse as UTC first to get a reference point
-    const naive = new Date(`${wallClock}Z`);
-
-    // Get what Intl thinks the local date/time is at that UTC moment
-    const parts = new Intl.DateTimeFormat("en-US", {
-      timeZone: tz,
-      year: "numeric",
-      month: "2-digit",
-      day: "2-digit",
-      hour: "2-digit",
-      minute: "2-digit",
-      second: "2-digit",
-      hour12: false,
-    }).formatToParts(naive);
-
-    const get = (t: string) => parts.find((p) => p.type === t)?.value ?? "00";
-    const localStr = `${get("year")}-${get("month")}-${get("day")}T${get("hour").padStart(2, "0")}:${get("minute")}:${get("second")}Z`;
-    const localAtUTC = new Date(localStr);
-
-    // offset = what local time reads minus what UTC time reads
-    const offsetMs = localAtUTC.getTime() - naive.getTime();
-    return new Date(naive.getTime() - offsetMs).toISOString();
-  }
-
-  const utcStart = localMidnight(localToday, false);
-  const utcEnd = localMidnight(localToday, true);
-
-  const { data, error } = await supabase
-    .from("sales")
-    .select("total_amount, total_cogs")
-    .eq("status", "completed")
-    .gte("created_at", utcStart)
-    .lte("created_at", utcEnd);
-
-  if (error) throw new Error(error.message);
-
-  const rows = data ?? [];
-  return {
-    date: localToday,
-    total_transactions: rows.length,
-    total_revenue: rows.reduce((s, r) => s + r.total_amount, 0),
-    total_cogs: rows.reduce((s, r) => s + r.total_cogs, 0),
-    gross_profit: rows.reduce((s, r) => s + (r.total_amount - r.total_cogs), 0),
-  };
+  return _getCachedTodaySales(utcStart, utcEnd, localToday);
 }
 
 export async function getSalesSummary(
@@ -168,15 +180,9 @@ export async function getSalesSummary(
   limit?: number,
   paymentType?: string,
 ) {
-  const supabase = await createClient();
   const tz = process.env.APP_TIMEZONE ?? "UTC";
 
-  // When a limit is requested without an explicit start date, only fetch the
-  // last (limit + 1) days so the query doesn't scan all historical rows.
-  // +1 ensures we catch a full day even at timezone boundaries.
-  // When neither a startDate nor a limit is provided (e.g. the /reports/sales
-  // page which filters client-side), default to the last 365 days. Callers
-  // that genuinely need older data should pass an explicit startDate.
+  // Derive a default start date when no explicit bound is given.
   let effectiveStartDate = startDate;
   if (!effectiveStartDate && limit) {
     const d = new Date();
@@ -188,70 +194,16 @@ export async function getSalesSummary(
     effectiveStartDate = d.toISOString().slice(0, 10);
   }
 
-  let query = supabase
-    .from("sales")
-    .select(
-      "created_at, total_amount, total_cogs, discount_amount, campaign_savings, cart_campaign_discount, delivery_fee",
-    )
-    .eq("status", "completed")
-    .order("created_at", { ascending: false });
+  const supabase = await createClient();
+  const { data, error } = await supabase.rpc("get_sales_summary", {
+    p_start_date: effectiveStartDate ? `${effectiveStartDate}T00:00:00Z` : null,
+    p_end_date: endDate ? `${endDate}T23:59:59Z` : null,
+    p_timezone: tz,
+    p_payment_type: paymentType || null,
+  });
 
-  if (effectiveStartDate) query = query.gte("created_at", effectiveStartDate);
-  if (endDate) query = query.lte("created_at", endDate);
-  if (paymentType) query = query.eq("payment_method", paymentType);
-
-  const { data, error } = await query;
   if (error) throw new Error(error.message);
 
-  // Aggregate by local date (timezone-aware)
-  const dailyMap = new Map<
-    string,
-    {
-      total_transactions: number;
-      total_revenue: number;
-      total_cogs: number;
-      gross_profit: number;
-      total_discount: number;
-      total_delivery_fee: number;
-    }
-  >();
-
-  for (const sale of data ?? []) {
-    const day = new Intl.DateTimeFormat("sv-SE", {
-      timeZone: tz,
-      year: "numeric",
-      month: "2-digit",
-      day: "2-digit",
-    }).format(new Date(sale.created_at));
-
-    const saleDiscount =
-      (sale.discount_amount ?? 0) +
-      (sale.campaign_savings ?? 0) +
-      (sale.cart_campaign_discount ?? 0);
-
-    const existing = dailyMap.get(day);
-    if (existing) {
-      existing.total_transactions += 1;
-      existing.total_revenue += sale.total_amount;
-      existing.total_cogs += sale.total_cogs;
-      existing.gross_profit += sale.total_amount - sale.total_cogs;
-      existing.total_discount += saleDiscount;
-      existing.total_delivery_fee += sale.delivery_fee ?? 0;
-    } else {
-      dailyMap.set(day, {
-        total_transactions: 1,
-        total_revenue: sale.total_amount,
-        total_cogs: sale.total_cogs,
-        gross_profit: sale.total_amount - sale.total_cogs,
-        total_discount: saleDiscount,
-        total_delivery_fee: sale.delivery_fee ?? 0,
-      });
-    }
-  }
-
-  const result = Array.from(dailyMap.entries())
-    .map(([date, stats]) => ({ sale_date: date, ...stats }))
-    .sort((a, b) => b.sale_date.localeCompare(a.sale_date));
-
+  const result = (data ?? []) as import("@/lib/types").SalesSummaryRow[];
   return limit ? result.slice(0, limit) : result;
 }

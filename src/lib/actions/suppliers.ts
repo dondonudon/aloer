@@ -1,7 +1,7 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
-import { createClient } from "@/lib/supabase/server";
+import { revalidatePath, revalidateTag, unstable_cache } from "next/cache";
+import { createAdminClient } from "@/lib/supabase/admin";
 import {
   formatDbError,
   insertAuditLog,
@@ -9,15 +9,22 @@ import {
   validateName,
 } from "./action-utils";
 
-export async function getSuppliers() {
-  const supabase = await createClient();
-  const { data, error } = await supabase
-    .from("suppliers")
-    .select("*")
-    .order("name");
+const getCachedSuppliers = unstable_cache(
+  async () => {
+    const admin = createAdminClient();
+    const { data, error } = await admin
+      .from("suppliers")
+      .select("*")
+      .order("name");
+    if (error) throw new Error(error.message);
+    return data;
+  },
+  ["suppliers"],
+  { revalidate: 60, tags: ["suppliers"] },
+);
 
-  if (error) throw new Error(error.message);
-  return data;
+export async function getSuppliers() {
+  return getCachedSuppliers();
 }
 
 export async function createSupplier(formData: FormData) {
@@ -45,6 +52,7 @@ export async function createSupplier(formData: FormData) {
     );
     revalidatePath("/purchases");
     revalidatePath("/catalog/suppliers");
+    revalidateTag("suppliers", { expire: 0 });
     return {};
   });
 }
@@ -68,6 +76,7 @@ export async function updateSupplier(id: string, formData: FormData) {
     await insertAuditLog(supabase, userId, "UPDATE_SUPPLIER", "suppliers", id);
     revalidatePath("/purchases");
     revalidatePath("/catalog/suppliers");
+    revalidateTag("suppliers", { expire: 0 });
     return {};
   });
 }
