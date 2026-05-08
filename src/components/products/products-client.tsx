@@ -1,6 +1,13 @@
 "use client";
 
-import { Download, Loader2, Pencil, Plus } from "lucide-react";
+import {
+  Download,
+  Loader2,
+  Pencil,
+  Plus,
+  SlidersHorizontal,
+  X,
+} from "lucide-react";
 import dynamic from "next/dynamic";
 import { usePathname, useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -8,9 +15,7 @@ import { Button } from "@/components/ui/button";
 import { DataTable, type DataTableColumn } from "@/components/ui/data-table";
 import {
   ActiveFilter,
-  FilterBar,
   RangeFilter,
-  SearchFilter,
   SelectFilter,
   type SelectFilterOption,
 } from "@/components/ui/filters";
@@ -141,13 +146,13 @@ export function ProductsClient({
   ];
 
   const [filters, setFilters] = useState<ProductsFilterState>(initialFilters);
-  const hasActiveFilters =
-    !!filters.search ||
-    !!filters.category ||
-    !!filters.unit ||
-    !!filters.active ||
-    !!filters.minPrice ||
-    !!filters.maxPrice;
+  const [filtersOpen, setFiltersOpen] = useState(false);
+
+  const panelActiveCount =
+    (filters.category ? 1 : 0) +
+    (filters.unit ? 1 : 0) +
+    (filters.active ? 1 : 0) +
+    (filters.minPrice || filters.maxPrice ? 1 : 0);
 
   const [modalOpen, setModalOpen] = useState(false);
   const [editing, setEditing] = useState<Product | null>(null);
@@ -495,41 +500,163 @@ export function ProductsClient({
         </Button>
       </div>
 
-      <FilterBar onClear={hasActiveFilters ? clearAll : undefined}>
-        <SearchFilter
-          value={filters.search}
-          onChange={(v) => updateFilter("search", v, false)}
-          placeholder={t.products.searchPlaceholder}
-        />
-        <SelectFilter
-          label={t.filter.filterByCategory}
-          srOnlyLabel
-          value={filters.category}
-          onChange={(v) => updateFilter("category", v)}
-          options={categoryFilterOptions}
-        />
-        <SelectFilter
-          label={t.filter.filterByUnit}
-          srOnlyLabel
-          value={filters.unit}
-          onChange={(v) => updateFilter("unit", v)}
-          options={unitFilterOptions}
-        />
-        <RangeFilter
-          label={t.filter.priceRange}
-          idPrefix="products-price"
-          min={filters.minPrice}
-          onMinChange={(v) => updateFilter("minPrice", v, false)}
-          max={filters.maxPrice}
-          onMaxChange={(v) => updateFilter("maxPrice", v, false)}
-          minPlaceholder={t.filter.minPlaceholder}
-          maxPlaceholder={t.filter.maxPlaceholder}
-        />
-        <ActiveFilter
-          value={filters.active}
-          onChange={(v) => updateFilter("active", v)}
-        />
-      </FilterBar>
+      {/* Search + Filters */}
+      <div className="space-y-2">
+        <div className="flex gap-2">
+          <div className="relative flex-1">
+            <svg
+              className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+              strokeWidth={2}
+              aria-hidden="true"
+            >
+              <circle cx="11" cy="11" r="8" />
+              <path d="m21 21-4.35-4.35" />
+            </svg>
+            <input
+              type="text"
+              placeholder={t.products.searchPlaceholder}
+              value={filters.search}
+              onChange={(e) => updateFilter("search", e.target.value, false)}
+              className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 pl-10 pr-3 py-2 text-sm text-gray-900 dark:text-gray-100 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              aria-label={t.products.searchPlaceholder}
+            />
+          </div>
+          <button
+            type="button"
+            onClick={() => setFiltersOpen((v) => !v)}
+            className={`inline-flex items-center gap-2 rounded-lg border px-3 py-2 text-sm font-medium transition-colors ${
+              filtersOpen || panelActiveCount > 0
+                ? "border-blue-500 bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:border-blue-400 dark:text-blue-300"
+                : "border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-600"
+            }`}
+            aria-expanded={filtersOpen}
+          >
+            <SlidersHorizontal className="h-4 w-4" aria-hidden="true" />
+            {t.filter.filters}
+            {panelActiveCount > 0 && (
+              <span className="inline-flex items-center justify-center h-5 w-5 rounded-full bg-blue-600 dark:bg-blue-500 text-white text-xs font-bold">
+                {panelActiveCount}
+              </span>
+            )}
+          </button>
+        </div>
+
+        {/* Active filter chips */}
+        {panelActiveCount > 0 && (
+          <div className="flex flex-wrap gap-1.5">
+            {filters.category && (
+              <span className="inline-flex items-center gap-1 rounded-full bg-blue-50 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-700 px-2.5 py-1 text-xs font-medium text-blue-700 dark:text-blue-300">
+                {filters.category}
+                <button
+                  type="button"
+                  onClick={() => updateFilter("category", "")}
+                  className="rounded-full p-0.5 hover:bg-blue-200 dark:hover:bg-blue-700"
+                  aria-label={`Remove ${filters.category} filter`}
+                >
+                  <X className="h-3 w-3" />
+                </button>
+              </span>
+            )}
+            {filters.unit && (
+              <span className="inline-flex items-center gap-1 rounded-full bg-blue-50 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-700 px-2.5 py-1 text-xs font-medium text-blue-700 dark:text-blue-300">
+                {filters.unit}
+                <button
+                  type="button"
+                  onClick={() => updateFilter("unit", "")}
+                  className="rounded-full p-0.5 hover:bg-blue-200 dark:hover:bg-blue-700"
+                  aria-label={`Remove ${filters.unit} filter`}
+                >
+                  <X className="h-3 w-3" />
+                </button>
+              </span>
+            )}
+            {filters.active && (
+              <span className="inline-flex items-center gap-1 rounded-full bg-blue-50 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-700 px-2.5 py-1 text-xs font-medium text-blue-700 dark:text-blue-300">
+                {filters.active === "true"
+                  ? t.common.active
+                  : t.common.inactive}
+                <button
+                  type="button"
+                  onClick={() => updateFilter("active", "")}
+                  className="rounded-full p-0.5 hover:bg-blue-200 dark:hover:bg-blue-700"
+                  aria-label="Remove status filter"
+                >
+                  <X className="h-3 w-3" />
+                </button>
+              </span>
+            )}
+            {(filters.minPrice || filters.maxPrice) && (
+              <span className="inline-flex items-center gap-1 rounded-full bg-blue-50 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-700 px-2.5 py-1 text-xs font-medium text-blue-700 dark:text-blue-300">
+                {[
+                  filters.minPrice && `≥ ${filters.minPrice}`,
+                  filters.maxPrice && `≤ ${filters.maxPrice}`,
+                ]
+                  .filter(Boolean)
+                  .join(" – ")}
+                <button
+                  type="button"
+                  onClick={() => {
+                    updateFilter("minPrice", "");
+                    updateFilter("maxPrice", "");
+                  }}
+                  className="rounded-full p-0.5 hover:bg-blue-200 dark:hover:bg-blue-700"
+                  aria-label="Remove price filter"
+                >
+                  <X className="h-3 w-3" />
+                </button>
+              </span>
+            )}
+          </div>
+        )}
+
+        {/* Collapsible filter panel */}
+        {filtersOpen && (
+          <div className="rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/60 p-3">
+            <div className="flex flex-wrap items-end gap-3">
+              <SelectFilter
+                label={t.filter.filterByCategory}
+                srOnlyLabel
+                value={filters.category}
+                onChange={(v) => updateFilter("category", v)}
+                options={categoryFilterOptions}
+              />
+              <SelectFilter
+                label={t.filter.filterByUnit}
+                srOnlyLabel
+                value={filters.unit}
+                onChange={(v) => updateFilter("unit", v)}
+                options={unitFilterOptions}
+              />
+              <RangeFilter
+                label={t.filter.priceRange}
+                idPrefix="products-price"
+                min={filters.minPrice}
+                onMinChange={(v) => updateFilter("minPrice", v, false)}
+                max={filters.maxPrice}
+                onMaxChange={(v) => updateFilter("maxPrice", v, false)}
+                minPlaceholder={t.filter.minPlaceholder}
+                maxPlaceholder={t.filter.maxPlaceholder}
+              />
+              <ActiveFilter
+                value={filters.active}
+                onChange={(v) => updateFilter("active", v)}
+              />
+              {panelActiveCount > 0 && (
+                <button
+                  type="button"
+                  onClick={clearAll}
+                  className="text-sm text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300 ml-auto"
+                >
+                  {t.filter.clear}
+                </button>
+              )}
+            </div>
+          </div>
+        )}
+      </div>
 
       <DataTable
         columns={columns}

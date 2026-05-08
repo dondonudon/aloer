@@ -105,6 +105,16 @@ export interface Translations {
     minPlaceholder: string;
     /** "Max" placeholder shown in a numeric range input */
     maxPlaceholder: string;
+    /** "All Payment Types" — first option in a payment type dropdown */
+    allPaymentTypes: string;
+    /** "Filter by payment type" — accessible label for the payment type dropdown */
+    filterByPaymentType: string;
+    /** "All Suppliers" — first option in a supplier dropdown */
+    allSuppliers: string;
+    /** "Filter by supplier" — accessible label for the supplier dropdown */
+    filterBySupplier: string;
+    /** "Filters" — label for the filter toggle button */
+    filters: string;
   };
 
   login: {
@@ -697,6 +707,11 @@ export const en: Translations = {
     priceRange: "Price Range",
     minPlaceholder: "Min",
     maxPlaceholder: "Max",
+    allPaymentTypes: "All Payment Types",
+    filterByPaymentType: "Filter by payment type",
+    allSuppliers: "All Suppliers",
+    filterBySupplier: "Filter by supplier",
+    filters: "Filters",
   },
 
   login: {
@@ -1290,6 +1305,11 @@ export const id: Translations = {
     priceRange: "Rentang Harga",
     minPlaceholder: "Min",
     maxPlaceholder: "Maks",
+    allPaymentTypes: "Semua Metode Pembayaran",
+    filterByPaymentType: "Filter berdasarkan metode pembayaran",
+    allSuppliers: "Semua Pemasok",
+    filterBySupplier: "Filter berdasarkan pemasok",
+    filters: "Filter",
   },
 
   login: {

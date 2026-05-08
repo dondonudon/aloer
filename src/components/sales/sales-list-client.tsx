@@ -5,7 +5,11 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { DataTable, type DataTableColumn } from "@/components/ui/data-table";
-import { ListFilter } from "@/components/ui/list-filter";
+import {
+  type FilterChip,
+  filterSelectCls,
+  ListFilter,
+} from "@/components/ui/list-filter";
 import { Pagination } from "@/components/ui/pagination";
 import { getSalesForExport } from "@/lib/actions/sales";
 import { exportCsv, exportXlsx } from "@/lib/export";
@@ -27,6 +31,7 @@ interface SalesListClientProps {
   startDate: string;
   endDate: string;
   status: string;
+  paymentMethod: string;
 }
 
 /**
@@ -42,12 +47,20 @@ export function SalesListClient({
   startDate: initialStartDate,
   endDate: initialEndDate,
   status: initialStatus,
+  paymentMethod: initialPaymentMethod,
 }: SalesListClientProps) {
   const { t } = useI18n();
   const SALES_STATUS_OPTIONS = [
     { value: "", label: t.sales.allStatus },
     { value: "completed", label: t.sales.completed },
     { value: "voided", label: t.sales.voided },
+  ];
+  const PAYMENT_TYPE_OPTIONS = [
+    { value: "", label: t.filter.allPaymentTypes },
+    { value: "cash", label: "Cash" },
+    { value: "transfer", label: "Transfer" },
+    { value: "mixed", label: "Mixed" },
+    { value: "credit", label: "Credit" },
   ];
   const router = useRouter();
   const pathname = usePathname();
@@ -56,6 +69,8 @@ export function SalesListClient({
   const [startDate, setStartDate] = useState(initialStartDate);
   const [endDate, setEndDate] = useState(initialEndDate);
   const [statusFilter, setStatusFilter] = useState(initialStatus);
+  const [paymentMethodFilter, setPaymentMethodFilter] =
+    useState(initialPaymentMethod);
   const [isExporting, setIsExporting] = useState(false);
 
   // Keep latest filter values in a ref so the debounce effect can read them
@@ -64,9 +79,15 @@ export function SalesListClient({
     startDate: initialStartDate,
     endDate: initialEndDate,
     statusFilter: initialStatus,
+    paymentMethodFilter: initialPaymentMethod,
   });
   useEffect(() => {
-    latestFilters.current = { startDate, endDate, statusFilter };
+    latestFilters.current = {
+      startDate,
+      endDate,
+      statusFilter,
+      paymentMethodFilter,
+    };
   });
 
   const buildHref = useCallback(
@@ -76,12 +97,21 @@ export function SalesListClient({
       if (startDate) params.set("startDate", startDate);
       if (endDate) params.set("endDate", endDate);
       if (statusFilter) params.set("status", statusFilter);
+      if (paymentMethodFilter) params.set("paymentMethod", paymentMethodFilter);
       if (pageSize !== 10) params.set("limit", String(pageSize));
       if (p > 1) params.set("page", String(p));
       const qs = params.toString();
       return qs ? `${pathname}?${qs}` : pathname;
     },
-    [pathname, search, startDate, endDate, statusFilter, pageSize],
+    [
+      pathname,
+      search,
+      startDate,
+      endDate,
+      statusFilter,
+      paymentMethodFilter,
+      pageSize,
+    ],
   );
 
   const buildLimitHref = useCallback(
@@ -91,30 +121,34 @@ export function SalesListClient({
       if (startDate) params.set("startDate", startDate);
       if (endDate) params.set("endDate", endDate);
       if (statusFilter) params.set("status", statusFilter);
+      if (paymentMethodFilter) params.set("paymentMethod", paymentMethodFilter);
       if (limit !== 10) params.set("limit", String(limit));
       // page intentionally omitted — resets to 1
       const qs = params.toString();
       return qs ? `${pathname}?${qs}` : pathname;
     },
-    [pathname, search, startDate, endDate, statusFilter],
+    [pathname, search, startDate, endDate, statusFilter, paymentMethodFilter],
   );
 
-  // Navigate immediately when date/status change — reset to page 1
+  // Navigate immediately when date/status/payment change — reset to page 1
   function navigate(overrides: {
     search?: string;
     startDate?: string;
     endDate?: string;
     status?: string;
+    paymentMethod?: string;
   }) {
     const s = overrides.search ?? search;
     const sd = overrides.startDate ?? startDate;
     const ed = overrides.endDate ?? endDate;
     const st = overrides.status ?? statusFilter;
+    const pm = overrides.paymentMethod ?? paymentMethodFilter;
     const params = new URLSearchParams();
     if (s) params.set("search", s);
     if (sd) params.set("startDate", sd);
     if (ed) params.set("endDate", ed);
     if (st) params.set("status", st);
+    if (pm) params.set("paymentMethod", pm);
     const qs = params.toString();
     router.push(qs ? `${pathname}?${qs}` : pathname);
   }
@@ -131,6 +165,7 @@ export function SalesListClient({
       startDate: sd,
       endDate: ed,
       statusFilter: st,
+      paymentMethodFilter: pm,
     } = latestFilters.current;
     const t = setTimeout(() => {
       const params = new URLSearchParams();
@@ -138,6 +173,7 @@ export function SalesListClient({
       if (sd) params.set("startDate", sd);
       if (ed) params.set("endDate", ed);
       if (st) params.set("status", st);
+      if (pm) params.set("paymentMethod", pm);
       const qs = params.toString();
       router.push(qs ? `${pathname}?${qs}` : pathname);
     }, 400);
@@ -182,6 +218,7 @@ export function SalesListClient({
         startDate,
         endDate,
         status: statusFilter,
+        paymentMethod: paymentMethodFilter,
       });
       const filename = `sales-${startDate || "all"}-${endDate || "all"}`;
       if (format === "xlsx") {
@@ -219,6 +256,54 @@ export function SalesListClient({
         }}
         statusOptions={SALES_STATUS_OPTIONS}
         idPrefix="sales-list"
+        extraFilters={
+          <select
+            value={paymentMethodFilter}
+            onChange={(e) => {
+              setPaymentMethodFilter(e.target.value);
+              navigate({ paymentMethod: e.target.value });
+            }}
+            className={filterSelectCls}
+            aria-label={t.filter.filterByPaymentType}
+          >
+            {PAYMENT_TYPE_OPTIONS.map((opt) => (
+              <option key={opt.value} value={opt.value}>
+                {opt.label}
+              </option>
+            ))}
+          </select>
+        }
+        externalActiveCount={paymentMethodFilter ? 1 : 0}
+        extraChips={
+          paymentMethodFilter
+            ? ([
+                {
+                  label:
+                    PAYMENT_TYPE_OPTIONS.find(
+                      (o) => o.value === paymentMethodFilter,
+                    )?.label ?? paymentMethodFilter,
+                  onRemove: () => {
+                    setPaymentMethodFilter("");
+                    navigate({ paymentMethod: "" });
+                  },
+                },
+              ] satisfies FilterChip[])
+            : []
+        }
+        onClearAll={() => {
+          setSearch("");
+          setStartDate("");
+          setEndDate("");
+          setStatusFilter("");
+          setPaymentMethodFilter("");
+          navigate({
+            search: "",
+            startDate: "",
+            endDate: "",
+            status: "",
+            paymentMethod: "",
+          });
+        }}
       />
 
       <div className="flex items-center justify-between">

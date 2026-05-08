@@ -16,6 +16,7 @@ export async function getPurchaseOrders(options?: {
   search?: string;
   startDate?: string;
   endDate?: string;
+  supplierId?: string;
   page?: number;
   limit?: number;
 }) {
@@ -34,6 +35,9 @@ export async function getPurchaseOrders(options?: {
   }
   if (options?.status) {
     query = query.eq("status", options.status);
+  }
+  if (options?.supplierId) {
+    query = query.eq("supplier_id", options.supplierId);
   }
   if (options?.startDate) {
     query = query.gte("created_at", `${options.startDate}T00:00:00`);

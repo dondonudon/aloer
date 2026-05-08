@@ -3,9 +3,16 @@ import { PageHeader } from "@/components/ui/page-header";
 import { getSalesSummary } from "@/lib/actions/reports";
 import { getServerTranslations } from "@/lib/i18n/server";
 
-export default async function SalesReportPage() {
+interface Props {
+  searchParams: Promise<Record<string, string | undefined>>;
+}
+
+export default async function SalesReportPage({ searchParams }: Props) {
+  const params = await searchParams;
+  const paymentType = params.paymentType ?? "";
+
   const [summary, t] = await Promise.all([
-    getSalesSummary(),
+    getSalesSummary(undefined, undefined, undefined, paymentType || undefined),
     getServerTranslations(),
   ]);
 
@@ -17,7 +24,7 @@ export default async function SalesReportPage() {
         backLabel={t.reports.title}
       />
 
-      <SalesReportClient summary={summary} />
+      <SalesReportClient summary={summary} paymentType={paymentType} />
     </div>
   );
 }

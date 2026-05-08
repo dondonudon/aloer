@@ -1,6 +1,7 @@
 "use client";
 
 import { Download } from "lucide-react";
+import { usePathname, useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 import { DataTable, type DataTableColumn } from "@/components/ui/data-table";
 import { Input } from "@/components/ui/input";
@@ -12,13 +13,19 @@ import { formatCurrency } from "@/lib/utils";
 
 interface SalesReportClientProps {
   summary: SalesSummaryRow[];
+  paymentType?: string;
 }
 
 /**
  * Sales summary report with date range filtering.
  */
-export function SalesReportClient({ summary }: SalesReportClientProps) {
+export function SalesReportClient({
+  summary,
+  paymentType = "",
+}: SalesReportClientProps) {
   const { t } = useI18n();
+  const router = useRouter();
+  const pathname = usePathname();
   const today = new Date();
   const defaultStart = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-01`;
   const defaultEnd = today.toISOString().slice(0, 10);
@@ -26,6 +33,21 @@ export function SalesReportClient({ summary }: SalesReportClientProps) {
   const [endDate, setEndDate] = useState(defaultEnd);
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
+
+  const PAYMENT_TYPE_OPTIONS = [
+    { value: "", label: t.filter.allPaymentTypes },
+    { value: "cash", label: "Cash" },
+    { value: "transfer", label: "Transfer" },
+    { value: "mixed", label: "Mixed" },
+    { value: "credit", label: "Credit" },
+  ];
+
+  function navigatePaymentType(value: string) {
+    const params = new URLSearchParams();
+    if (value) params.set("paymentType", value);
+    const qs = params.toString();
+    router.push(qs ? `${pathname}?${qs}` : pathname);
+  }
 
   const filtered = useMemo(() => {
     return summary.filter((row) => {
@@ -102,6 +124,18 @@ export function SalesReportClient({ summary }: SalesReportClientProps) {
             className="w-40"
           />
         </div>
+        <select
+          value={paymentType}
+          onChange={(e) => navigatePaymentType(e.target.value)}
+          className="rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 px-3 py-2 text-sm"
+          aria-label={t.filter.filterByPaymentType}
+        >
+          {PAYMENT_TYPE_OPTIONS.map((opt) => (
+            <option key={opt.value} value={opt.value}>
+              {opt.label}
+            </option>
+          ))}
+        </select>
         {(startDate || endDate) && (
           <button
             type="button"

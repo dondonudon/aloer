@@ -1,6 +1,6 @@
 "use client";
 
-import { Pencil, Plus } from "lucide-react";
+import { Pencil, Plus, Search, SlidersHorizontal, X } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
@@ -26,14 +26,18 @@ export function SuppliersClient({ suppliers }: Props) {
   const [editing, setEditing] = useState<Supplier | null>(null);
   const [loading, setLoading] = useState(false);
   const [activeFilter, setActiveFilter] = useState("");
+  const [search, setSearch] = useState("");
+  const [filtersOpen, setFiltersOpen] = useState(false);
   const [toast, setToast] = useState<{
     message: string;
     type: "success" | "error";
   } | null>(null);
 
   const visibleSuppliers = suppliers.filter((s) => {
-    if (activeFilter === "true") return s.is_active;
-    if (activeFilter === "false") return !s.is_active;
+    if (activeFilter === "true" && !s.is_active) return false;
+    if (activeFilter === "false" && s.is_active) return false;
+    if (search && !s.name.toLowerCase().includes(search.toLowerCase()))
+      return false;
     return true;
   });
 
@@ -79,7 +83,72 @@ export function SuppliersClient({ suppliers }: Props) {
         </Button>
       </div>
 
-      <ActiveFilter value={activeFilter} onChange={setActiveFilter} />
+      <div className="space-y-2">
+        <div className="flex gap-2">
+          <div className="relative flex-1">
+            <Search
+              className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400"
+              aria-hidden="true"
+            />
+            <Input
+              placeholder={t.filter.search}
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="pl-10"
+              aria-label={t.filter.search}
+            />
+          </div>
+          <button
+            type="button"
+            onClick={() => setFiltersOpen((v) => !v)}
+            className={`inline-flex items-center gap-2 rounded-lg border px-3 py-2 text-sm font-medium transition-colors ${
+              filtersOpen || activeFilter
+                ? "border-blue-500 bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:border-blue-400 dark:text-blue-300"
+                : "border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-600"
+            }`}
+            aria-expanded={filtersOpen}
+          >
+            <SlidersHorizontal className="h-4 w-4" aria-hidden="true" />
+            {t.filter.filters}
+            {activeFilter && (
+              <span className="inline-flex items-center justify-center h-5 w-5 rounded-full bg-blue-600 dark:bg-blue-500 text-white text-xs font-bold">
+                1
+              </span>
+            )}
+          </button>
+        </div>
+        {activeFilter && (
+          <div className="flex flex-wrap gap-1.5">
+            <span className="inline-flex items-center gap-1 rounded-full bg-blue-50 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-700 px-2.5 py-1 text-xs font-medium text-blue-700 dark:text-blue-300">
+              {activeFilter === "true" ? t.common.active : t.common.inactive}
+              <button
+                type="button"
+                onClick={() => setActiveFilter("")}
+                className="rounded-full p-0.5 hover:bg-blue-200 dark:hover:bg-blue-700"
+                aria-label="Remove status filter"
+              >
+                <X className="h-3 w-3" />
+              </button>
+            </span>
+          </div>
+        )}
+        {filtersOpen && (
+          <div className="rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/60 p-3">
+            <div className="flex flex-wrap items-center gap-3">
+              <ActiveFilter value={activeFilter} onChange={setActiveFilter} />
+              {activeFilter && (
+                <button
+                  type="button"
+                  onClick={() => setActiveFilter("")}
+                  className="text-sm text-red-600 dark:text-red-400 hover:text-red-700 ml-auto"
+                >
+                  {t.filter.clear}
+                </button>
+              )}
+            </div>
+          </div>
+        )}
+      </div>
 
       {(() => {
         const columns: DataTableColumn<Supplier>[] = [

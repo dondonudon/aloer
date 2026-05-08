@@ -5,7 +5,11 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { DataTable, type DataTableColumn } from "@/components/ui/data-table";
-import { ListFilter } from "@/components/ui/list-filter";
+import {
+  type FilterChip,
+  filterSelectCls,
+  ListFilter,
+} from "@/components/ui/list-filter";
 import { Pagination } from "@/components/ui/pagination";
 import { exportCsv, exportXlsx } from "@/lib/export";
 import { useI18n } from "@/lib/i18n/context";
@@ -27,6 +31,11 @@ interface PurchaseOrderRow {
   created_at: string;
 }
 
+interface SupplierOption {
+  id: string;
+  name: string;
+}
+
 interface PurchasesListClientProps {
   orders: PurchaseOrderRow[];
   total: number;
@@ -36,6 +45,8 @@ interface PurchasesListClientProps {
   startDate: string;
   endDate: string;
   status: string;
+  supplierId: string;
+  suppliers: SupplierOption[];
 }
 
 /**
@@ -51,6 +62,8 @@ export function PurchasesListClient({
   startDate: initialStartDate,
   endDate: initialEndDate,
   status: initialStatus,
+  supplierId: initialSupplierId,
+  suppliers,
 }: PurchasesListClientProps) {
   const { t } = useI18n();
   const PO_STATUS_OPTIONS = [
@@ -66,14 +79,21 @@ export function PurchasesListClient({
   const [startDate, setStartDate] = useState(initialStartDate);
   const [endDate, setEndDate] = useState(initialEndDate);
   const [statusFilter, setStatusFilter] = useState(initialStatus);
+  const [supplierFilter, setSupplierFilter] = useState(initialSupplierId);
 
   const latestFilters = useRef({
     startDate: initialStartDate,
     endDate: initialEndDate,
     statusFilter: initialStatus,
+    supplierFilter: initialSupplierId,
   });
   useEffect(() => {
-    latestFilters.current = { startDate, endDate, statusFilter };
+    latestFilters.current = {
+      startDate,
+      endDate,
+      statusFilter,
+      supplierFilter,
+    };
   });
 
   const buildHref = useCallback(
@@ -83,12 +103,21 @@ export function PurchasesListClient({
       if (startDate) params.set("startDate", startDate);
       if (endDate) params.set("endDate", endDate);
       if (statusFilter) params.set("status", statusFilter);
+      if (supplierFilter) params.set("supplierId", supplierFilter);
       if (pageSize !== 10) params.set("limit", String(pageSize));
       if (p > 1) params.set("page", String(p));
       const qs = params.toString();
       return qs ? `${pathname}?${qs}` : pathname;
     },
-    [pathname, search, startDate, endDate, statusFilter, pageSize],
+    [
+      pathname,
+      search,
+      startDate,
+      endDate,
+      statusFilter,
+      supplierFilter,
+      pageSize,
+    ],
   );
 
   const buildLimitHref = useCallback(
@@ -98,12 +127,13 @@ export function PurchasesListClient({
       if (startDate) params.set("startDate", startDate);
       if (endDate) params.set("endDate", endDate);
       if (statusFilter) params.set("status", statusFilter);
+      if (supplierFilter) params.set("supplierId", supplierFilter);
       if (limit !== 10) params.set("limit", String(limit));
       // page intentionally omitted — resets to 1
       const qs = params.toString();
       return qs ? `${pathname}?${qs}` : pathname;
     },
-    [pathname, search, startDate, endDate, statusFilter],
+    [pathname, search, startDate, endDate, statusFilter, supplierFilter],
   );
 
   function navigate(overrides: {
@@ -111,16 +141,19 @@ export function PurchasesListClient({
     startDate?: string;
     endDate?: string;
     status?: string;
+    supplierId?: string;
   }) {
     const s = overrides.search ?? search;
     const sd = overrides.startDate ?? startDate;
     const ed = overrides.endDate ?? endDate;
     const st = overrides.status ?? statusFilter;
+    const sup = overrides.supplierId ?? supplierFilter;
     const params = new URLSearchParams();
     if (s) params.set("search", s);
     if (sd) params.set("startDate", sd);
     if (ed) params.set("endDate", ed);
     if (st) params.set("status", st);
+    if (sup) params.set("supplierId", sup);
     const qs = params.toString();
     router.push(qs ? `${pathname}?${qs}` : pathname);
   }
@@ -135,6 +168,7 @@ export function PurchasesListClient({
       startDate: sd,
       endDate: ed,
       statusFilter: st,
+      supplierFilter: sup,
     } = latestFilters.current;
     const t = setTimeout(() => {
       const params = new URLSearchParams();
@@ -142,6 +176,7 @@ export function PurchasesListClient({
       if (sd) params.set("startDate", sd);
       if (ed) params.set("endDate", ed);
       if (st) params.set("status", st);
+      if (sup) params.set("supplierId", sup);
       const qs = params.toString();
       router.push(qs ? `${pathname}?${qs}` : pathname);
     }, 400);
@@ -184,6 +219,54 @@ export function PurchasesListClient({
         }}
         statusOptions={PO_STATUS_OPTIONS}
         idPrefix="po-list"
+        extraFilters={
+          <select
+            value={supplierFilter}
+            onChange={(e) => {
+              setSupplierFilter(e.target.value);
+              navigate({ supplierId: e.target.value });
+            }}
+            className={filterSelectCls}
+            aria-label={t.filter.filterBySupplier}
+          >
+            <option value="">{t.filter.allSuppliers}</option>
+            {suppliers.map((s) => (
+              <option key={s.id} value={s.id}>
+                {s.name}
+              </option>
+            ))}
+          </select>
+        }
+        externalActiveCount={supplierFilter ? 1 : 0}
+        extraChips={
+          supplierFilter
+            ? ([
+                {
+                  label:
+                    suppliers.find((s) => s.id === supplierFilter)?.name ??
+                    supplierFilter,
+                  onRemove: () => {
+                    setSupplierFilter("");
+                    navigate({ supplierId: "" });
+                  },
+                },
+              ] satisfies FilterChip[])
+            : []
+        }
+        onClearAll={() => {
+          setSearch("");
+          setStartDate("");
+          setEndDate("");
+          setStatusFilter("");
+          setSupplierFilter("");
+          navigate({
+            search: "",
+            startDate: "",
+            endDate: "",
+            status: "",
+            supplierId: "",
+          });
+        }}
       />
 
       <div className="flex items-center justify-between">

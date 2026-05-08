@@ -36,6 +36,7 @@ export async function getSales(options?: {
   search?: string;
   startDate?: string;
   endDate?: string;
+  paymentMethod?: string;
   page?: number;
   limit?: number;
 }) {
@@ -54,6 +55,9 @@ export async function getSales(options?: {
   }
   if (options?.status) {
     query = query.eq("status", options.status);
+  }
+  if (options?.paymentMethod) {
+    query = query.eq("payment_method", options.paymentMethod);
   }
   if (options?.startDate) {
     query = query.gte("created_at", `${options.startDate}T00:00:00`);
@@ -74,6 +78,7 @@ export async function getSalesForExport(options?: {
   search?: string;
   startDate?: string;
   endDate?: string;
+  paymentMethod?: string;
 }) {
   const supabase = await createClient();
 
@@ -89,6 +94,9 @@ export async function getSalesForExport(options?: {
   }
   if (options?.status) {
     query = query.eq("status", options.status);
+  }
+  if (options?.paymentMethod) {
+    query = query.eq("payment_method", options.paymentMethod);
   }
   if (options?.startDate) {
     query = query.gte("created_at", `${options.startDate}T00:00:00`);

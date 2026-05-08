@@ -18,11 +18,20 @@ export default async function SalesPage({ searchParams }: Props) {
     params.startDate !== undefined ? params.startDate : defaultStart;
   const endDate = params.endDate ?? "";
   const status = params.status ?? "";
+  const paymentMethod = params.paymentMethod ?? "";
   const limit = parsePageSize(params.limit);
 
   const [t, { data: sales, count }] = await Promise.all([
     getServerTranslations(),
-    getSales({ search, startDate, endDate, status, page, limit }),
+    getSales({
+      search,
+      startDate,
+      endDate,
+      status,
+      paymentMethod,
+      page,
+      limit,
+    }),
   ]);
 
   return (
@@ -48,6 +57,7 @@ export default async function SalesPage({ searchParams }: Props) {
         startDate={startDate}
         endDate={endDate}
         status={status}
+        paymentMethod={paymentMethod}
       />
     </div>
   );

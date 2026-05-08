@@ -3,6 +3,7 @@ import Link from "next/link";
 import { PurchasesListClient } from "@/components/purchases/purchases-list-client";
 import { Button } from "@/components/ui/button";
 import { getPurchaseOrders } from "@/lib/actions/purchases";
+import { getSuppliers } from "@/lib/actions/suppliers";
 import { getServerTranslations } from "@/lib/i18n/server";
 import { parsePage, parsePageSize } from "@/lib/pagination";
 
@@ -17,18 +18,21 @@ export default async function PurchasesPage({ searchParams }: Props) {
   const startDate = params.startDate ?? "";
   const endDate = params.endDate ?? "";
   const status = params.status ?? "";
+  const supplierId = params.supplierId ?? "";
   const limit = parsePageSize(params.limit);
 
-  const [t, { data: orders, count }] = await Promise.all([
+  const [t, { data: orders, count }, suppliers] = await Promise.all([
     getServerTranslations(),
     getPurchaseOrders({
       search,
       startDate,
       endDate,
       status,
+      supplierId,
       page,
       limit,
     }),
+    getSuppliers(),
   ]);
 
   return (
@@ -54,6 +58,8 @@ export default async function PurchasesPage({ searchParams }: Props) {
         startDate={startDate}
         endDate={endDate}
         status={status}
+        supplierId={supplierId}
+        suppliers={suppliers ?? []}
       />
     </div>
   );

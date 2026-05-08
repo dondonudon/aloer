@@ -166,6 +166,7 @@ export async function getSalesSummary(
   startDate?: string,
   endDate?: string,
   limit?: number,
+  paymentType?: string,
 ) {
   const supabase = await createClient();
   const tz = process.env.APP_TIMEZONE ?? "UTC";
@@ -197,6 +198,7 @@ export async function getSalesSummary(
 
   if (effectiveStartDate) query = query.gte("created_at", effectiveStartDate);
   if (endDate) query = query.lte("created_at", endDate);
+  if (paymentType) query = query.eq("payment_method", paymentType);
 
   const { data, error } = await query;
   if (error) throw new Error(error.message);

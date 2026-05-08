@@ -1,6 +1,6 @@
 "use client";
 
-import { Search } from "lucide-react";
+import { Search, SlidersHorizontal, X } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -40,6 +40,7 @@ export function InventoryListClient({
   const [page, setPage] = useState(initialPage);
   const [pageSize] = useState(initialPageSize);
   const [lowStockOnly, setLowStockOnly] = useState(initialLowStockOnly);
+  const [filtersOpen, setFiltersOpen] = useState(false);
 
   const isFirstRender = useRef(true);
   useEffect(() => {
@@ -110,37 +111,96 @@ export function InventoryListClient({
 
   return (
     <div className="space-y-4">
-      <div className="flex gap-2 items-center">
-        <div className="relative flex-1">
-          <Search
-            className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400"
-            aria-hidden="true"
-          />
-          <Input
-            placeholder={t.inventory.searchPlaceholder}
-            value={search}
-            onChange={(e) => {
-              setSearch(e.target.value);
-              setPage(1);
-            }}
-            className="pl-10"
-            aria-label={t.inventory.searchPlaceholder}
-          />
+      {/* Search + Filters */}
+      <div className="space-y-2">
+        <div className="flex gap-2 items-center">
+          <div className="relative flex-1">
+            <Search
+              className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400"
+              aria-hidden="true"
+            />
+            <Input
+              placeholder={t.inventory.searchPlaceholder}
+              value={search}
+              onChange={(e) => {
+                setSearch(e.target.value);
+                setPage(1);
+              }}
+              className="pl-10"
+              aria-label={t.inventory.searchPlaceholder}
+            />
+          </div>
+          <button
+            type="button"
+            onClick={() => setFiltersOpen((v) => !v)}
+            className={`inline-flex items-center gap-2 rounded-lg border px-3 py-2 text-sm font-medium transition-colors ${
+              filtersOpen || lowStockOnly
+                ? "border-blue-500 bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:border-blue-400 dark:text-blue-300"
+                : "border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-600"
+            }`}
+            aria-expanded={filtersOpen}
+          >
+            <SlidersHorizontal className="h-4 w-4" aria-hidden="true" />
+            {t.filter.filters}
+            {lowStockOnly && (
+              <span className="inline-flex items-center justify-center h-5 w-5 rounded-full bg-blue-600 dark:bg-blue-500 text-white text-xs font-bold">
+                1
+              </span>
+            )}
+          </button>
         </div>
-        <button
-          type="button"
-          onClick={() => {
-            setLowStockOnly(!lowStockOnly);
-            setPage(1);
-          }}
-          className={`shrink-0 px-3 py-2 text-sm rounded-lg border font-medium transition-colors ${
-            lowStockOnly
-              ? "bg-amber-100 border-amber-300 text-amber-800 dark:bg-amber-900/30 dark:border-amber-700 dark:text-amber-300"
-              : "border-gray-200 text-gray-600 dark:border-gray-700 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800"
-          }`}
-        >
-          {t.inventory.lowStockOnly}
-        </button>
+
+        {/* Active filter chips */}
+        {lowStockOnly && (
+          <div className="flex flex-wrap gap-1.5">
+            <span className="inline-flex items-center gap-1 rounded-full bg-blue-50 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-700 px-2.5 py-1 text-xs font-medium text-blue-700 dark:text-blue-300">
+              {t.inventory.lowStockOnly}
+              <button
+                type="button"
+                onClick={() => {
+                  setLowStockOnly(false);
+                  setPage(1);
+                }}
+                className="rounded-full p-0.5 hover:bg-blue-200 dark:hover:bg-blue-700 transition-colors"
+                aria-label="Remove low stock filter"
+              >
+                <X className="h-3 w-3" />
+              </button>
+            </span>
+          </div>
+        )}
+
+        {/* Collapsible filter panel */}
+        {filtersOpen && (
+          <div className="rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/60 p-3">
+            <div className="flex flex-wrap items-center gap-3">
+              <label className="inline-flex items-center gap-2 cursor-pointer select-none text-sm text-gray-700 dark:text-gray-200">
+                <input
+                  type="checkbox"
+                  checked={lowStockOnly}
+                  onChange={(e) => {
+                    setLowStockOnly(e.target.checked);
+                    setPage(1);
+                  }}
+                  className="h-4 w-4 rounded border-gray-300 dark:border-gray-600 accent-amber-500"
+                />
+                {t.inventory.lowStockOnly}
+              </label>
+              {lowStockOnly && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setLowStockOnly(false);
+                    setPage(1);
+                  }}
+                  className="text-sm text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300 ml-auto"
+                >
+                  {t.filter.clear}
+                </button>
+              )}
+            </div>
+          </div>
+        )}
       </div>
 
       <p className="text-sm text-gray-500">
