@@ -98,11 +98,7 @@ export async function getProfitLoss(startDate: string, endDate: string) {
  */
 
 // Helper: compute UTC ISO boundaries for a given local date string and timezone.
-function localMidnight(
-  dateStr: string,
-  tz: string,
-  endOfDay = false,
-): string {
+function localMidnight(dateStr: string, tz: string, endOfDay = false): string {
   const wallClock = endOfDay
     ? `${dateStr}T23:59:59.999`
     : `${dateStr}T00:00:00.000`;
