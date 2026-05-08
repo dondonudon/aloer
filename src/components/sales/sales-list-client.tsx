@@ -7,6 +7,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { DataTable, type DataTableColumn } from "@/components/ui/data-table";
 import { ListFilter } from "@/components/ui/list-filter";
 import { Pagination } from "@/components/ui/pagination";
+import { getSalesForExport } from "@/lib/actions/sales";
 import { exportCsv, exportXlsx } from "@/lib/export";
 import { useI18n } from "@/lib/i18n/context";
 import type { Sale } from "@/lib/types";
@@ -55,6 +56,7 @@ export function SalesListClient({
   const [startDate, setStartDate] = useState(initialStartDate);
   const [endDate, setEndDate] = useState(initialEndDate);
   const [statusFilter, setStatusFilter] = useState(initialStatus);
+  const [isExporting, setIsExporting] = useState(false);
 
   // Keep latest filter values in a ref so the debounce effect can read them
   // without needing them as dependencies (which would re-arm the timer).
@@ -142,16 +144,54 @@ export function SalesListClient({
     return () => clearTimeout(t);
   }, [search, router, pathname]);
 
-  function toExportRows(data: Sale[]) {
+  function toExportRows(
+    data: {
+      invoice_number: string;
+      payment_method: string;
+      total_amount: number;
+      total_cogs: number;
+      discount_amount: number;
+      campaign_savings: number;
+      cart_campaign_discount: number;
+      delivery_fee: number;
+      status: string;
+      created_at: string;
+    }[],
+  ) {
     return data.map((s) => ({
       Invoice: s.invoice_number,
       Payment: s.payment_method,
       Total: s.total_amount,
       COGS: s.total_cogs,
+      Discount:
+        (s.discount_amount ?? 0) +
+        (s.campaign_savings ?? 0) +
+        (s.cart_campaign_discount ?? 0),
+      "Delivery Fee": s.delivery_fee ?? 0,
       Profit: s.status === "completed" ? s.total_amount - s.total_cogs : 0,
       Status: s.status,
       Date: formatDateTime(s.created_at),
     }));
+  }
+
+  async function handleExport(format: "xlsx" | "csv") {
+    setIsExporting(true);
+    try {
+      const data = await getSalesForExport({
+        search,
+        startDate,
+        endDate,
+        status: statusFilter,
+      });
+      const filename = `sales-${startDate || "all"}-${endDate || "all"}`;
+      if (format === "xlsx") {
+        await exportXlsx(toExportRows(data), filename);
+      } else {
+        await exportCsv(toExportRows(data), filename);
+      }
+    } finally {
+      setIsExporting(false);
+    }
   }
 
   const totalPages = Math.ceil(total / pageSize);
@@ -188,21 +228,23 @@ export function SalesListClient({
         <div className="flex items-center gap-2">
           <button
             type="button"
-            onClick={() => void exportXlsx(toExportRows(sales), "sales")}
-            className="inline-flex items-center gap-1.5 rounded-lg border border-gray-200 dark:border-gray-700 px-3 py-1.5 text-xs font-medium text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+            disabled={isExporting}
+            onClick={() => void handleExport("xlsx")}
+            className="inline-flex items-center gap-1.5 rounded-lg border border-gray-200 dark:border-gray-700 px-3 py-1.5 text-xs font-medium text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             aria-label={t.common.exportXlsx}
           >
             <Download className="h-3.5 w-3.5" aria-hidden="true" />
-            {t.common.exportXlsx}
+            {isExporting ? t.reports.loading : t.common.exportXlsx}
           </button>
           <button
             type="button"
-            onClick={() => void exportCsv(toExportRows(sales), "sales")}
-            className="inline-flex items-center gap-1.5 rounded-lg border border-gray-200 dark:border-gray-700 px-3 py-1.5 text-xs font-medium text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+            disabled={isExporting}
+            onClick={() => void handleExport("csv")}
+            className="inline-flex items-center gap-1.5 rounded-lg border border-gray-200 dark:border-gray-700 px-3 py-1.5 text-xs font-medium text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             aria-label={t.common.exportCsv}
           >
             <Download className="h-3.5 w-3.5" aria-hidden="true" />
-            {t.common.exportCsv}
+            {isExporting ? t.reports.loading : t.common.exportCsv}
           </button>
         </div>
       </div>

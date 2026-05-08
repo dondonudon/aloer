@@ -189,7 +189,9 @@ export async function getSalesSummary(
 
   let query = supabase
     .from("sales")
-    .select("created_at, total_amount, total_cogs")
+    .select(
+      "created_at, total_amount, total_cogs, discount_amount, campaign_savings, cart_campaign_discount, delivery_fee",
+    )
     .eq("status", "completed")
     .order("created_at", { ascending: false });
 
@@ -207,6 +209,8 @@ export async function getSalesSummary(
       total_revenue: number;
       total_cogs: number;
       gross_profit: number;
+      total_discount: number;
+      total_delivery_fee: number;
     }
   >();
 
@@ -218,18 +222,27 @@ export async function getSalesSummary(
       day: "2-digit",
     }).format(new Date(sale.created_at));
 
+    const saleDiscount =
+      (sale.discount_amount ?? 0) +
+      (sale.campaign_savings ?? 0) +
+      (sale.cart_campaign_discount ?? 0);
+
     const existing = dailyMap.get(day);
     if (existing) {
       existing.total_transactions += 1;
       existing.total_revenue += sale.total_amount;
       existing.total_cogs += sale.total_cogs;
       existing.gross_profit += sale.total_amount - sale.total_cogs;
+      existing.total_discount += saleDiscount;
+      existing.total_delivery_fee += sale.delivery_fee ?? 0;
     } else {
       dailyMap.set(day, {
         total_transactions: 1,
         total_revenue: sale.total_amount,
         total_cogs: sale.total_cogs,
         gross_profit: sale.total_amount - sale.total_cogs,
+        total_discount: saleDiscount,
+        total_delivery_fee: sale.delivery_fee ?? 0,
       });
     }
   }

@@ -5,7 +5,7 @@ import { useMemo, useState } from "react";
 import { DataTable, type DataTableColumn } from "@/components/ui/data-table";
 import { Input } from "@/components/ui/input";
 import { Pagination } from "@/components/ui/pagination";
-import { exportPdf } from "@/lib/export";
+import { exportCsv, exportPdf, exportXlsx } from "@/lib/export";
 import { useI18n } from "@/lib/i18n/context";
 import type { SalesSummaryRow } from "@/lib/types";
 import { formatCurrency } from "@/lib/utils";
@@ -19,8 +19,11 @@ interface SalesReportClientProps {
  */
 export function SalesReportClient({ summary }: SalesReportClientProps) {
   const { t } = useI18n();
-  const [startDate, setStartDate] = useState("");
-  const [endDate, setEndDate] = useState("");
+  const today = new Date();
+  const defaultStart = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-01`;
+  const defaultEnd = today.toISOString().slice(0, 10);
+  const [startDate, setStartDate] = useState(defaultStart);
+  const [endDate, setEndDate] = useState(defaultEnd);
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
 
@@ -46,8 +49,17 @@ export function SalesReportClient({ summary }: SalesReportClientProps) {
         revenue: acc.revenue + row.total_revenue,
         cogs: acc.cogs + row.total_cogs,
         profit: acc.profit + row.gross_profit,
+        discount: acc.discount + row.total_discount,
+        deliveryFee: acc.deliveryFee + row.total_delivery_fee,
       }),
-      { transactions: 0, revenue: 0, cogs: 0, profit: 0 },
+      {
+        transactions: 0,
+        revenue: 0,
+        cogs: 0,
+        profit: 0,
+        discount: 0,
+        deliveryFee: 0,
+      },
     );
   }, [filtered]);
 
@@ -104,47 +116,117 @@ export function SalesReportClient({ summary }: SalesReportClientProps) {
           </button>
         )}
         {filtered.length > 0 && (
-          <button
-            type="button"
-            onClick={() =>
-              exportPdf(
-                "Sales Summary Report",
-                [
-                  { header: "Date", key: "Date" },
-                  {
-                    header: "Transactions",
-                    key: "Transactions",
-                    align: "right",
-                  },
-                  { header: "Revenue", key: "Revenue", align: "right" },
-                  { header: "COGS", key: "COGS", align: "right" },
-                  {
-                    header: "Gross Profit",
-                    key: "Gross Profit",
-                    align: "right",
-                  },
-                  { header: "Margin %", key: "Margin", align: "right" },
-                ],
-                filtered.map((r) => ({
-                  Date: r.sale_date,
-                  Transactions: r.total_transactions,
-                  Revenue: formatCurrency(r.total_revenue),
-                  COGS: formatCurrency(r.total_cogs),
-                  "Gross Profit": formatCurrency(r.gross_profit),
-                  Margin:
-                    r.total_revenue > 0
-                      ? `${((r.gross_profit / r.total_revenue) * 100).toFixed(1)}%`
-                      : "0.0%",
-                })),
-                "sales-report",
-              )
-            }
-            className="ml-auto inline-flex items-center gap-1.5 rounded-lg border border-gray-200 dark:border-gray-700 px-3 py-1.5 text-xs font-medium text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
-            aria-label={t.reports.exportPdf}
-          >
-            <Download className="h-3.5 w-3.5" aria-hidden="true" />
-            {t.reports.exportPdf}
-          </button>
+          <div className="ml-auto flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() =>
+                exportXlsx(
+                  filtered.map((r) => ({
+                    [t.reports.date]: r.sale_date,
+                    [t.reports.transactions]: r.total_transactions,
+                    [t.reports.revenue]: r.total_revenue,
+                    [t.reports.cogs]: r.total_cogs,
+                    [t.reports.discount]: r.total_discount,
+                    [t.reports.deliveryFee]: r.total_delivery_fee,
+                    [t.reports.grossProfit]: r.gross_profit,
+                    "Margin %":
+                      r.total_revenue > 0
+                        ? `${((r.gross_profit / r.total_revenue) * 100).toFixed(1)}%`
+                        : "0.0%",
+                  })),
+                  `sales-report-${startDate || "all"}-${endDate || "all"}`,
+                )
+              }
+              className="inline-flex items-center gap-1.5 rounded-lg border border-gray-200 dark:border-gray-700 px-3 py-1.5 text-xs font-medium text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+              aria-label={t.reports.exportXlsx}
+            >
+              <Download className="h-3.5 w-3.5" aria-hidden="true" />
+              {t.reports.exportXlsx}
+            </button>
+            <button
+              type="button"
+              onClick={() =>
+                exportCsv(
+                  filtered.map((r) => ({
+                    [t.reports.date]: r.sale_date,
+                    [t.reports.transactions]: r.total_transactions,
+                    [t.reports.revenue]: r.total_revenue,
+                    [t.reports.cogs]: r.total_cogs,
+                    [t.reports.discount]: r.total_discount,
+                    [t.reports.deliveryFee]: r.total_delivery_fee,
+                    [t.reports.grossProfit]: r.gross_profit,
+                    "Margin %":
+                      r.total_revenue > 0
+                        ? `${((r.gross_profit / r.total_revenue) * 100).toFixed(1)}%`
+                        : "0.0%",
+                  })),
+                  `sales-report-${startDate || "all"}-${endDate || "all"}`,
+                )
+              }
+              className="inline-flex items-center gap-1.5 rounded-lg border border-gray-200 dark:border-gray-700 px-3 py-1.5 text-xs font-medium text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+              aria-label={t.reports.exportCsv}
+            >
+              <Download className="h-3.5 w-3.5" aria-hidden="true" />
+              {t.reports.exportCsv}
+            </button>
+            <button
+              type="button"
+              onClick={() =>
+                exportPdf(
+                  "Sales Summary Report",
+                  [
+                    { header: t.reports.date, key: "Date" },
+                    {
+                      header: t.reports.transactions,
+                      key: "Transactions",
+                      align: "right",
+                    },
+                    {
+                      header: t.reports.revenue,
+                      key: "Revenue",
+                      align: "right",
+                    },
+                    { header: t.reports.cogs, key: "COGS", align: "right" },
+                    {
+                      header: t.reports.discount,
+                      key: "Discount",
+                      align: "right",
+                    },
+                    {
+                      header: t.reports.deliveryFee,
+                      key: "DeliveryFee",
+                      align: "right",
+                    },
+                    {
+                      header: t.reports.grossProfit,
+                      key: "Gross Profit",
+                      align: "right",
+                    },
+                    { header: "Margin %", key: "Margin", align: "right" },
+                  ],
+                  filtered.map((r) => ({
+                    Date: r.sale_date,
+                    Transactions: r.total_transactions,
+                    Revenue: formatCurrency(r.total_revenue),
+                    COGS: formatCurrency(r.total_cogs),
+                    Discount: formatCurrency(r.total_discount),
+                    DeliveryFee: formatCurrency(r.total_delivery_fee),
+                    "Gross Profit": formatCurrency(r.gross_profit),
+                    Margin:
+                      r.total_revenue > 0
+                        ? `${((r.gross_profit / r.total_revenue) * 100).toFixed(1)}%`
+                        : "0.0%",
+                  })),
+                  `sales-report-${startDate || "all"}-${endDate || "all"}`,
+                )
+              }
+              className="inline-flex items-center gap-1.5 rounded-lg border border-gray-200 dark:border-gray-700 px-3 py-1.5 text-xs font-medium text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+              aria-label={t.reports.exportPdf}
+            >
+              <Download className="h-3.5 w-3.5" aria-hidden="true" />
+              {t.reports.exportPdf}
+            </button>
+          </div>
         )}
       </div>
 
@@ -176,6 +258,20 @@ export function SalesReportClient({ summary }: SalesReportClientProps) {
             align: "right",
             cellClassName: "text-gray-700 dark:text-gray-300",
             cell: (row) => formatCurrency(row.total_cogs),
+          },
+          {
+            id: "discount",
+            header: t.reports.discount,
+            align: "right",
+            cellClassName: "text-orange-600 dark:text-orange-400",
+            cell: (row) => formatCurrency(row.total_discount),
+          },
+          {
+            id: "deliveryFee",
+            header: t.reports.deliveryFee,
+            align: "right",
+            cellClassName: "text-gray-700 dark:text-gray-300",
+            cell: (row) => formatCurrency(row.total_delivery_fee),
           },
           {
             id: "grossProfit",
@@ -212,6 +308,12 @@ export function SalesReportClient({ summary }: SalesReportClientProps) {
               </td>
               <td className="py-3 px-4 text-right text-gray-900 dark:text-gray-100">
                 {formatCurrency(totals.cogs)}
+              </td>
+              <td className="py-3 px-4 text-right text-orange-600 dark:text-orange-400">
+                {formatCurrency(totals.discount)}
+              </td>
+              <td className="py-3 px-4 text-right text-gray-900 dark:text-gray-100">
+                {formatCurrency(totals.deliveryFee)}
               </td>
               <td className="py-3 px-4 text-right text-green-700 dark:text-green-400">
                 {formatCurrency(totals.profit)}

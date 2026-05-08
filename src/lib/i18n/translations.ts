@@ -428,11 +428,15 @@ export interface Translations {
     to: string;
     clear: string;
     exportPdf: string;
+    exportXlsx: string;
+    exportCsv: string;
     date: string;
     transactions: string;
     revenue: string;
     cogs: string;
     grossProfit: string;
+    discount: string;
+    deliveryFee: string;
     margin: string;
     noSalesData: string;
     total: string;
@@ -1012,11 +1016,15 @@ export const en: Translations = {
     to: "To",
     clear: "Clear",
     exportPdf: "Export PDF",
+    exportXlsx: "XLSX",
+    exportCsv: "CSV",
     date: "Date",
     transactions: "Transactions",
     revenue: "Revenue",
     cogs: "COGS",
     grossProfit: "Gross Profit",
+    discount: "Discount",
+    deliveryFee: "Delivery Fee",
     margin: "Margin",
     noSalesData: "No sales data for this period",
     total: "Total",
@@ -1601,11 +1609,15 @@ export const id: Translations = {
     to: "Sampai",
     clear: "Hapus",
     exportPdf: "Ekspor PDF",
+    exportXlsx: "XLSX",
+    exportCsv: "CSV",
     date: "Tanggal",
     transactions: "Transaksi",
     revenue: "Pendapatan",
     cogs: "HPP",
     grossProfit: "Laba Kotor",
+    discount: "Diskon",
+    deliveryFee: "Biaya Pengiriman",
     margin: "Margin",
     noSalesData: "Tidak ada data penjualan untuk periode ini",
     total: "Total",

@@ -69,6 +69,39 @@ export async function getSales(options?: {
   return { data: data ?? [], count: count ?? 0 };
 }
 
+export async function getSalesForExport(options?: {
+  status?: string;
+  search?: string;
+  startDate?: string;
+  endDate?: string;
+}) {
+  const supabase = await createClient();
+
+  let query = supabase
+    .from("sales")
+    .select(
+      "invoice_number, payment_method, total_amount, total_cogs, discount_amount, campaign_savings, cart_campaign_discount, delivery_fee, status, created_at",
+    )
+    .order("created_at", { ascending: false });
+
+  if (options?.search) {
+    query = query.ilike("invoice_number", `%${options.search}%`);
+  }
+  if (options?.status) {
+    query = query.eq("status", options.status);
+  }
+  if (options?.startDate) {
+    query = query.gte("created_at", `${options.startDate}T00:00:00`);
+  }
+  if (options?.endDate) {
+    query = query.lte("created_at", `${options.endDate}T23:59:59`);
+  }
+
+  const { data, error } = await query;
+  if (error) throw new Error(error.message);
+  return data ?? [];
+}
+
 export async function getSaleWithItems(saleId: string) {
   const supabase = await createClient();
 

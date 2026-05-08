@@ -343,6 +343,8 @@ export interface SalesSummaryRow {
   total_revenue: number;
   total_cogs: number;
   gross_profit: number;
+  total_discount: number;
+  total_delivery_fee: number;
 }
 
 export interface StockReportRow {

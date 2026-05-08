@@ -12,7 +12,10 @@ export default async function SalesPage({ searchParams }: Props) {
   const params = await searchParams;
   const page = parsePage(params.page);
   const search = params.search ?? "";
-  const startDate = params.startDate ?? "";
+  const today = new Date();
+  const defaultStart = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-01`;
+  const startDate =
+    params.startDate !== undefined ? params.startDate : defaultStart;
   const endDate = params.endDate ?? "";
   const status = params.status ?? "";
   const limit = parsePageSize(params.limit);
