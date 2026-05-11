@@ -11,30 +11,11 @@ import { getCurrentUser } from "@/lib/auth";
 type UserPromise = ReturnType<typeof getCurrentUser>;
 type StoreSettingsPromise = ReturnType<typeof getStoreSettings>;
 
-async function StreamedSidebar({
-  userPromise,
-  storeSettingsPromise,
-}: {
-  userPromise: UserPromise;
-  storeSettingsPromise: StoreSettingsPromise;
-}) {
-  const [user, storeSettings] = await Promise.all([
-    userPromise,
-    storeSettingsPromise,
-  ]);
-  if (!user) redirect("/login");
-
-  return (
-    <Sidebar
-      userRole={user.role}
-      userName={user.name}
-      storeName={storeSettings.store_name}
-      storeIconUrl={storeSettings.store_icon_url}
-    />
-  );
-}
-
-async function StreamedMain({
+// Both sidebar and main content are wrapped in the same providers so that
+// the sidebar's setLocale has access to onSave={saveLocale}. Previously the
+// sidebar lived outside AuthenticatedI18nProvider, which meant locale changes
+// from the sidebar never called saveLocale and were lost on page refresh.
+async function AuthenticatedShell({
   children,
   userPromise,
   storeSettingsPromise,
@@ -53,21 +34,33 @@ async function StreamedMain({
     <AuthenticatedThemeProvider initialTheme={user.theme}>
       <AuthenticatedI18nProvider initialLocale={user.locale}>
         <StoreProvider storeIconUrl={storeSettings.store_icon_url}>
-          <div className="p-4 lg:p-8">{children}</div>
+          <Sidebar
+            userRole={user.role}
+            userName={user.name}
+            storeName={storeSettings.store_name}
+            storeIconUrl={storeSettings.store_icon_url}
+          />
+          {/* pt-14 clears the fixed mobile top bar; removed on lg+ where the bar is hidden */}
+          <main className="flex-1 overflow-y-auto pt-14 lg:pt-0">
+            <div className="p-4 lg:p-8">{children}</div>
+          </main>
         </StoreProvider>
       </AuthenticatedI18nProvider>
     </AuthenticatedThemeProvider>
   );
 }
 
-// Match the page-level <div className="p-4 lg:p-8"> spacing so the skeleton
-// occupies the same box as real content — no shift when StreamedMain swaps in.
-function MainFallback() {
+function ShellFallback() {
   return (
-    <div className="p-4 lg:p-8 space-y-4">
-      <div className="h-7 w-48 rounded bg-gray-200 dark:bg-gray-700 animate-pulse" />
-      <div className="h-32 rounded-xl bg-gray-200 dark:bg-gray-700 animate-pulse" />
-    </div>
+    <>
+      <SidebarSkeleton />
+      <main className="flex-1 overflow-y-auto pt-14 lg:pt-0">
+        <div className="p-4 lg:p-8 space-y-4">
+          <div className="h-7 w-48 rounded bg-gray-200 dark:bg-gray-700 animate-pulse" />
+          <div className="h-32 rounded-xl bg-gray-200 dark:bg-gray-700 animate-pulse" />
+        </div>
+      </main>
+    </>
   );
 }
 
@@ -78,30 +71,21 @@ export default function AuthenticatedLayout({
 }) {
   // Kick off both fetches without awaiting — getCurrentUser is React-cached so
   // the same promise is reused by getServerTranslations() and any page-level
-  // call. The shell HTML flushes immediately; both Suspense boundaries below
-  // resolve in parallel with the page's own data fetches.
+  // call. The shell HTML flushes immediately; the Suspense boundary below
+  // resolves once auth + store settings are ready.
   const userPromise = getCurrentUser();
   const storeSettingsPromise = getStoreSettings();
 
   return (
     <div className="flex h-screen overflow-hidden bg-gray-50 dark:bg-gray-900">
-      <Suspense fallback={<SidebarSkeleton />}>
-        <StreamedSidebar
+      <Suspense fallback={<ShellFallback />}>
+        <AuthenticatedShell
           userPromise={userPromise}
           storeSettingsPromise={storeSettingsPromise}
-        />
+        >
+          {children}
+        </AuthenticatedShell>
       </Suspense>
-      {/* pt-14 clears the fixed mobile top bar; removed on lg+ where the bar is hidden */}
-      <main className="flex-1 overflow-y-auto pt-14 lg:pt-0">
-        <Suspense fallback={<MainFallback />}>
-          <StreamedMain
-            userPromise={userPromise}
-            storeSettingsPromise={storeSettingsPromise}
-          >
-            {children}
-          </StreamedMain>
-        </Suspense>
-      </main>
     </div>
   );
 }
