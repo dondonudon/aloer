@@ -334,6 +334,7 @@ export async function getPurchaseReturns(poId: string): Promise<{
   return {
     returns: returnsData.map((r) => ({
       ...r,
+      refund_method: r.refund_method as PurchaseReturn["refund_method"],
       created_by_name: r.created_by ? (userNames[r.created_by] ?? null) : null,
       items: itemsByReturn[r.id] ?? [],
     })),

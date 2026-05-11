@@ -40,6 +40,7 @@ export async function getSaleCreditPayments(saleId: string) {
 
   return payments.map((p) => ({
     ...p,
+    payment_method: p.payment_method as "cash" | "transfer",
     created_by_name: p.created_by ? (userNames[p.created_by] ?? null) : null,
   }));
 }
@@ -47,7 +48,6 @@ export async function getSaleCreditPayments(saleId: string) {
 /**
  * Records a customer payment collection against a credit sale.
  * Calls the collect_sale_payment SQL function which handles the journal entry atomically.
- *
  * Security: owner only.
  * Validates: positive amount, valid payment method.
  */

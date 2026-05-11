@@ -2,6 +2,7 @@
 
 import { revalidatePath, revalidateTag } from "next/cache";
 import { getCurrentUser } from "@/lib/auth";
+import type { Json } from "@/lib/supabase/database.types";
 import { createClient } from "@/lib/supabase/server";
 import type {
   CreateSaleInput,
@@ -17,7 +18,7 @@ export async function createSale(input: CreateSaleInput) {
 
   const supabase = await createClient();
   const { data, error } = await supabase.rpc("create_sale_transaction", {
-    sale_payload: input,
+    sale_payload: input as unknown as Json,
   });
 
   if (error) return { error: await formatDbError(error) };
@@ -73,7 +74,10 @@ export async function getSales(options?: {
 
   const { data, error, count } = await query;
   if (error) throw new Error(error.message);
-  return { data: data ?? [], count: count ?? 0 };
+  return {
+    data: (data ?? []) as unknown as import("@/lib/types").Sale[],
+    count: count ?? 0,
+  };
 }
 
 export async function getSalesForExport(options?: {
@@ -256,6 +260,7 @@ export async function getSaleReturns(saleId: string): Promise<{
   return {
     returns: returnsData.map((r) => ({
       ...r,
+      refund_method: r.refund_method as SaleReturn["refund_method"],
       created_by_name: r.created_by ? (userNames[r.created_by] ?? null) : null,
       items: itemsByReturn[r.id] ?? [],
     })),

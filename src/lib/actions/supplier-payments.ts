@@ -36,6 +36,7 @@ export async function getSupplierPayments(poId: string) {
 
   return payments.map((p) => ({
     ...p,
+    payment_method: p.payment_method as "cash" | "transfer",
     created_by_name: p.created_by ? (userNames[p.created_by] ?? null) : null,
   }));
 }
