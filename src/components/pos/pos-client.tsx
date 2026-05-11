@@ -138,7 +138,7 @@ export function POSClient({
 
         {/* Cart: inline panel on desktop, slide-in drawer on mobile */}
         <aside
-          className={`fixed inset-y-0 right-0 z-50 w-full max-w-sm transform shadow-2xl transition-transform duration-200 ease-out lg:relative lg:inset-auto lg:z-auto lg:w-96 lg:max-w-none lg:flex-shrink-0 lg:translate-x-0 lg:shadow-none lg:transition-none ${
+          className={`fixed inset-y-0 right-0 z-50 w-full max-w-sm transform shadow-2xl transition-transform duration-200 ease-out lg:relative lg:inset-auto lg:z-auto lg:w-96 lg:max-w-none lg:shrink-0 lg:translate-x-0 lg:shadow-none lg:transition-none ${
             cartOpen ? "translate-x-0" : "translate-x-full"
           }`}
           aria-hidden={!cartOpen}
@@ -194,7 +194,7 @@ export function POSClient({
           <span className="relative">
             <ShoppingCart className="h-5 w-5" aria-hidden="true" />
             {cart.length > 0 && (
-              <span className="absolute -right-2 -top-1.5 flex h-4 min-w-[1rem] items-center justify-center rounded-full bg-amber-400 px-1 text-[10px] font-bold text-gray-900">
+              <span className="absolute -right-2 -top-1.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-amber-400 px-1 text-[10px] font-bold text-gray-900">
                 {cart.length}
               </span>
             )}

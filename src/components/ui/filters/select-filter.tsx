@@ -47,7 +47,7 @@ export function SelectFilter({
         id={fieldId}
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        className={`h-[38px] rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 px-3 text-sm ${className}`.trim()}
+        className={`h-9.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 px-3 text-sm ${className}`.trim()}
         aria-label={label}
       >
         {options.map((opt) => (

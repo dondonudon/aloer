@@ -207,7 +207,7 @@ export function ReceiptModal({
             <div className="border-t border-b border-dashed border-black py-2 my-1 space-y-1.5">
               {receipt.items.map((item) => (
                 <div key={item.name}>
-                  <div className="break-words">{item.name}</div>
+                  <div className="wrap-break-word">{item.name}</div>
                   <div className="flex justify-between">
                     <span className="text-gray-600">
                       {item.quantity} x{" "}

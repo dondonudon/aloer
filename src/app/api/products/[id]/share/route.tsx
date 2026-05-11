@@ -1,6 +1,7 @@
 import { ImageResponse } from "next/og";
 import type { NextRequest } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import type { Campaign, Product } from "@/lib/types";
 
 export const runtime = "nodejs";
 
@@ -43,9 +44,9 @@ export async function GET(
   const supabase = createAdminClient();
 
   const [
-    { data: product, error: productError },
-    { data: storeSettings },
-    { data: campaigns },
+    { data: productRaw, error: productError },
+    { data: storeSettingsRaw },
+    { data: campaignsRaw },
   ] = await Promise.all([
     supabase.from("products").select("*").eq("id", id).single(),
     supabase
@@ -61,6 +62,13 @@ export async function GET(
       .gte("end_date", new Date().toISOString())
       .eq("campaign_products.product_id", id),
   ]);
+
+  const product = productRaw as unknown as Product | null;
+  const storeSettings = storeSettingsRaw as unknown as {
+    store_name: string;
+    store_icon_url: string | null;
+  } | null;
+  const campaigns = campaignsRaw as unknown as Campaign[] | null;
 
   if (productError || !product) {
     return new Response("Product not found", { status: 404 });
