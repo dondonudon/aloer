@@ -1,6 +1,14 @@
 import { cache } from "react";
 import { getCurrentUser } from "@/lib/auth";
-import { type Locale, localeMap, type Translations } from "./translations";
+import { en } from "./en";
+import type { Locale, Translations } from "./translations";
+
+/** Returns the translation dictionary for a given locale. */
+async function getLocaleDict(locale: Locale): Promise<Translations> {
+  if (locale === "en") return en;
+  const { id } = await import("./id");
+  return id;
+}
 
 /**
  * Server-side helper that returns the translation dictionary for the current
@@ -9,7 +17,7 @@ import { type Locale, localeMap, type Translations } from "./translations";
  */
 export const getServerTranslations = cache(async (): Promise<Translations> => {
   const user = await getCurrentUser();
-  return localeMap[user?.locale ?? "en"];
+  return getLocaleDict(user?.locale ?? "en");
 });
 
 /**
@@ -18,11 +26,11 @@ export const getServerTranslations = cache(async (): Promise<Translations> => {
  * jobs that send a push notification to each owner in their own language.
  * Falls back to English when the input is null/unknown.
  */
-export function getTranslationsForLocale(
+export async function getTranslationsForLocale(
   locale: string | null | undefined,
-): Translations {
+): Promise<Translations> {
   if (locale === "id" || locale === "en") {
-    return localeMap[locale as Locale];
+    return getLocaleDict(locale as Locale);
   }
-  return localeMap.en;
+  return en;
 }

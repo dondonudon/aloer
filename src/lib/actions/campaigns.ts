@@ -156,7 +156,7 @@ export async function createCampaign(formData: FormData) {
 
     revalidatePath("/catalog/campaigns");
     revalidatePath("/pos");
-    revalidateTag("active-campaigns", { expire: 0 });
+    revalidateTag("active-campaigns");
     await insertAuditLog(
       supabase,
       user.id,
@@ -228,7 +228,7 @@ export async function updateCampaign(campaignId: string, formData: FormData) {
     );
     revalidatePath("/catalog/campaigns");
     revalidatePath("/pos");
-    revalidateTag("active-campaigns", { expire: 0 });
+    revalidateTag("active-campaigns");
     return {};
   });
 }
@@ -243,7 +243,7 @@ export async function toggleCampaign(campaignId: string, isActive: boolean) {
     if (error) return { error: await formatDbError(error) };
     revalidatePath("/catalog/campaigns");
     revalidatePath("/pos");
-    revalidateTag("active-campaigns", { expire: 0 });
+    revalidateTag("active-campaigns");
     return {};
   });
 }
@@ -265,7 +265,7 @@ export async function deleteCampaign(campaignId: string) {
     );
     revalidatePath("/catalog/campaigns");
     revalidatePath("/pos");
-    revalidateTag("active-campaigns", { expire: 0 });
+    revalidateTag("active-campaigns");
     return {};
   });
 }

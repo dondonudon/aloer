@@ -23,9 +23,9 @@ export async function createSale(input: CreateSaleInput) {
   if (error) return { error: await formatDbError(error) };
 
   await insertAuditLog(supabase, user.id, "CREATE_SALE", "sales");
-  revalidateTag("stock-report", { expire: 0 });
-  revalidateTag("today-sales", { expire: 0 });
-  revalidateTag("credit-sales", { expire: 0 });
+  revalidateTag("stock-report");
+  revalidateTag("today-sales");
+  revalidateTag("credit-sales");
   revalidatePath("/pos");
   revalidatePath("/inventory");
   revalidatePath("/reports");

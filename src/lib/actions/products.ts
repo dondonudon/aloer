@@ -145,7 +145,7 @@ export async function createProduct(formData: FormData) {
       product.id,
     );
     revalidatePath("/products");
-    revalidateTag("active-products", { expire: 0 });
+    revalidateTag("active-products");
     return {};
   });
 }
@@ -173,7 +173,7 @@ export async function updateProduct(id: string, formData: FormData) {
     if (error) return { error: await formatDbError(error) };
     await insertAuditLog(supabase, userId, "UPDATE_PRODUCT", "products", id);
     revalidatePath("/products");
-    revalidateTag("active-products", { expire: 0 });
+    revalidateTag("active-products");
     return {};
   });
 }

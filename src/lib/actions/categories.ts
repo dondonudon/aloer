@@ -65,7 +65,7 @@ export async function createCategory(formData: FormData) {
     );
     revalidatePath("/catalog/categories");
     revalidatePath("/products");
-    revalidateTag("active-categories", { expire: 0 });
+    revalidateTag("active-categories");
     return {};
   });
 }
@@ -86,7 +86,7 @@ export async function updateCategory(id: string, formData: FormData) {
     await insertAuditLog(supabase, userId, "UPDATE_CATEGORY", "categories", id);
     revalidatePath("/catalog/categories");
     revalidatePath("/products");
-    revalidateTag("active-categories", { expire: 0 });
+    revalidateTag("active-categories");
     return {};
   });
 }

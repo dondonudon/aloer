@@ -74,7 +74,7 @@ export async function paySupplier(poId: string, formData: FormData) {
     );
     revalidatePath(`/purchases/${poId}`);
     revalidatePath("/purchases");
-    revalidateTag("credit-pos", { expire: 0 });
+    revalidateTag("credit-pos");
     return { data };
   });
 }

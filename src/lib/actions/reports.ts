@@ -125,7 +125,6 @@ function localMidnight(dateStr: string, tz: string, endOfDay = false): string {
 }
 
 // Cached fetcher — keyed per day so the cache naturally expires at midnight.
-// Arguments are included in the cache key automatically by unstable_cache.
 const _getCachedTodaySales = unstable_cache(
   async (utcStart: string, utcEnd: string, localToday: string) => {
     const admin = createAdminClient();
@@ -138,16 +137,18 @@ const _getCachedTodaySales = unstable_cache(
 
     if (error) throw new Error(error.message);
 
-    const rows = data ?? [];
+    const rows = (data ?? []) as {
+      total_amount: number | null;
+      total_cogs: number | null;
+    }[];
+    const revenue = rows.reduce((s, r) => s + (r.total_amount ?? 0), 0);
+    const cogs = rows.reduce((s, r) => s + (r.total_cogs ?? 0), 0);
     return {
       date: localToday,
       total_transactions: rows.length,
-      total_revenue: rows.reduce((s, r) => s + r.total_amount, 0),
-      total_cogs: rows.reduce((s, r) => s + r.total_cogs, 0),
-      gross_profit: rows.reduce(
-        (s, r) => s + (r.total_amount - r.total_cogs),
-        0,
-      ),
+      total_revenue: revenue,
+      total_cogs: cogs,
+      gross_profit: revenue - cogs,
     };
   },
   ["today-sales"],
@@ -191,15 +192,21 @@ export async function getSalesSummary(
   }
 
   const supabase = await createClient();
-  const { data, error } = await supabase.rpc("get_sales_summary", {
+  let query = supabase.rpc("get_sales_summary", {
     p_start_date: effectiveStartDate ? `${effectiveStartDate}T00:00:00Z` : null,
     p_end_date: endDate ? `${endDate}T23:59:59Z` : null,
     p_timezone: tz,
     p_payment_type: paymentType || null,
   });
 
+  // Apply limit at the DB level via PostgREST range header — avoids fetching
+  // all rows just to slice them in JS.
+  if (limit) {
+    query = query.limit(limit);
+  }
+
+  const { data, error } = await query;
   if (error) throw new Error(error.message);
 
-  const result = (data ?? []) as import("@/lib/types").SalesSummaryRow[];
-  return limit ? result.slice(0, limit) : result;
+  return (data ?? []) as import("@/lib/types").SalesSummaryRow[];
 }

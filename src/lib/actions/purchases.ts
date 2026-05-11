@@ -204,8 +204,8 @@ export async function receivePurchaseOrder(poId: string) {
       "purchase_orders",
       poId,
     );
-    revalidateTag("stock-report", { expire: 0 });
-    revalidateTag("credit-pos", { expire: 0 });
+    revalidateTag("stock-report");
+    revalidateTag("credit-pos");
     revalidatePath("/purchases");
     revalidatePath("/inventory");
     revalidatePath("/reports");
@@ -248,7 +248,7 @@ export async function voidPurchaseOrder(poId: string, reason: string) {
       poId,
       { reason },
     );
-    revalidateTag("stock-report", { expire: 0 });
+    revalidateTag("stock-report");
     revalidatePath("/purchases");
     revalidatePath("/inventory");
     revalidatePath("/reports");
@@ -272,7 +272,7 @@ export async function createPurchaseReturn(input: CreatePurchaseReturnInput) {
         return_id: (data as { return_id: string }).return_id,
       },
     );
-    revalidateTag("stock-report", { expire: 0 });
+    revalidateTag("stock-report");
     revalidatePath("/purchases");
     revalidatePath("/inventory");
     revalidatePath("/reports");

@@ -86,7 +86,7 @@ export async function collectSalePayment(saleId: string, formData: FormData) {
     revalidatePath(`/sales/${saleId}`);
     revalidatePath("/sales");
     revalidatePath("/credit");
-    revalidateTag("credit-sales", { expire: 0 });
+    revalidateTag("credit-sales");
     return { data };
   });
 }

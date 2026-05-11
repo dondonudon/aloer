@@ -33,7 +33,7 @@ export async function reserveStock(input: ReserveStockInput) {
 
   if (error) return { error: await formatDbError(error) };
 
-  revalidateTag("stock-report", { expire: 0 });
+  revalidateTag("stock-report");
   revalidatePath("/pos");
   revalidatePath("/inventory");
   revalidatePath("/reports");
@@ -51,7 +51,7 @@ export async function releaseStockReservations(reference: string) {
 
   if (error) return { error: await formatDbError(error) };
 
-  revalidateTag("stock-report", { expire: 0 });
+  revalidateTag("stock-report");
   revalidatePath("/pos");
   revalidatePath("/inventory");
   revalidatePath("/reports");
@@ -70,7 +70,7 @@ export async function getInventoryBatches(productId?: string) {
     query = query.eq("product_id", productId);
   }
 
-  const { data, error } = await query;
+  const { data, error } = await query.limit(500);
   if (error) throw new Error(error.message);
   return data;
 }
@@ -87,7 +87,7 @@ export async function createAdjustment(input: CreateAdjustmentInput) {
       "CREATE_ADJUSTMENT",
       "inventory_adjustments",
     );
-    revalidateTag("stock-report", { expire: 0 });
+    revalidateTag("stock-report");
     revalidatePath("/inventory");
     revalidatePath("/reports");
     return { data };
@@ -98,32 +98,19 @@ export async function getAdjustments() {
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("inventory_adjustments")
-    .select("*")
-    .order("created_at", { ascending: false });
+    .select("*, profiles!created_by(full_name)")
+    .order("created_at", { ascending: false })
+    .limit(500);
 
   if (error) throw new Error(error.message);
 
-  const adjustments = data ?? [];
-  const userIds = [
-    ...new Set(
-      adjustments
-        .map((a) => a.created_by)
-        .filter((id): id is string => Boolean(id)),
-    ),
-  ];
-  const userNames: Record<string, string> = {};
-  if (userIds.length > 0) {
-    const { data: profiles } = await supabase
-      .from("profiles")
-      .select("id, full_name")
-      .in("id", userIds);
-    for (const p of profiles ?? []) {
-      userNames[p.id] = p.full_name;
-    }
-  }
-
-  return adjustments.map((a) => ({
-    ...a,
-    created_by_name: a.created_by ? (userNames[a.created_by] ?? null) : null,
-  }));
+  return (data ?? []).map((a) => {
+    const { profiles: profile, ...rest } = a as typeof a & {
+      profiles: { full_name: string } | null;
+    };
+    return {
+      ...rest,
+      created_by_name: profile?.full_name ?? null,
+    };
+  });
 }

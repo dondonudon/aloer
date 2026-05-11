@@ -1,13 +1,45 @@
 import { ClipboardList } from "lucide-react";
 import Link from "next/link";
+import { Suspense } from "react";
 import { InventoryListClient } from "@/components/inventory/inventory-list-client";
 import { Button } from "@/components/ui/button";
+import { SkeletonTable } from "@/components/ui/loading-skeletons";
 import { getStockReport } from "@/lib/actions/inventory";
 import { getServerTranslations } from "@/lib/i18n/server";
+import type { Translations } from "@/lib/i18n/translations";
 import { parsePage, parsePageSize } from "@/lib/pagination";
 
 interface Props {
   searchParams: Promise<Record<string, string | undefined>>;
+}
+
+async function InventoryTable({
+  tPromise,
+  dataPromise,
+  page,
+  pageSize,
+  search,
+  lowStockOnly,
+}: {
+  tPromise: Promise<Translations>;
+  dataPromise: ReturnType<typeof getStockReport>;
+  page: number;
+  pageSize: number;
+  search: string;
+  lowStockOnly: boolean;
+}) {
+  const [, stockReport] = await Promise.all([tPromise, dataPromise]);
+  const stock = Array.isArray(stockReport) ? stockReport : [];
+  return (
+    <InventoryListClient
+      key={`${page}-${pageSize}-${search}-${lowStockOnly}`}
+      stock={stock}
+      initialPage={page}
+      initialPageSize={pageSize}
+      initialSearch={search}
+      initialLowStockOnly={lowStockOnly}
+    />
+  );
 }
 
 export default async function InventoryPage({ searchParams }: Props) {
@@ -17,11 +49,11 @@ export default async function InventoryPage({ searchParams }: Props) {
   const search = params.search ?? "";
   const lowStockOnly = params.lowStock === "true";
 
-  const [t, stockReport] = await Promise.all([
-    getServerTranslations(),
-    getStockReport(),
-  ]);
-  const stock = Array.isArray(stockReport) ? stockReport : [];
+  // Both fetches start in parallel. The header resolves as soon as translations
+  // are available (cached); the table streams in when the stock query finishes.
+  const tPromise = getServerTranslations();
+  const dataPromise = getStockReport();
+  const t = await tPromise;
 
   return (
     <div className="space-y-4">
@@ -37,14 +69,16 @@ export default async function InventoryPage({ searchParams }: Props) {
         </Link>
       </div>
 
-      <InventoryListClient
-        key={`${page}-${pageSize}-${search}-${lowStockOnly}`}
-        stock={stock}
-        initialPage={page}
-        initialPageSize={pageSize}
-        initialSearch={search}
-        initialLowStockOnly={lowStockOnly}
-      />
+      <Suspense fallback={<SkeletonTable rows={10} />}>
+        <InventoryTable
+          tPromise={tPromise}
+          dataPromise={dataPromise}
+          page={page}
+          pageSize={pageSize}
+          search={search}
+          lowStockOnly={lowStockOnly}
+        />
+      </Suspense>
 
       <div className="flex justify-end">
         <Link href="/inventory/adjustments">

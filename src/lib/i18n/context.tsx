@@ -8,18 +8,33 @@ import {
   useRef,
   useSyncExternalStore,
 } from "react";
-import { type Locale, localeMap, type Translations } from "./translations";
+import { en } from "./en";
+import type { Locale, Translations } from "./translations";
 
-interface I18nContextValue {
+// ---------------------------------------------------------------------------
+// Two separate contexts:
+//   I18nValueContext — { locale, t } — re-renders all consumers on locale change
+//   I18nSetterContext — { setLocale } — stable reference, never re-renders consumers
+// Components that only need to trigger a locale switch (e.g. the language
+// toggle button in the sidebar) should consume I18nSetterContext so they are
+// not re-rendered on every locale change.
+// ---------------------------------------------------------------------------
+
+interface I18nValueContextValue {
   locale: Locale;
-  /** Full translation dictionary for the current locale */
   t: Translations;
+}
+
+interface I18nSetterContextValue {
   setLocale: (locale: Locale) => void;
 }
 
-const I18nContext = createContext<I18nContextValue>({
+const I18nValueContext = createContext<I18nValueContextValue>({
   locale: "en",
-  t: localeMap.en,
+  t: en,
+});
+
+const I18nSetterContext = createContext<I18nSetterContextValue>({
   setLocale: () => {},
 });
 
@@ -29,6 +44,20 @@ const I18nContext = createContext<I18nContextValue>({
 // ---------------------------------------------------------------------------
 
 let currentLocale: Locale = "en";
+// Dict cache — `en` is always present (static import); `id` is loaded on demand
+// so that English users never download the Indonesian dictionary.
+const dictCache: Partial<Record<Locale, Translations>> = { en };
+
+/** Lazily loads a locale's dictionary and fires a re-render when ready. */
+async function loadDict(locale: Locale): Promise<Translations> {
+  if (dictCache[locale]) return dictCache[locale] as Translations;
+  if (locale === "id") {
+    const mod = await import("./id");
+    dictCache.id = mod.id;
+    return mod.id;
+  }
+  return en;
+}
 
 function subscribe(callback: () => void) {
   window.addEventListener("pos-locale-change", callback);
@@ -43,11 +72,19 @@ function getServerSnapshot(): Locale {
   return "en";
 }
 
-// Initialise from localStorage before first render.
+// Initialise from localStorage before first render. If the stored locale needs
+// a dictionary that isn't loaded yet, start fetching it immediately so the
+// flash duration is minimised.
 if (typeof window !== "undefined") {
   const stored = localStorage.getItem("pos-locale");
   if (stored === "en" || stored === "id") {
     currentLocale = stored;
+    if (stored !== "en") {
+      // Fire-and-forget: load dict in background; re-render once ready.
+      loadDict(stored).then(() => {
+        window.dispatchEvent(new Event("pos-locale-change"));
+      });
+    }
   }
 }
 
@@ -72,6 +109,10 @@ interface I18nProviderProps {
 /**
  * Provides i18n locale state and translation dictionary for all child
  * components via `useI18n()`.
+ *
+ * Internally uses two separate contexts:
+ * - `I18nValueContext` for `{ locale, t }` — triggers re-renders on locale change
+ * - `I18nSetterContext` for `{ setLocale }` — stable, never triggers re-renders
  */
 export function I18nProvider({
   children,
@@ -92,26 +133,36 @@ export function I18nProvider({
   useEffect(() => {
     const dbLocale = initialLocaleRef.current;
     if (!dbLocale || currentLocale === dbLocale) return;
-    currentLocale = dbLocale;
-    localStorage.setItem("pos-locale", dbLocale);
-    window.dispatchEvent(new Event("pos-locale-change"));
+    // Ensure the dict is loaded before switching so there's no flash.
+    loadDict(dbLocale).then(() => {
+      currentLocale = dbLocale;
+      localStorage.setItem("pos-locale", dbLocale);
+      window.dispatchEvent(new Event("pos-locale-change"));
+    });
   }, []);
 
-  const setLocale = useCallback(
-    (next: Locale) => {
-      if (next === currentLocale) return;
+  const onSaveRef = useRef(onSave);
+  onSaveRef.current = onSave;
+
+  // Stable setter — never changes identity, so I18nSetterContext consumers
+  // are never re-rendered due to locale changes.
+  const setLocale = useCallback((next: Locale) => {
+    if (next === currentLocale) return;
+    // Load the dict first, then commit the switch atomically.
+    loadDict(next).then(() => {
       currentLocale = next;
       localStorage.setItem("pos-locale", next);
       window.dispatchEvent(new Event("pos-locale-change"));
-      onSave?.(next);
-    },
-    [onSave],
-  );
+      onSaveRef.current?.(next);
+    });
+  }, []);
 
   return (
-    <I18nContext.Provider value={{ locale, t: localeMap[locale], setLocale }}>
-      {children}
-    </I18nContext.Provider>
+    <I18nSetterContext.Provider value={{ setLocale }}>
+      <I18nValueContext.Provider value={{ locale, t: dictCache[locale] ?? en }}>
+        {children}
+      </I18nValueContext.Provider>
+    </I18nSetterContext.Provider>
   );
 }
 
@@ -119,7 +170,20 @@ export function I18nProvider({
  * Returns `{ locale, t, setLocale }` for the current locale.
  * `t` is the full typed translation dictionary — use as `t.nav.dashboard`,
  * `t.sales.title`, etc.
+ *
+ * Components that only need `setLocale` (e.g. a language toggle) should use
+ * `useSetLocale()` to avoid re-rendering on every locale change.
  */
 export function useI18n() {
-  return useContext(I18nContext);
+  const { locale, t } = useContext(I18nValueContext);
+  const { setLocale } = useContext(I18nSetterContext);
+  return { locale, t, setLocale };
+}
+
+/**
+ * Returns only `setLocale`. Components consuming this hook are never
+ * re-rendered when the active locale changes.
+ */
+export function useSetLocale() {
+  return useContext(I18nSetterContext).setLocale;
 }

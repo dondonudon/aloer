@@ -1,11 +1,52 @@
 import Link from "next/link";
+import { Suspense } from "react";
 import { SalesListClient } from "@/components/sales/sales-list-client";
+import { SkeletonTable } from "@/components/ui/loading-skeletons";
 import { getSales } from "@/lib/actions/sales";
 import { getServerTranslations } from "@/lib/i18n/server";
+import type { Translations } from "@/lib/i18n/translations";
 import { parsePage, parsePageSize } from "@/lib/pagination";
+import type { Sale } from "@/lib/types";
 
 interface Props {
   searchParams: Promise<Record<string, string | undefined>>;
+}
+
+async function SalesTable({
+  tPromise,
+  dataPromise,
+  page,
+  limit,
+  search,
+  startDate,
+  endDate,
+  status,
+  paymentMethod,
+}: {
+  tPromise: Promise<Translations>;
+  dataPromise: ReturnType<typeof getSales>;
+  page: number;
+  limit: number;
+  search: string;
+  startDate: string;
+  endDate: string;
+  status: string;
+  paymentMethod: string;
+}) {
+  const [, { data: sales, count }] = await Promise.all([tPromise, dataPromise]);
+  return (
+    <SalesListClient
+      sales={sales as Sale[]}
+      total={count}
+      page={page}
+      pageSize={limit}
+      search={search}
+      startDate={startDate}
+      endDate={endDate}
+      status={status}
+      paymentMethod={paymentMethod}
+    />
+  );
 }
 
 export default async function SalesPage({ searchParams }: Props) {
@@ -21,18 +62,20 @@ export default async function SalesPage({ searchParams }: Props) {
   const paymentMethod = params.paymentMethod ?? "";
   const limit = parsePageSize(params.limit);
 
-  const [t, { data: sales, count }] = await Promise.all([
-    getServerTranslations(),
-    getSales({
-      search,
-      startDate,
-      endDate,
-      status,
-      paymentMethod,
-      page,
-      limit,
-    }),
-  ]);
+  // Kick off both fetches in parallel — translations are fast (cached),
+  // data query runs concurrently. The header renders as soon as translations
+  // resolve; the table streams in once the DB query completes.
+  const tPromise = getServerTranslations();
+  const dataPromise = getSales({
+    search,
+    startDate,
+    endDate,
+    status,
+    paymentMethod,
+    page,
+    limit,
+  });
+  const t = await tPromise;
 
   return (
     <div className="space-y-4">
@@ -48,17 +91,19 @@ export default async function SalesPage({ searchParams }: Props) {
         </Link>
       </div>
 
-      <SalesListClient
-        sales={sales}
-        total={count}
-        page={page}
-        pageSize={limit}
-        search={search}
-        startDate={startDate}
-        endDate={endDate}
-        status={status}
-        paymentMethod={paymentMethod}
-      />
+      <Suspense fallback={<SkeletonTable rows={10} />}>
+        <SalesTable
+          tPromise={tPromise}
+          dataPromise={dataPromise}
+          page={page}
+          limit={limit}
+          search={search}
+          startDate={startDate}
+          endDate={endDate}
+          status={status}
+          paymentMethod={paymentMethod}
+        />
+      </Suspense>
     </div>
   );
 }

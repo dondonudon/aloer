@@ -118,7 +118,7 @@ export function ReceiptModal({
         </head>
         <body>
           <div style="display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:4px;">
-            ${storeLogoUrl ? `<img src="${storeLogoUrl}" alt="" style="height:36px;width:36px;object-fit:contain;" />` : ""}
+            ${storeLogoUrl ? `<img src="${storeLogoUrl.replace(/["<>]/g, "")}" alt="" style="height:36px;width:36px;object-fit:contain;" />` : ""}
             <div class="bold" style="font-size:15px;">${storeName}</div>
           </div>
           <div class="center" style="font-size:11px;">${formatDateTime(receipt.createdAt)}</div>

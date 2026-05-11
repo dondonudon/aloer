@@ -18,7 +18,7 @@ export async function saveTheme(theme: "light" | "dark"): Promise<void> {
   if (!user) return;
 
   await supabase.from("user_roles").update({ theme }).eq("user_id", user.id);
-  revalidateTag(`user-${user.id}`, { expire: 0 });
+  revalidateTag(`user-${user.id}`);
 }
 
 /**
@@ -33,7 +33,7 @@ export async function saveLocale(locale: "en" | "id"): Promise<void> {
   if (!user) return;
 
   await supabase.from("user_roles").update({ locale }).eq("user_id", user.id);
-  revalidateTag(`user-${user.id}`, { expire: 0 });
+  revalidateTag(`user-${user.id}`);
 }
 
 export interface ManagedUser {
@@ -115,8 +115,8 @@ export async function setUserRole(
       .upsert({ user_id: userId, role }, { onConflict: "user_id" });
   }
 
-  revalidateTag(`user-${userId}`, { expire: 0 });
-  revalidateTag("managed-users", { expire: 0 });
+  revalidateTag(`user-${userId}`);
+  revalidateTag("managed-users");
   revalidatePath("/settings");
   return {};
 }

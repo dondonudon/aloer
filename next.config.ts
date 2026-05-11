@@ -8,6 +8,29 @@ if (
 }
 
 const nextConfig: NextConfig = {
+  // Don't advertise the framework version to the outside world.
+  poweredByHeader: false,
+
+  // Ensure gzip compression is active on self-hosted deployments that don't
+  // sit behind a reverse-proxy that handles compression.
+  compress: true,
+
+  async headers() {
+    return [
+      {
+        source: "/(.*)",
+        headers: [
+          { key: "X-Content-Type-Options", value: "nosniff" },
+          { key: "X-Frame-Options", value: "DENY" },
+          {
+            key: "Referrer-Policy",
+            value: "strict-origin-when-cross-origin",
+          },
+        ],
+      },
+    ];
+  },
+
   images: {
     remotePatterns: [
       {

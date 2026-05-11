@@ -67,7 +67,7 @@ async function fanOutToOwners(
   let notified = 0;
   let errors = 0;
   for (const owner of owners) {
-    const t = getTranslationsForLocale(owner.locale);
+    const t = await getTranslationsForLocale(owner.locale);
     const { title, body } = target.build(t);
     try {
       const result = await sendPushToUser(owner.user_id, {
