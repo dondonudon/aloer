@@ -52,7 +52,7 @@ export async function createSupplier(formData: FormData) {
     );
     revalidatePath("/purchases");
     revalidatePath("/catalog/suppliers");
-    revalidateTag("suppliers");
+    revalidateTag("suppliers", { expire: 0 });
     return {};
   });
 }
@@ -76,7 +76,7 @@ export async function updateSupplier(id: string, formData: FormData) {
     await insertAuditLog(supabase, userId, "UPDATE_SUPPLIER", "suppliers", id);
     revalidatePath("/purchases");
     revalidatePath("/catalog/suppliers");
-    revalidateTag("suppliers");
+    revalidateTag("suppliers", { expire: 0 });
     return {};
   });
 }

@@ -68,7 +68,7 @@ export async function updateStoreSettings(formData: FormData) {
       })
       .eq("id", existing.id);
     if (error) return { error: await formatDbError(error) };
-    revalidateTag("store-settings");
+    revalidateTag("store-settings", { expire: 0 });
     revalidatePath("/", "layout");
     return {};
   });

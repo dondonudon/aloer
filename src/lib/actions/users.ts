@@ -18,7 +18,7 @@ export async function saveTheme(theme: "light" | "dark"): Promise<void> {
   if (!user) return;
 
   await supabase.from("user_roles").update({ theme }).eq("user_id", user.id);
-  revalidateTag(`user-${user.id}`);
+  revalidateTag(`user-${user.id}`, { expire: 0 });
 }
 
 /**
@@ -33,7 +33,7 @@ export async function saveLocale(locale: "en" | "id"): Promise<void> {
   if (!user) return;
 
   await supabase.from("user_roles").update({ locale }).eq("user_id", user.id);
-  revalidateTag(`user-${user.id}`);
+  revalidateTag(`user-${user.id}`, { expire: 0 });
 }
 
 export interface ManagedUser {
@@ -59,7 +59,9 @@ const _getCachedUsers = unstable_cache(
       .select("user_id, role");
 
     const roleMap = new Map(
-      roles?.map((r) => [r.user_id, r.role as UserRole]) ?? [],
+      (roles as unknown as { user_id: string; role: string }[] | null)?.map(
+        (r) => [r.user_id, r.role as UserRole],
+      ) ?? [],
     );
 
     return authUsers.users.map((u) => ({
@@ -115,8 +117,8 @@ export async function setUserRole(
       .upsert({ user_id: userId, role }, { onConflict: "user_id" });
   }
 
-  revalidateTag(`user-${userId}`);
-  revalidateTag("managed-users");
+  revalidateTag(`user-${userId}`, { expire: 0 });
+  revalidateTag("managed-users", { expire: 0 });
   revalidatePath("/settings");
   return {};
 }

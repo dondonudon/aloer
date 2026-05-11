@@ -70,7 +70,7 @@ export async function createReseller(formData: FormData) {
     );
     revalidatePath("/catalog/resellers");
     revalidatePath("/pos");
-    revalidateTag("active-resellers");
+    revalidateTag("active-resellers", { expire: 0 });
     return {};
   });
 }
@@ -95,7 +95,7 @@ export async function updateReseller(id: string, formData: FormData) {
     await insertAuditLog(supabase, userId, "UPDATE_RESELLER", "resellers", id);
     revalidatePath("/catalog/resellers");
     revalidatePath("/pos");
-    revalidateTag("active-resellers");
+    revalidateTag("active-resellers", { expire: 0 });
     return {};
   });
 }

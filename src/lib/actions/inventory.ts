@@ -4,15 +4,19 @@ import { revalidatePath, revalidateTag, unstable_cache } from "next/cache";
 import { getCurrentUser } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
-import type { CreateAdjustmentInput, ReserveStockInput } from "@/lib/types";
+import type {
+  CreateAdjustmentInput,
+  ReserveStockInput,
+  StockReportRow,
+} from "@/lib/types";
 import { formatDbError, insertAuditLog, ownerAction } from "./action-utils";
 
 const getCachedStockReport = unstable_cache(
-  async () => {
+  async (): Promise<StockReportRow[]> => {
     const admin = createAdminClient();
     const { data, error } = await admin.rpc("get_stock_report");
     if (error) throw new Error(error.message);
-    return data ?? [];
+    return (data ?? []) as unknown as StockReportRow[];
   },
   ["stock-report"],
   { revalidate: 30, tags: ["stock-report"] },
@@ -33,7 +37,7 @@ export async function reserveStock(input: ReserveStockInput) {
 
   if (error) return { error: await formatDbError(error) };
 
-  revalidateTag("stock-report");
+  revalidateTag("stock-report", { expire: 0 });
   revalidatePath("/pos");
   revalidatePath("/inventory");
   revalidatePath("/reports");
@@ -51,7 +55,7 @@ export async function releaseStockReservations(reference: string) {
 
   if (error) return { error: await formatDbError(error) };
 
-  revalidateTag("stock-report");
+  revalidateTag("stock-report", { expire: 0 });
   revalidatePath("/pos");
   revalidatePath("/inventory");
   revalidatePath("/reports");
@@ -87,7 +91,7 @@ export async function createAdjustment(input: CreateAdjustmentInput) {
       "CREATE_ADJUSTMENT",
       "inventory_adjustments",
     );
-    revalidateTag("stock-report");
+    revalidateTag("stock-report", { expire: 0 });
     revalidatePath("/inventory");
     revalidatePath("/reports");
     return { data };

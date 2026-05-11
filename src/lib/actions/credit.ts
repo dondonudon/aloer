@@ -86,7 +86,7 @@ export async function collectSalePayment(saleId: string, formData: FormData) {
     revalidatePath(`/sales/${saleId}`);
     revalidatePath("/sales");
     revalidatePath("/credit");
-    revalidateTag("credit-sales");
+    revalidateTag("credit-sales", { expire: 0 });
     return { data };
   });
 }
@@ -110,9 +110,19 @@ const _getCachedOutstandingCreditSales = unstable_cache(
 
     if (error) throw new Error(error.message);
 
-    return (data ?? []).map((sale) => {
-      const payments =
-        (sale.sale_credit_payments as { amount: number }[] | null) ?? [];
+    type SaleRow = {
+      id: string;
+      invoice_number: string;
+      total_amount: number;
+      created_at: string;
+      created_by: string | null;
+      reseller_id: string | null;
+      due_date: string | null;
+      resellers: { name: string } | null;
+      sale_credit_payments: { amount: number }[] | null;
+    };
+    return ((data ?? []) as unknown as SaleRow[]).map((sale) => {
+      const payments = sale.sale_credit_payments ?? [];
       const collected = payments.reduce((sum, p) => sum + p.amount, 0);
       return {
         id: sale.id,
@@ -121,7 +131,7 @@ const _getCachedOutstandingCreditSales = unstable_cache(
         created_at: sale.created_at,
         created_by: sale.created_by,
         reseller_id: sale.reseller_id,
-        due_date: sale.due_date as string | null,
+        due_date: sale.due_date,
         resellers: sale.resellers,
         collected,
         outstanding: sale.total_amount - collected,
@@ -155,16 +165,24 @@ const _getCachedOutstandingCreditPOs = unstable_cache(
 
     if (error) throw new Error(error.message);
 
-    return (data ?? []).map((po) => {
-      const payments =
-        (po.supplier_payments as { amount: number }[] | null) ?? [];
+    type PORow = {
+      id: string;
+      po_number: string;
+      total_amount: number;
+      created_at: string;
+      due_date: string | null;
+      suppliers: { name: string } | null;
+      supplier_payments: { amount: number }[] | null;
+    };
+    return ((data ?? []) as unknown as PORow[]).map((po) => {
+      const payments = po.supplier_payments ?? [];
       const paid = payments.reduce((sum, p) => sum + p.amount, 0);
       return {
         id: po.id,
         po_number: po.po_number,
         total_amount: po.total_amount,
         created_at: po.created_at,
-        due_date: po.due_date as string | null,
+        due_date: po.due_date,
         suppliers: po.suppliers,
         paid,
         outstanding: po.total_amount - paid,
