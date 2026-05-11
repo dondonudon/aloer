@@ -19,7 +19,13 @@ function fetchUserProfile(userId: string) {
         .select("role, theme, locale")
         .eq("user_id", userId)
         .single();
-      return data ?? null;
+      return (
+        (data as unknown as {
+          role: string;
+          theme: string | null;
+          locale: string | null;
+        } | null) ?? null
+      );
     },
     [`user-profile-${userId}`],
     { revalidate: 60, tags: [`user-${userId}`] },
