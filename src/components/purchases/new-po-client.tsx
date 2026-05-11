@@ -49,7 +49,6 @@ export function NewPurchaseOrderClient({ products, suppliers }: Props) {
 
   function addItem() {
     setItems((prev) => [
-      ...prev,
       {
         id: nextItemId++,
         product_id: "",
@@ -57,6 +56,7 @@ export function NewPurchaseOrderClient({ products, suppliers }: Props) {
         cost_price: "",
         expiry_date: "",
       },
+      ...prev,
     ]);
   }
 
@@ -131,15 +131,16 @@ export function NewPurchaseOrderClient({ products, suppliers }: Props) {
   ];
 
   return (
-    <div className="max-w-3xl space-y-6">
+    <div className="max-w-3xl space-y-4">
       <PageHeader
         title={t.purchases.newPOTitle}
         backHref="/purchases"
         backLabel={t.purchases.title}
       />
 
-      <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-6 space-y-4">
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+      {/* Order details */}
+      <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-4 space-y-3">
+        <div className="grid grid-cols-2 gap-3">
           <Select
             label={t.purchases.supplier}
             options={supplierOptions}
@@ -169,29 +170,38 @@ export function NewPurchaseOrderClient({ products, suppliers }: Props) {
           onChange={(e) => setNotes(e.target.value)}
           placeholder={t.purchases.additionalNotes}
         />
+      </div>
 
-        <div className="space-y-3">
-          <div className="flex items-center justify-between">
-            <h2 className="text-sm font-semibold text-gray-700 dark:text-gray-300">
-              {t.purchases.items}
-            </h2>
-            <Button
-              type="button"
-              size="sm"
-              variant="secondary"
-              onClick={addItem}
-            >
-              <Plus className="h-3 w-3" aria-hidden="true" />
-              {t.purchases.addItem}
-            </Button>
+      {/* Items section */}
+      <div className="space-y-3">
+        <div className="flex items-center justify-between">
+          <h2 className="text-sm font-semibold text-gray-700 dark:text-gray-300">
+            {t.purchases.items}
+            {items.length > 0 && (
+              <span className="ml-2 text-xs font-normal text-gray-400">
+                ({items.length})
+              </span>
+            )}
+          </h2>
+          <Button type="button" size="sm" onClick={addItem}>
+            <Plus className="h-3 w-3" aria-hidden="true" />
+            {t.purchases.addItem}
+          </Button>
+        </div>
+
+        {items.length === 0 && (
+          <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-6 text-center">
+            <p className="text-sm text-gray-400">{t.purchases.noItemsAdded}</p>
           </div>
+        )}
 
-          {items.map((item, index) => (
-            <div
-              key={item.id}
-              className="grid grid-cols-1 sm:grid-cols-5 gap-3 p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg"
-            >
-              <div className="sm:col-span-2">
+        {items.map((item, index) => (
+          <div
+            key={item.id}
+            className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-4 space-y-3"
+          >
+            <div className="flex items-start justify-between gap-2">
+              <div className="flex-1 min-w-0">
                 <SearchableSelect
                   label={t.purchases.product}
                   options={productOptions}
@@ -202,6 +212,16 @@ export function NewPurchaseOrderClient({ products, suppliers }: Props) {
                   noResultsLabel={t.common.noDataFound}
                 />
               </div>
+              <button
+                type="button"
+                onClick={() => removeItem(index)}
+                className="mt-6 p-2 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 text-red-400 hover:text-red-600 transition-colors shrink-0"
+                aria-label={t.purchases.removeItem}
+              >
+                <Trash2 className="h-4 w-4" aria-hidden="true" />
+              </button>
+            </div>
+            <div className="grid grid-cols-3 gap-3">
               <Input
                 label={t.purchases.quantity}
                 type="number"
@@ -216,48 +236,31 @@ export function NewPurchaseOrderClient({ products, suppliers }: Props) {
                   updateItem(index, "cost_price", e.target.value)
                 }
               />
-              <div className="flex items-end gap-2">
-                <div className="flex-1 min-w-0">
-                  <Input
-                    label={t.purchases.expiry}
-                    type="date"
-                    value={item.expiry_date}
-                    onChange={(e) =>
-                      updateItem(index, "expiry_date", e.target.value)
-                    }
-                  />
-                </div>
-                <button
-                  type="button"
-                  onClick={() => removeItem(index)}
-                  className="p-2 rounded hover:bg-red-100 text-red-500 transition-colors mb-0.5 shrink-0"
-                  aria-label={t.purchases.removeItem}
-                >
-                  <Trash2 className="h-4 w-4" aria-hidden="true" />
-                </button>
-              </div>
+              <Input
+                label={t.purchases.expiry}
+                type="date"
+                value={item.expiry_date}
+                onChange={(e) =>
+                  updateItem(index, "expiry_date", e.target.value)
+                }
+              />
             </div>
-          ))}
+          </div>
+        ))}
+      </div>
 
-          {items.length === 0 && (
-            <p className="text-sm text-gray-400 text-center py-4">
-              {t.purchases.noItemsAdded}
-            </p>
-          )}
-        </div>
-
-        <div className="flex justify-end gap-2 pt-4">
-          <Button variant="secondary" onClick={() => router.push("/purchases")}>
-            Cancel
-          </Button>
-          <Button
-            onClick={handleSubmit}
-            loading={loading}
-            disabled={items.length === 0}
-          >
-            {loading ? "Creating..." : "Create PO"}
-          </Button>
-        </div>
+      {/* Submit actions */}
+      <div className="flex justify-end gap-2 pb-6">
+        <Button variant="secondary" onClick={() => router.push("/purchases")}>
+          Cancel
+        </Button>
+        <Button
+          onClick={handleSubmit}
+          loading={loading}
+          disabled={items.length === 0}
+        >
+          {loading ? "Creating..." : "Create PO"}
+        </Button>
       </div>
 
       {toast && (
