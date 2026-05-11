@@ -27,23 +27,7 @@ export async function POST(req: Request) {
   }
 
   const admin = createAdminClient();
-  type PushSubRow = {
-    user_id: string;
-    endpoint: string;
-    p256dh: string;
-    auth: string;
-    user_agent: string | null;
-    last_seen_at: string;
-  };
-  type PushSubBuilder = {
-    upsert: (
-      values: PushSubRow,
-      options: { onConflict: string },
-    ) => Promise<{ error: { message: string } | null }>;
-  };
-  const { error } = await (
-    admin.from("push_subscriptions") as unknown as PushSubBuilder
-  ).upsert(
+  const { error } = await admin.from("push_subscriptions").upsert(
     {
       user_id: user.id,
       endpoint,

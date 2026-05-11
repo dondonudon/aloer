@@ -112,7 +112,8 @@ export function POSClient({
     } else {
       setReceipt(
         buildReceiptData(
-          result.data?.invoice_number ?? "",
+          (result.data as { invoice_number?: string } | null)?.invoice_number ??
+            "",
           isCreditSale ? [] : payments,
           isCreditSale,
         ),

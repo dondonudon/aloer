@@ -110,19 +110,10 @@ const _getCachedOutstandingCreditSales = unstable_cache(
 
     if (error) throw new Error(error.message);
 
-    type SaleRow = {
-      id: string;
-      invoice_number: string;
-      total_amount: number;
-      created_at: string;
-      created_by: string | null;
-      reseller_id: string | null;
-      due_date: string | null;
-      resellers: { name: string } | null;
-      sale_credit_payments: { amount: number }[] | null;
-    };
-    return ((data ?? []) as unknown as SaleRow[]).map((sale) => {
-      const payments = sale.sale_credit_payments ?? [];
+    return (data ?? []).map((sale) => {
+      const payments = (sale.sale_credit_payments ?? []) as {
+        amount: number;
+      }[];
       const collected = payments.reduce((sum, p) => sum + p.amount, 0);
       return {
         id: sale.id,
@@ -165,17 +156,8 @@ const _getCachedOutstandingCreditPOs = unstable_cache(
 
     if (error) throw new Error(error.message);
 
-    type PORow = {
-      id: string;
-      po_number: string;
-      total_amount: number;
-      created_at: string;
-      due_date: string | null;
-      suppliers: { name: string } | null;
-      supplier_payments: { amount: number }[] | null;
-    };
-    return ((data ?? []) as unknown as PORow[]).map((po) => {
-      const payments = po.supplier_payments ?? [];
+    return (data ?? []).map((po) => {
+      const payments = (po.supplier_payments ?? []) as { amount: number }[];
       const paid = payments.reduce((sum, p) => sum + p.amount, 0);
       return {
         id: po.id,

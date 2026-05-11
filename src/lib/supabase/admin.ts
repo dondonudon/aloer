@@ -1,10 +1,11 @@
 // Supabase admin client (service role) for Server Actions only
 import { createClient } from "@supabase/supabase-js";
+import type { Database } from "./database.types";
 
 // Singleton — the service-role client is stateless (no user session) so it is
 // safe to share a single instance across all server-side calls in the same
 // worker process, avoiding repeated construction overhead.
-let _adminClient: ReturnType<typeof createClient> | undefined;
+let _adminClient: ReturnType<typeof createClient<Database>> | undefined;
 
 export function createAdminClient() {
   if (_adminClient) return _adminClient;
@@ -13,6 +14,8 @@ export function createAdminClient() {
   if (!url || !key) {
     throw new Error("Missing SUPABASE_URL or SERVICE_ROLE_KEY env vars");
   }
-  _adminClient = createClient(url, key, { auth: { persistSession: false } });
+  _adminClient = createClient<Database>(url, key, {
+    auth: { persistSession: false },
+  });
   return _adminClient;
 }

@@ -1,6 +1,7 @@
 // Supabase client for Server Components and Server Actions
 import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
+import type { Database } from "./database.types";
 
 export async function createClient() {
   const cookieStore = await cookies();
@@ -10,7 +11,7 @@ export async function createClient() {
   if (!url || !key) {
     throw new Error("Missing SUPABASE_URL or ANON_KEY env vars");
   }
-  return createServerClient(url, key, {
+  return createServerClient<Database>(url, key, {
     cookies: {
       getAll() {
         return cookieStore.getAll();

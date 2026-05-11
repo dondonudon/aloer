@@ -1,7 +1,6 @@
 import { ImageResponse } from "next/og";
 import type { NextRequest } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
-import type { Campaign, Product } from "@/lib/types";
 
 export const runtime = "nodejs";
 
@@ -63,12 +62,9 @@ export async function GET(
       .eq("campaign_products.product_id", id),
   ]);
 
-  const product = productRaw as unknown as Product | null;
-  const storeSettings = storeSettingsRaw as unknown as {
-    store_name: string;
-    store_icon_url: string | null;
-  } | null;
-  const campaigns = campaignsRaw as unknown as Campaign[] | null;
+  const product = productRaw;
+  const storeSettings = storeSettingsRaw;
+  const campaigns = campaignsRaw;
 
   if (productError || !product) {
     return new Response("Product not found", { status: 404 });

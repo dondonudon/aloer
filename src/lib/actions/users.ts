@@ -59,9 +59,7 @@ const _getCachedUsers = unstable_cache(
       .select("user_id, role");
 
     const roleMap = new Map(
-      (roles as unknown as { user_id: string; role: string }[] | null)?.map(
-        (r) => [r.user_id, r.role as UserRole],
-      ) ?? [],
+      roles?.map((r) => [r.user_id, r.role as UserRole]) ?? [],
     );
 
     return authUsers.users.map((u) => ({

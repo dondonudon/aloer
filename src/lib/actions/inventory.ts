@@ -3,6 +3,7 @@
 import { revalidatePath, revalidateTag, unstable_cache } from "next/cache";
 import { getCurrentUser } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
+import type { Json } from "@/lib/supabase/database.types";
 import { createClient } from "@/lib/supabase/server";
 import type {
   CreateAdjustmentInput,
@@ -16,7 +17,7 @@ const getCachedStockReport = unstable_cache(
     const admin = createAdminClient();
     const { data, error } = await admin.rpc("get_stock_report");
     if (error) throw new Error(error.message);
-    return (data ?? []) as unknown as StockReportRow[];
+    return data ?? [];
   },
   ["stock-report"],
   { revalidate: 30, tags: ["stock-report"] },
@@ -32,7 +33,7 @@ export async function reserveStock(input: ReserveStockInput) {
 
   const supabase = await createClient();
   const { data, error } = await supabase.rpc("reserve_stock", {
-    reservation_payload: input,
+    reservation_payload: input as unknown as Json,
   });
 
   if (error) return { error: await formatDbError(error) };

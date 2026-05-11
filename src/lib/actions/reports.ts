@@ -48,13 +48,8 @@ export async function getBalanceSheet(period?: string) {
   >();
 
   for (const line of data ?? []) {
-    const account = line.accounts as unknown as {
-      id: string;
-      code: string;
-      name: string;
-      type: string;
-    };
-    if (!account) continue;
+    const account = line.accounts;
+    if (!account || Array.isArray(account)) continue;
 
     const existing = accountMap.get(account.id);
     if (existing) {
@@ -193,10 +188,12 @@ export async function getSalesSummary(
 
   const supabase = await createClient();
   let query = supabase.rpc("get_sales_summary", {
-    p_start_date: effectiveStartDate ? `${effectiveStartDate}T00:00:00Z` : null,
-    p_end_date: endDate ? `${endDate}T23:59:59Z` : null,
+    p_start_date: effectiveStartDate
+      ? `${effectiveStartDate}T00:00:00Z`
+      : undefined,
+    p_end_date: endDate ? `${endDate}T23:59:59Z` : undefined,
     p_timezone: tz,
-    p_payment_type: paymentType || null,
+    p_payment_type: paymentType || undefined,
   });
 
   // Apply limit at the DB level via PostgREST range header — avoids fetching

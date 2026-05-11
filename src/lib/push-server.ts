@@ -43,13 +43,10 @@ export async function sendPushToUser(
   configure();
   const admin = createAdminClient();
 
-  const { data: subsRaw, error } = await admin
+  const { data: subs, error } = await admin
     .from("push_subscriptions")
     .select("endpoint, p256dh, auth")
     .eq("user_id", userId);
-  const subs = subsRaw as unknown as
-    | { endpoint: string; p256dh: string; auth: string }[]
-    | null;
 
   if (error) throw error;
   if (!subs || subs.length === 0) {

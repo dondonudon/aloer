@@ -2,9 +2,10 @@
 "use client";
 
 import { createBrowserClient } from "@supabase/ssr";
+import type { Database } from "./database.types";
 
 // Singleton — reused across the component tree to avoid redundant connections.
-let _client: ReturnType<typeof createBrowserClient> | null = null;
+let _client: ReturnType<typeof createBrowserClient<Database>> | null = null;
 
 export function createClient() {
   if (_client) return _client;
@@ -13,6 +14,6 @@ export function createClient() {
   if (!url || !key) {
     throw new Error("Missing SUPABASE_URL or ANON_KEY env vars");
   }
-  _client = createBrowserClient(url, key);
+  _client = createBrowserClient<Database>(url, key);
   return _client;
 }

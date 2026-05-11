@@ -20,12 +20,7 @@ const getCachedActiveCategories = unstable_cache(
       .order("name");
 
     if (error) throw new Error(error.message);
-    return (data ?? []) as unknown as {
-      id: string;
-      name: string;
-      is_active: boolean;
-      created_at: string;
-    }[];
+    return data ?? [];
   },
   ["active-categories"],
   { revalidate: 60, tags: ["active-categories"] },
