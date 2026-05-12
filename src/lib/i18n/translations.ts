@@ -149,6 +149,7 @@ export interface Translations {
     expandSidebar: string;
     collapseSidebar: string;
     language: string;
+    notifications: string;
   };
 
   dashboard: {
@@ -606,6 +607,12 @@ export interface Translations {
       purchaseTitle: string;
       /** Placeholders: {name}, {amount} */
       purchaseBody: string;
+    };
+    page: {
+      title: string;
+      /** Shown when there are no notifications yet */
+      empty: string;
+      markAllRead: string;
     };
   };
 

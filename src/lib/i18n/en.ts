@@ -125,6 +125,7 @@ export const en: Translations = {
     expandSidebar: "Expand sidebar",
     collapseSidebar: "Collapse sidebar",
     language: "Language",
+    notifications: "Notifications",
   },
 
   dashboard: {
@@ -578,6 +579,11 @@ export const en: Translations = {
       salesBody: "{name} still owes Rp {amount}",
       purchaseTitle: "Supplier payment due tomorrow",
       purchaseBody: "Pay {name} Rp {amount}",
+    },
+    page: {
+      title: "Notifications",
+      empty: "You're all caught up — no notifications yet.",
+      markAllRead: "Mark all as read",
     },
   },
 

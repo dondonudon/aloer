@@ -5,11 +5,13 @@ import { AuthenticatedThemeProvider } from "@/components/ui/authenticated-theme-
 import { Sidebar } from "@/components/ui/sidebar";
 import { SidebarSkeleton } from "@/components/ui/sidebar-skeleton";
 import { StoreProvider } from "@/components/ui/store-context";
+import { getUnreadNotificationsCount } from "@/lib/actions/notifications";
 import { getStoreSettings } from "@/lib/actions/store-settings";
 import { getCurrentUser } from "@/lib/auth";
 
 type UserPromise = ReturnType<typeof getCurrentUser>;
 type StoreSettingsPromise = ReturnType<typeof getStoreSettings>;
+type UnreadCountPromise = ReturnType<typeof getUnreadNotificationsCount>;
 
 // Both sidebar and main content are wrapped in the same providers so that
 // the sidebar's setLocale has access to onSave={saveLocale}. Previously the
@@ -19,14 +21,17 @@ async function AuthenticatedShell({
   children,
   userPromise,
   storeSettingsPromise,
+  unreadCountPromise,
 }: {
   children: React.ReactNode;
   userPromise: UserPromise;
   storeSettingsPromise: StoreSettingsPromise;
+  unreadCountPromise: UnreadCountPromise;
 }) {
-  const [user, storeSettings] = await Promise.all([
+  const [user, storeSettings, unreadNotifications] = await Promise.all([
     userPromise,
     storeSettingsPromise,
+    unreadCountPromise,
   ]);
   if (!user) redirect("/login");
 
@@ -39,6 +44,7 @@ async function AuthenticatedShell({
             userName={user.name}
             storeName={storeSettings.store_name}
             storeIconUrl={storeSettings.store_icon_url}
+            unreadNotifications={unreadNotifications}
           />
           {/* pt-14 clears the fixed mobile top bar; removed on lg+ where the bar is hidden */}
           <main className="flex-1 overflow-y-auto pt-14 lg:pt-0">
@@ -69,12 +75,13 @@ export default function AuthenticatedLayout({
 }: {
   children: React.ReactNode;
 }) {
-  // Kick off both fetches without awaiting — getCurrentUser is React-cached so
+  // Kick off all fetches without awaiting — getCurrentUser is React-cached so
   // the same promise is reused by getServerTranslations() and any page-level
   // call. The shell HTML flushes immediately; the Suspense boundary below
-  // resolves once auth + store settings are ready.
+  // resolves once auth + store settings + unread count are ready.
   const userPromise = getCurrentUser();
   const storeSettingsPromise = getStoreSettings();
+  const unreadCountPromise = getUnreadNotificationsCount().catch(() => 0);
 
   return (
     <div className="flex h-screen overflow-hidden bg-gray-50 dark:bg-gray-900">
@@ -82,6 +89,7 @@ export default function AuthenticatedLayout({
         <AuthenticatedShell
           userPromise={userPromise}
           storeSettingsPromise={storeSettingsPromise}
+          unreadCountPromise={unreadCountPromise}
         >
           {children}
         </AuthenticatedShell>

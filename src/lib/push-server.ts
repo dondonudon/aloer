@@ -33,7 +33,9 @@ interface SendResult {
   failed: number;
 }
 
-// Sends `payload` to every push_subscription belonging to `userId`.
+// Sends `payload` to every push_subscription belonging to `userId` and
+// persists a notification inbox row so the user can review it in-app even
+// after dismissing the device alert.
 // Subscriptions that return 404/410 are stale (user revoked or browser
 // dropped them) — we delete those so the table doesn't accumulate dead rows.
 export async function sendPushToUser(
@@ -42,6 +44,25 @@ export async function sendPushToUser(
 ): Promise<SendResult> {
   configure();
   const admin = createAdminClient();
+
+  // Persist to the in-app notification inbox regardless of push subscription
+  // status — users without a subscription can still read notifications here.
+  // Tagged notifications (e.g. credit-due reminders) are upserted so a cron
+  // re-run on the same day doesn't create duplicate inbox entries.
+  const notifRow = {
+    user_id: userId,
+    title: payload.title,
+    body: payload.body ?? null,
+    url: payload.url ?? null,
+    tag: payload.tag ?? null,
+  };
+  if (payload.tag) {
+    await admin
+      .from("notifications")
+      .upsert(notifRow, { onConflict: "user_id,tag" });
+  } else {
+    await admin.from("notifications").insert(notifRow);
+  }
 
   const { data: subs, error } = await admin
     .from("push_subscriptions")

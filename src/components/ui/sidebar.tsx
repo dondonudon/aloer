@@ -1,6 +1,7 @@
 "use client";
 
 import {
+  Bell,
   ChevronDown,
   Globe,
   LogOut,
@@ -31,6 +32,7 @@ interface SidebarProps {
   userName: string;
   storeName: string;
   storeIconUrl?: string | null;
+  unreadNotifications?: number;
 }
 
 // Memoised nav link — re-renders only when its props change. Prevents the
@@ -79,6 +81,7 @@ function SidebarFooter({
   setLocale,
   theme,
   toggleTheme,
+  unreadNotifications,
 }: {
   userName: string;
   userRole: UserRole;
@@ -88,6 +91,7 @@ function SidebarFooter({
   setLocale: (locale: "en" | "id") => void;
   theme: "light" | "dark";
   toggleTheme: () => void;
+  unreadNotifications?: number;
 }) {
   return (
     <div
@@ -120,6 +124,20 @@ function SidebarFooter({
         <div
           className={`flex items-center gap-1 ${collapsed ? "flex-col" : ""}`}
         >
+          <Link
+            href="/notifications"
+            className="relative p-2 rounded-lg text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+            aria-label={t.nav.notifications}
+            title={t.nav.notifications}
+          >
+            <Bell className="h-4 w-4" />
+            {(unreadNotifications ?? 0) > 0 && (
+              <span
+                className="absolute top-1 right-1 h-2 w-2 rounded-full bg-red-500"
+                aria-hidden="true"
+              />
+            )}
+          </Link>
           <button
             type="button"
             onClick={() => setLocale(locale === "en" ? "id" : "en")}
@@ -161,6 +179,7 @@ export function Sidebar({
   userName,
   storeName,
   storeIconUrl,
+  unreadNotifications,
 }: SidebarProps) {
   const pathname = usePathname();
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -282,6 +301,7 @@ export function Sidebar({
         setLocale={setLocale}
         theme={theme}
         toggleTheme={toggleTheme}
+        unreadNotifications={unreadNotifications}
       />
     </nav>
   );

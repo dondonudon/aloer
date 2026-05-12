@@ -123,6 +123,7 @@ export const id: Translations = {
     expandSidebar: "Perluas sidebar",
     collapseSidebar: "Ciutkan sidebar",
     language: "Bahasa",
+    notifications: "Notifikasi",
   },
 
   dashboard: {
@@ -577,6 +578,11 @@ export const id: Translations = {
       salesBody: "{name} masih berutang Rp {amount}",
       purchaseTitle: "Pembayaran pemasok jatuh tempo besok",
       purchaseBody: "Bayar {name} Rp {amount}",
+    },
+    page: {
+      title: "Notifikasi",
+      empty: "Tidak ada notifikasi.",
+      markAllRead: "Tandai semua dibaca",
     },
   },
 
