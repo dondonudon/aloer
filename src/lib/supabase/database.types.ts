@@ -736,6 +736,39 @@ export type Database = {
           },
         ];
       };
+      notifications: {
+        Row: {
+          id: string;
+          user_id: string;
+          title: string;
+          body: string | null;
+          url: string | null;
+          tag: string | null;
+          is_read: boolean;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          title: string;
+          body?: string | null;
+          url?: string | null;
+          tag?: string | null;
+          is_read?: boolean;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          title?: string;
+          body?: string | null;
+          url?: string | null;
+          tag?: string | null;
+          is_read?: boolean;
+          created_at?: string;
+        };
+        Relationships: [];
+      };
       push_subscriptions: {
         Row: {
           auth: string;
