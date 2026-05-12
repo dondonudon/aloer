@@ -50,10 +50,7 @@ export async function markNotificationRead(id: string): Promise<void> {
   if (!user) return;
 
   const supabase = await createClient();
-  await supabase
-    .from("notifications")
-    .update({ is_read: true })
-    .eq("id", id);
+  await supabase.from("notifications").update({ is_read: true }).eq("id", id);
 
   revalidatePath("/notifications");
 }
