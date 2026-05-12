@@ -40,7 +40,8 @@ function LoginForm() {
           alt="Aloer logo"
           width={500}
           height={500}
-          className="rounded-xl"
+          className="rounded-xl w-full"
+          sizes="(max-width: 640px) calc(100vw - 2rem), 384px"
           priority
         />
         <div className="text-center space-y-1">

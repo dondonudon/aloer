@@ -27,6 +27,7 @@ export async function createSale(input: CreateSaleInput) {
   revalidateTag("stock-report", { expire: 0 });
   revalidateTag("today-sales", { expire: 0 });
   revalidateTag("credit-sales", { expire: 0 });
+  revalidateTag("sales-summary", { expire: 0 });
   revalidatePath("/pos");
   revalidatePath("/inventory");
   revalidatePath("/reports");
@@ -179,6 +180,7 @@ export async function voidSale(saleId: string, reason: string) {
     revalidatePath("/reports");
     revalidatePath("/sales");
     revalidatePath("/sales/history");
+    revalidateTag("sales-summary", { expire: 0 });
     return { data };
   });
 }
@@ -202,6 +204,7 @@ export async function createSaleReturn(input: CreateSaleReturnInput) {
     revalidatePath("/sales");
     revalidatePath("/inventory");
     revalidatePath("/reports");
+    revalidateTag("sales-summary", { expire: 0 });
     return {
       data: data as {
         return_id: string;

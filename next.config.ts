@@ -42,6 +42,12 @@ const nextConfig: NextConfig = {
         pathname: "/storage/v1/object/public/**",
       },
     ],
+    // Prefer AVIF (smallest), fall back to WebP for browsers that don't support it.
+    formats: ["image/avif", "image/webp"],
+    // Cache optimised images for 30 days on Vercel's CDN.
+    // Static assets like logos rarely change; this avoids re-optimising on
+    // every cold-start and dramatically improves repeat-visit LCP.
+    minimumCacheTTL: 2592000,
   },
 };
 

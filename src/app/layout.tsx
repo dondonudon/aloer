@@ -48,12 +48,22 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const supabaseOrigin = process.env.NEXT_PUBLIC_SUPABASE_URL;
   return (
     <html
       lang="en"
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
       suppressHydrationWarning
     >
+      <head>
+        {supabaseOrigin && (
+          <link
+            rel="preconnect"
+            href={supabaseOrigin}
+            crossOrigin="anonymous"
+          />
+        )}
+      </head>
       <body className="min-h-full flex flex-col">
         <ThemeProvider>
           <I18nProvider>{children}</I18nProvider>

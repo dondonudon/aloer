@@ -166,6 +166,40 @@ export async function getTodaySales() {
   return _getCachedTodaySales(utcStart, utcEnd, localToday);
 }
 
+// Cached inner fetcher — uses admin client so it is not bound to
+// request-scoped cookies and can be shared across concurrent requests.
+// Cache key includes all query params; TTL matches today-sales (30 s).
+// Tagged "sales-summary" so mutations can revalidate it.
+const _getCachedSalesSummary = unstable_cache(
+  async (
+    effectiveStartDate: string | undefined,
+    endDate: string | undefined,
+    limit: number | undefined,
+    paymentType: string | undefined,
+    tz: string,
+  ) => {
+    const admin = createAdminClient();
+    let query = admin.rpc("get_sales_summary", {
+      p_start_date: effectiveStartDate
+        ? `${effectiveStartDate}T00:00:00Z`
+        : undefined,
+      p_end_date: endDate ? `${endDate}T23:59:59Z` : undefined,
+      p_timezone: tz,
+      p_payment_type: paymentType || undefined,
+    });
+
+    if (limit) {
+      query = query.limit(limit);
+    }
+
+    const { data, error } = await query;
+    if (error) throw new Error(error.message);
+    return (data ?? []) as import("@/lib/types").SalesSummaryRow[];
+  },
+  ["sales-summary"],
+  { revalidate: 30, tags: ["sales-summary"] },
+);
+
 export async function getSalesSummary(
   startDate?: string,
   endDate?: string,
@@ -186,24 +220,11 @@ export async function getSalesSummary(
     effectiveStartDate = d.toISOString().slice(0, 10);
   }
 
-  const supabase = await createClient();
-  let query = supabase.rpc("get_sales_summary", {
-    p_start_date: effectiveStartDate
-      ? `${effectiveStartDate}T00:00:00Z`
-      : undefined,
-    p_end_date: endDate ? `${endDate}T23:59:59Z` : undefined,
-    p_timezone: tz,
-    p_payment_type: paymentType || undefined,
-  });
-
-  // Apply limit at the DB level via PostgREST range header — avoids fetching
-  // all rows just to slice them in JS.
-  if (limit) {
-    query = query.limit(limit);
-  }
-
-  const { data, error } = await query;
-  if (error) throw new Error(error.message);
-
-  return (data ?? []) as import("@/lib/types").SalesSummaryRow[];
+  return _getCachedSalesSummary(
+    effectiveStartDate,
+    endDate,
+    limit,
+    paymentType,
+    tz,
+  );
 }
