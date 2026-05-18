@@ -139,13 +139,17 @@ export async function createPurchaseOrder(formData: FormData) {
     }>;
     try {
       const parsed: unknown = JSON.parse(formData.get("items") as string);
-      if (!Array.isArray(parsed) || parsed.length === 0) {
+      if (!Array.isArray(parsed)) {
         return { error: "Purchase order must contain at least one item" };
       }
-      for (const item of parsed) {
-        if (!item || typeof item.product_id !== "string" || !item.product_id) {
-          return { error: "Each item must have a valid product" };
-        }
+      const filtered = parsed.filter(
+        (item) =>
+          item && typeof item.product_id === "string" && item.product_id,
+      );
+      if (filtered.length === 0) {
+        return { error: "Purchase order must contain at least one item" };
+      }
+      for (const item of filtered) {
         if (
           !Number.isFinite(item.quantity) ||
           item.quantity <= 0 ||
@@ -159,7 +163,7 @@ export async function createPurchaseOrder(formData: FormData) {
           };
         }
       }
-      items = parsed as typeof items;
+      items = filtered as typeof items;
     } catch {
       return { error: "Invalid items data" };
     }

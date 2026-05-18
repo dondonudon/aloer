@@ -92,12 +92,14 @@ export function NewPurchaseOrderClient({ products, suppliers }: Props) {
     formData.set(
       "items",
       JSON.stringify(
-        items.map((item) => ({
-          product_id: item.product_id,
-          quantity: parseFloat(item.quantity),
-          cost_price: parseFloat(item.cost_price),
-          expiry_date: item.expiry_date || undefined,
-        })),
+        items
+          .filter((item) => item.product_id)
+          .map((item) => ({
+            product_id: item.product_id,
+            quantity: parseFloat(item.quantity),
+            cost_price: parseFloat(item.cost_price),
+            expiry_date: item.expiry_date || undefined,
+          })),
       ),
     );
 
