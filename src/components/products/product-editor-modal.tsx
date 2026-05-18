@@ -119,6 +119,10 @@ export function ProductEditorModal({
           name="name"
           required
           defaultValue={editing?.name}
+          onInput={(e) => {
+            const el = e.currentTarget as HTMLInputElement;
+            el.value = el.value.toUpperCase();
+          }}
         />
         <Input
           label={labels.sku}

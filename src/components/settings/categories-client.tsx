@@ -210,6 +210,10 @@ export function CategoriesClient({ categories }: CategoriesClientProps) {
             maxLength={50}
             defaultValue={editing?.name ?? ""}
             placeholder={t.settings.categoryPlaceholder}
+            onInput={(e) => {
+              const el = e.currentTarget as HTMLInputElement;
+              el.value = el.value.toUpperCase();
+            }}
           />
           {editing && (
             <Select
