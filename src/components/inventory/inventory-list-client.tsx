@@ -8,6 +8,7 @@ import { DataTable, type DataTableColumn } from "@/components/ui/data-table";
 import { Input } from "@/components/ui/input";
 import { Pagination } from "@/components/ui/pagination";
 import { useI18n } from "@/lib/i18n/context";
+import { withFromParam } from "@/lib/navigation";
 import { formatCurrency } from "@/lib/utils";
 
 interface StockItem {
@@ -252,7 +253,10 @@ export function InventoryListClient({
             cell: (item) =>
               item.id ? (
                 <Link
-                  href={`/inventory/${item.id}`}
+                  href={withFromParam(
+                    `/inventory/${item.id}`,
+                    buildHref(currentPage),
+                  )}
                   className="text-blue-600 hover:text-blue-700 text-sm font-medium"
                 >
                   {t.common.view}

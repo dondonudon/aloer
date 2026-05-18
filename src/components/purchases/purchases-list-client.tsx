@@ -13,6 +13,7 @@ import {
 import { Pagination } from "@/components/ui/pagination";
 import { exportCsv, exportXlsx } from "@/lib/export";
 import { useI18n } from "@/lib/i18n/context";
+import { withFromParam } from "@/lib/navigation";
 import { formatCurrency, formatDateTime } from "@/lib/utils";
 
 const statusColors: Record<string, string> = {
@@ -348,7 +349,7 @@ export function PurchasesListClient({
             align: "center",
             cell: (po) => (
               <Link
-                href={`/purchases/${po.id}`}
+                href={withFromParam(`/purchases/${po.id}`, buildHref(page))}
                 className="text-blue-600 hover:text-blue-700 text-sm font-medium"
               >
                 {t.purchases.view}

@@ -14,6 +14,7 @@ import { Pagination } from "@/components/ui/pagination";
 import { getSalesForExport } from "@/lib/actions/sales";
 import { exportCsv, exportXlsx } from "@/lib/export";
 import { useI18n } from "@/lib/i18n/context";
+import { withFromParam } from "@/lib/navigation";
 import type { Sale } from "@/lib/types";
 import { formatCurrency, formatDateTime } from "@/lib/utils";
 
@@ -398,7 +399,7 @@ export function SalesListClient({
             align: "center",
             cell: (s) => (
               <Link
-                href={`/sales/${s.id}`}
+                href={withFromParam(`/sales/${s.id}`, buildHref(page))}
                 className="text-blue-600 hover:text-blue-700 text-sm font-medium"
               >
                 {t.sales.view}

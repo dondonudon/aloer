@@ -10,10 +10,12 @@ import {
 } from "@/lib/actions/purchases";
 import { getSupplierPayments } from "@/lib/actions/supplier-payments";
 import { getServerTranslations } from "@/lib/i18n/server";
+import { resolveBackHref } from "@/lib/navigation";
 import { formatCurrency, formatDateTime } from "@/lib/utils";
 
 interface Props {
   params: Promise<{ id: string }>;
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
 }
 
 const statusColors: Record<string, string> = {
@@ -23,8 +25,12 @@ const statusColors: Record<string, string> = {
   voided: "bg-red-50 text-red-600",
 };
 
-export default async function PurchaseOrderDetailPage({ params }: Props) {
-  const { id } = await params;
+export default async function PurchaseOrderDetailPage({
+  params,
+  searchParams,
+}: Props) {
+  const [{ id }, sp] = await Promise.all([params, searchParams]);
+  const backHref = resolveBackHref(sp, "/purchases");
 
   // Run all queries concurrently.
   // getSupplierPayments returns [] for non-credit POs.
@@ -90,7 +96,7 @@ export default async function PurchaseOrderDetailPage({ params }: Props) {
     <div className="max-w-3xl space-y-6">
       <PageHeader
         title={po.po_number}
-        backHref="/purchases"
+        backHref={backHref}
         backLabel={t.purchases.title}
       >
         <span

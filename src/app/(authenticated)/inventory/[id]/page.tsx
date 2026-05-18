@@ -2,10 +2,12 @@ import { DataTable, type DataTableColumn } from "@/components/ui/data-table";
 import { PageHeader } from "@/components/ui/page-header";
 import { getInventoryBatches } from "@/lib/actions/inventory";
 import { getServerTranslations } from "@/lib/i18n/server";
+import { resolveBackHref } from "@/lib/navigation";
 import { formatCurrency, formatDate } from "@/lib/utils";
 
 interface InventoryDetailPageProps {
   params: Promise<{ id: string }>;
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
 }
 
 /**
@@ -13,12 +15,14 @@ interface InventoryDetailPageProps {
  */
 export default async function InventoryDetailPage({
   params,
+  searchParams,
 }: InventoryDetailPageProps) {
-  const { id } = await params;
-  const [batches, t] = await Promise.all([
-    getInventoryBatches(id),
+  const [sp, batches, t] = await Promise.all([
+    searchParams,
+    params.then(({ id }) => getInventoryBatches(id)),
     getServerTranslations(),
   ]);
+  const backHref = resolveBackHref(sp, "/inventory");
 
   const productName =
     (batches[0]?.products as { name: string; sku: string } | undefined)?.name ??
@@ -125,7 +129,7 @@ export default async function InventoryDetailPage({
     <div className="space-y-4">
       <PageHeader
         title={productName}
-        backHref="/inventory"
+        backHref={backHref}
         backLabel={t.inventory.title}
       >
         <p className="text-sm text-gray-500">

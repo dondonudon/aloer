@@ -7,10 +7,12 @@ import { PageHeader } from "@/components/ui/page-header";
 import { getSaleCreditPayments } from "@/lib/actions/credit";
 import { getSaleReturns, getSaleWithItems } from "@/lib/actions/sales";
 import { getServerTranslations } from "@/lib/i18n/server";
+import { resolveBackHref } from "@/lib/navigation";
 import { formatCurrency, formatDateTime } from "@/lib/utils";
 
 interface Props {
   params: Promise<{ id: string }>;
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
 }
 
 const statusColors: Record<string, string> = {
@@ -18,8 +20,9 @@ const statusColors: Record<string, string> = {
   voided: "bg-red-50 text-red-600",
 };
 
-export default async function SaleDetailPage({ params }: Props) {
-  const { id } = await params;
+export default async function SaleDetailPage({ params, searchParams }: Props) {
+  const [{ id }, sp] = await Promise.all([params, searchParams]);
+  const backHref = resolveBackHref(sp, "/sales");
 
   // Run all queries concurrently. getSaleWithItems resolves first internally
   // (it too parallelises sale + items). getSaleCreditPayments and getSaleReturns
@@ -106,7 +109,7 @@ export default async function SaleDetailPage({ params }: Props) {
     <div className="max-w-3xl space-y-6">
       <PageHeader
         title={sale.invoice_number}
-        backHref="/sales"
+        backHref={backHref}
         backLabel={t.sales.title}
       >
         <span
