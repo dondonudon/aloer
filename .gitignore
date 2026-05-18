@@ -45,3 +45,6 @@ playwright-report/
 
 # supabase
 supabase/.temp/
+
+# claude
+settings.local.json
