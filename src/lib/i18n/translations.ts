@@ -173,10 +173,8 @@ export interface Translations {
     arCustomers: string;
     apSuppliers: string;
     lowStockAlert: string;
-    /** "remaining" — prepended by quantity in JSX */
-    remaining: string;
-    /** "View all {count} low-stock items →" — {count} replaced at runtime */
-    viewAllLowStock: string;
+    outOfStockItems: string;
+    lowStockItems: string;
   };
 
   pos: {

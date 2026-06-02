@@ -342,22 +342,23 @@ async function DashboardLowStockAlert({
     stockReportPromise,
   ]);
 
-  const lowStockItems = Array.isArray(stockReport)
-    ? stockReport
-        .filter((item) => item.stock_on_hand <= 5)
-        .sort((a, b) => a.stock_on_hand - b.stock_on_hand)
-    : [];
+  const outOfStockCount = Array.isArray(stockReport)
+    ? stockReport.filter((item) => item.stock_on_hand === 0).length
+    : 0;
+  const lowStockCount = Array.isArray(stockReport)
+    ? stockReport.filter(
+        (item) => item.stock_on_hand > 0 && item.stock_on_hand <= 5,
+      ).length
+    : 0;
 
   return (
     <LowStockAlert
-      items={lowStockItems.slice(0, 5)}
-      totalCount={lowStockItems.length}
-      remainingLabel={t.dashboard.remaining}
+      outOfStockCount={outOfStockCount}
+      lowStockCount={lowStockCount}
       title={t.dashboard.lowStockAlert}
-      viewAllLabel={t.dashboard.viewAllLowStock.replace(
-        "{count}",
-        String(lowStockItems.length),
-      )}
+      outOfStockLabel={t.dashboard.outOfStockItems}
+      lowStockLabel={t.dashboard.lowStockItems}
+      viewAllLabel={t.dashboard.viewAll}
     />
   );
 }

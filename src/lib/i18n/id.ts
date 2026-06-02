@@ -146,8 +146,8 @@ export const id: Translations = {
     arCustomers: "AR — Pelanggan berhutang kepada Anda",
     apSuppliers: "AP — Anda berhutang kepada pemasok",
     lowStockAlert: "Peringatan Stok Rendah",
-    remaining: "tersisa",
-    viewAllLowStock: "Lihat semua {count} item stok rendah →",
+    outOfStockItems: "Habis",
+    lowStockItems: "Stok rendah (≤ 5)",
   },
 
   pos: {

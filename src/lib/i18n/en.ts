@@ -148,8 +148,8 @@ export const en: Translations = {
     arCustomers: "AR — Customers owe you",
     apSuppliers: "AP — You owe suppliers",
     lowStockAlert: "Low Stock Alert",
-    remaining: "remaining",
-    viewAllLowStock: "View all {count} low-stock items →",
+    outOfStockItems: "Out of stock",
+    lowStockItems: "Low stock (≤ 5)",
   },
 
   pos: {
