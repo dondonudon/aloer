@@ -31,7 +31,7 @@ function HeaderSkeleton() {
 
 function StatsSkeleton() {
   return (
-    <div className="grid grid-cols-1 gap-4 animate-pulse sm:grid-cols-2 lg:grid-cols-4">
+    <div className="grid grid-cols-1 gap-4 animate-pulse sm:grid-cols-2 xl:grid-cols-4">
       {(["a", "b", "c", "d"] as const).map((key) => (
         <div
           key={key}
@@ -143,7 +143,7 @@ async function DashboardStats({
   ];
 
   return (
-    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
       {stats.map((stat) => (
         <div
           key={stat.label}

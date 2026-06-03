@@ -46,9 +46,9 @@ async function AuthenticatedShell({
             storeIconUrl={storeSettings.store_icon_url}
             unreadNotifications={unreadNotifications}
           />
-          {/* pt-14 clears the fixed mobile top bar; removed on lg+ where the bar is hidden */}
-          <main className="flex-1 overflow-y-auto pt-14 lg:pt-0">
-            <div className="p-4 lg:p-8">{children}</div>
+          {/* pt-14 clears the fixed mobile top bar; removed on xl+ where the bar is hidden */}
+          <main className="flex-1 overflow-y-auto pt-14 xl:pt-0">
+            <div className="p-4 xl:p-8">{children}</div>
           </main>
         </StoreProvider>
       </AuthenticatedI18nProvider>
@@ -60,8 +60,8 @@ function ShellFallback() {
   return (
     <>
       <SidebarSkeleton />
-      <main className="flex-1 overflow-y-auto pt-14 lg:pt-0">
-        <div className="p-4 lg:p-8 space-y-4">
+      <main className="flex-1 overflow-y-auto pt-14 xl:pt-0">
+        <div className="p-4 xl:p-8 space-y-4">
           <div className="h-7 w-48 rounded bg-gray-200 dark:bg-gray-700 animate-pulse" />
           <div className="h-32 rounded-xl bg-gray-200 dark:bg-gray-700 animate-pulse" />
         </div>

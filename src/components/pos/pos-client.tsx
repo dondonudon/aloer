@@ -128,7 +128,7 @@ export function POSClient({
 
   return (
     <>
-      <div className="flex flex-col lg:flex-row gap-4 h-[calc(100vh-9.5rem)] lg:h-[calc(100vh-4rem)]">
+      <div className="flex flex-col xl:flex-row gap-4 h-[calc(100vh-9.5rem)] xl:h-[calc(100vh-4rem)]">
         <ProductGrid
           products={products}
           getCampaignForProduct={getCampaignForProduct}
@@ -139,7 +139,7 @@ export function POSClient({
 
         {/* Cart: inline panel on desktop, slide-in drawer on mobile */}
         <aside
-          className={`fixed inset-y-0 right-0 z-50 w-full max-w-sm transform shadow-2xl transition-transform duration-200 ease-out lg:relative lg:inset-auto lg:z-auto lg:w-96 lg:max-w-none lg:shrink-0 lg:translate-x-0 lg:shadow-none lg:transition-none ${
+          className={`fixed inset-y-0 right-0 z-50 w-full max-w-sm transform shadow-2xl transition-transform duration-200 ease-out xl:relative xl:inset-auto xl:z-auto xl:w-96 xl:max-w-none xl:shrink-0 xl:translate-x-0 xl:shadow-none xl:transition-none ${
             cartOpen ? "translate-x-0" : "translate-x-full"
           }`}
           aria-hidden={!cartOpen}
@@ -178,7 +178,7 @@ export function POSClient({
           <button
             type="button"
             aria-label={t.pos.cart}
-            className="fixed inset-0 z-40 bg-black/40 lg:hidden"
+            className="fixed inset-0 z-40 bg-black/40 xl:hidden"
             onClick={() => setCartOpen(false)}
           />
         )}
@@ -188,7 +188,7 @@ export function POSClient({
       <button
         type="button"
         onClick={() => setCartOpen(true)}
-        className="fixed inset-x-0 bottom-0 z-30 flex h-16 items-center justify-between gap-3 border-t border-blue-700/40 bg-blue-600 px-4 text-white shadow-lg active:bg-blue-700 lg:hidden"
+        className="fixed inset-x-0 bottom-0 z-30 flex h-16 items-center justify-between gap-3 border-t border-blue-700/40 bg-blue-600 px-4 text-white shadow-lg active:bg-blue-700 xl:hidden"
         aria-label={`${t.pos.cart} (${cart.length})`}
       >
         <span className="flex items-center gap-3 font-medium">

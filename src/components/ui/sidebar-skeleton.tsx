@@ -6,14 +6,14 @@
 export function SidebarSkeleton() {
   return (
     <>
-      <header className="lg:hidden fixed top-0 inset-x-0 z-30 h-14 flex items-center gap-3 px-4 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 shadow-sm pointer-events-none">
+      <header className="xl:hidden fixed top-0 inset-x-0 z-30 h-14 flex items-center gap-3 px-4 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 shadow-sm pointer-events-none">
         <div className="h-9 w-9 rounded-lg bg-gray-200 dark:bg-gray-700 animate-pulse" />
         <div className="h-7 w-7 rounded-md bg-gray-200 dark:bg-gray-700 animate-pulse" />
         <div className="h-4 w-32 rounded bg-gray-200 dark:bg-gray-700 animate-pulse" />
       </header>
 
       <aside
-        className="hidden lg:flex lg:flex-col lg:w-64 lg:border-r lg:border-gray-200 dark:lg:border-gray-700 bg-white dark:bg-gray-800 overflow-hidden"
+        className="hidden xl:flex xl:flex-col xl:w-64 xl:border-r xl:border-gray-200 dark:xl:border-gray-700 bg-white dark:bg-gray-800 overflow-hidden"
         aria-hidden="true"
       >
         <div className="p-3 border-b border-gray-200 dark:border-gray-700">

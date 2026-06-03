@@ -236,7 +236,7 @@ export function Sidebar({
           <button
             type="button"
             onClick={() => setMinimized((v) => !v)}
-            className="hidden lg:flex shrink-0 p-1.5 rounded-md text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+            className="hidden xl:flex shrink-0 p-1.5 rounded-md text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
             aria-label={collapsed ? t.nav.expandSidebar : t.nav.collapseSidebar}
           >
             {collapsed ? (
@@ -308,7 +308,7 @@ export function Sidebar({
 
   return (
     <>
-      <header className="lg:hidden fixed top-0 inset-x-0 z-30 h-14 flex items-center gap-3 px-4 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 shadow-sm">
+      <header className="xl:hidden fixed top-0 inset-x-0 z-30 h-14 flex items-center gap-3 px-4 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 shadow-sm">
         <button
           type="button"
           onClick={() => setMobileOpen(!mobileOpen)}
@@ -342,14 +342,14 @@ export function Sidebar({
         <button
           type="button"
           aria-label="Close menu"
-          className="lg:hidden fixed inset-0 z-40 bg-black/30"
+          className="xl:hidden fixed inset-0 z-40 bg-black/30"
           onClick={closeMobileDrawer}
         />
       )}
 
       <aside
         id="mobile-sidebar"
-        className={`lg:hidden fixed top-14 bottom-0 left-0 z-40 w-64 bg-white dark:bg-gray-800 shadow-lg transform transition-transform ${
+        className={`xl:hidden fixed top-14 bottom-0 left-0 z-40 w-64 bg-white dark:bg-gray-800 shadow-lg transform transition-transform ${
           mobileOpen ? "translate-x-0" : "-translate-x-full"
         }`}
         aria-label="Sidebar"
@@ -358,8 +358,8 @@ export function Sidebar({
       </aside>
 
       <aside
-        className={`hidden lg:flex lg:flex-col lg:border-r lg:border-gray-200 dark:lg:border-gray-700 bg-white dark:bg-gray-800 transition-all duration-200 overflow-hidden ${
-          minimized ? "lg:w-14" : "lg:w-64"
+        className={`hidden xl:flex xl:flex-col xl:border-r xl:border-gray-200 dark:xl:border-gray-700 bg-white dark:bg-gray-800 transition-all duration-200 overflow-hidden ${
+          minimized ? "xl:w-14" : "xl:w-64"
         }`}
         aria-label="Sidebar"
       >

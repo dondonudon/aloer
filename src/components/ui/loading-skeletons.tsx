@@ -126,7 +126,7 @@ export function DashboardLoadingSkeleton() {
         <SkeletonBlock className="h-4 w-56 rounded bg-gray-200 dark:bg-gray-700" />
       </div>
 
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
         {createSkeletonKeys("stat", 4).map((key) => (
           <SkeletonCard key={key} className="h-20 p-5">
             <div className="h-4 w-1/2 rounded bg-gray-200 dark:bg-gray-700 mb-2" />
@@ -145,7 +145,7 @@ export function DashboardLoadingSkeleton() {
 export function PosLoadingSkeleton() {
   return (
     <LoadingShell
-      className="flex h-[calc(100vh-6rem)] flex-col gap-4 lg:flex-row"
+      className="flex h-[calc(100vh-6rem)] flex-col gap-4 xl:flex-row"
       label="Loading POS…"
     >
       <div className="flex min-h-0 flex-1 flex-col">
@@ -153,13 +153,13 @@ export function PosLoadingSkeleton() {
           <SkeletonBlock className="h-8 w-40 rounded bg-gray-200 dark:bg-gray-700" />
           <SkeletonBlock className="h-10 w-full rounded-lg bg-gray-100 dark:bg-gray-800" />
         </div>
-        <div className="grid flex-1 grid-cols-2 gap-3 overflow-hidden sm:grid-cols-3 md:grid-cols-4">
+        <div className="grid flex-1 grid-cols-2 gap-3 overflow-hidden sm:grid-cols-3 xl:grid-cols-4">
           {createSkeletonKeys("product", 12).map((key) => (
             <SkeletonCard key={key} className="h-24" />
           ))}
         </div>
       </div>
-      <SkeletonCard className="h-64 w-full lg:h-auto lg:w-96" />
+      <SkeletonCard className="h-64 w-full xl:h-auto xl:w-96" />
     </LoadingShell>
   );
 }

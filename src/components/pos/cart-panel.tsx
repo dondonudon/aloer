@@ -167,7 +167,7 @@ export function CartPanel({
     splitRemaining === 0 && (splitCash > 0 || splitTransfer > 0);
 
   return (
-    <div className="flex h-full w-full flex-col overflow-y-auto border-l border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800 lg:overflow-hidden lg:rounded-xl lg:border">
+    <div className="flex h-full w-full flex-col overflow-y-auto border-l border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800 xl:overflow-hidden xl:rounded-xl xl:border">
       <div className="flex items-center justify-between gap-2 border-b border-gray-200 p-4 dark:border-gray-700">
         <div className="flex min-w-0 items-center gap-2">
           <ShoppingCart
@@ -182,7 +182,7 @@ export function CartPanel({
           <button
             type="button"
             onClick={onClose}
-            className="-mr-1 rounded p-1 text-gray-500 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-700 lg:hidden"
+            className="-mr-1 rounded p-1 text-gray-500 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-700 xl:hidden"
             aria-label="Close cart"
           >
             <X className="h-5 w-5" aria-hidden="true" />
@@ -216,7 +216,7 @@ export function CartPanel({
         </div>
       )}
 
-      <div className="space-y-3 p-4 lg:min-h-0 lg:flex-1 lg:overflow-y-auto">
+      <div className="space-y-3 p-4 xl:min-h-0 xl:flex-1 xl:overflow-y-auto">
         {cart.length === 0 && (
           <p className="text-center text-gray-400 py-8 text-sm">
             {t.pos.cartEmpty}
