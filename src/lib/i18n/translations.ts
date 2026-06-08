@@ -200,6 +200,7 @@ export interface Translations {
     closeReceipt: string;
     thankYou: string;
     print: string;
+    downloadPdf: string;
     done: string;
     payment: string;
     checkoutConfirmTitle: string;

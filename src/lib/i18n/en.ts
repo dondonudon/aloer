@@ -174,6 +174,7 @@ export const en: Translations = {
     closeReceipt: "Close receipt",
     thankYou: "Thank you for your purchase!",
     print: "Print",
+    downloadPdf: "Download PDF",
     done: "Done",
     payment: "Payment",
     checkoutConfirmTitle: "Confirm Checkout",

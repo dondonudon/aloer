@@ -1,6 +1,6 @@
 "use client";
 
-import { Printer, X } from "lucide-react";
+import { Download, Printer, X } from "lucide-react";
 import Image from "next/image";
 import { useRef } from "react";
 import { Button } from "@/components/ui/button";
@@ -158,6 +158,172 @@ export function ReceiptModal({
     printWindow.close();
   }
 
+  async function handleDownloadPdf() {
+    const { jsPDF } = await import("jspdf");
+
+    const pageWidth = 80;
+    const margin = 4;
+
+    const padLine = (left: string, right: string, width = 36) => {
+      const gap = width - left.length - right.length;
+      return `${left}${" ".repeat(Math.max(1, gap))}${right}`;
+    };
+
+    const SEP_DOUBLE = "================================";
+    const SEP_SINGLE = "--------------------------------";
+
+    const totalPaid = receipt.isCreditSale
+      ? 0
+      : receipt.payments.reduce((sum, p) => sum + p.amount, 0);
+    const change = totalPaid > receipt.total ? totalPaid - receipt.total : 0;
+
+    // Estimate page height
+    const lineH = 4.5;
+    const itemCount = receipt.items.length;
+    const paymentCount = receipt.isCreditSale
+      ? 1
+      : receipt.payments.length + (change > 0 ? 1 : 0);
+    const discountLines =
+      (receipt.campaignSavings ? 1 : 0) +
+      (receipt.cartCampaignDiscount ? 1 : 0) +
+      (receipt.discount ? 2 : 0);
+    const estimatedHeight =
+      40 +
+      itemCount * lineH * 2 +
+      discountLines * lineH +
+      paymentCount * lineH +
+      20;
+
+    const doc = new jsPDF({
+      unit: "mm",
+      format: [pageWidth, Math.max(estimatedHeight, 100)],
+      orientation: "portrait",
+    });
+
+    doc.setFont("courier", "normal");
+    doc.setFontSize(9);
+
+    let y = margin + 4;
+
+    const centerText = (text: string, yPos: number) => {
+      const textWidth = doc.getTextWidth(text);
+      doc.text(text, (pageWidth - textWidth) / 2, yPos);
+      return yPos + lineH;
+    };
+
+    // Header
+    doc.setFont("courier", "bold");
+    doc.setFontSize(12);
+    y = centerText(storeName, y);
+
+    doc.setFont("courier", "normal");
+    doc.setFontSize(9);
+    y = centerText(formatDateTime(receipt.createdAt), y);
+    y = centerText(receipt.invoiceNumber, y);
+
+    doc.text(SEP_DOUBLE, margin, y);
+    y += lineH;
+
+    // Items
+    for (const item of receipt.items) {
+      const lines = doc.splitTextToSize(item.name, pageWidth - margin * 2);
+      doc.text(lines, margin, y);
+      y += lines.length * lineH;
+      const priceLabel =
+        item.originalPrice > item.price
+          ? `${item.quantity} x ${formatCurrency(item.price)} [SALE]`
+          : `${item.quantity} x ${formatCurrency(item.price)}`;
+      doc.text(padLine(priceLabel, formatCurrency(item.subtotal)), margin, y);
+      y += lineH + 1;
+    }
+
+    doc.text(SEP_SINGLE, margin, y);
+    y += lineH;
+
+    // Discounts
+    if (receipt.campaignSavings) {
+      doc.text(
+        padLine(
+          t.pos.campaignSavings,
+          `- ${formatCurrency(receipt.campaignSavings)}`,
+        ),
+        margin,
+        y,
+      );
+      y += lineH;
+    }
+    if (receipt.cartCampaignDiscount) {
+      doc.text(
+        padLine(
+          t.pos.cartCampaign,
+          `- ${formatCurrency(receipt.cartCampaignDiscount)}`,
+        ),
+        margin,
+        y,
+      );
+      y += lineH;
+    }
+    if (receipt.discount) {
+      doc.text(
+        padLine(t.pos.subtotal, formatCurrency(receipt.subtotal)),
+        margin,
+        y,
+      );
+      y += lineH;
+      doc.text(
+        padLine(
+          `Disc (${receipt.discount.label})`,
+          `- ${formatCurrency(receipt.discount.amount)}`,
+        ),
+        margin,
+        y,
+      );
+      y += lineH;
+    }
+
+    doc.text(SEP_DOUBLE, margin, y);
+    y += lineH;
+
+    // Total
+    doc.setFont("courier", "bold");
+    doc.setFontSize(11);
+    doc.text(padLine(t.pos.total, formatCurrency(receipt.total)), margin, y);
+    y += lineH + 1;
+
+    doc.setFont("courier", "normal");
+    doc.setFontSize(9);
+    doc.text(SEP_SINGLE, margin, y);
+    y += lineH;
+
+    // Payments
+    if (receipt.isCreditSale) {
+      doc.text(padLine(t.pos.payment, t.common.credit), margin, y);
+      y += lineH;
+    } else {
+      for (const p of receipt.payments) {
+        doc.text(
+          padLine(
+            p.method.charAt(0).toUpperCase() + p.method.slice(1),
+            formatCurrency(p.amount),
+          ),
+          margin,
+          y,
+        );
+        y += lineH;
+      }
+      if (change > 0) {
+        doc.text(padLine("Change", formatCurrency(change)), margin, y);
+        y += lineH;
+      }
+    }
+
+    doc.text(SEP_DOUBLE, margin, y);
+    y += lineH;
+    y = centerText(t.pos.thankYou, y);
+
+    doc.save(`receipt-${receipt.invoiceNumber}.pdf`);
+  }
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30">
       <div className="bg-white dark:bg-gray-800 rounded-xl shadow-xl w-full max-w-sm mx-4">
@@ -309,6 +475,15 @@ export function ReceiptModal({
           >
             <Printer className="h-4 w-4" aria-hidden="true" />
             {t.pos.print}
+          </Button>
+          <Button
+            type="button"
+            variant="secondary"
+            className="flex-1 flex items-center justify-center gap-2"
+            onClick={handleDownloadPdf}
+          >
+            <Download className="h-4 w-4" aria-hidden="true" />
+            {t.pos.downloadPdf}
           </Button>
           <Button type="button" className="flex-1" onClick={onClose}>
             {t.pos.done}

@@ -172,6 +172,7 @@ export const id: Translations = {
     closeReceipt: "Tutup struk",
     thankYou: "Terima kasih atas pembelian Anda!",
     print: "Cetak",
+    downloadPdf: "Unduh PDF",
     done: "Selesai",
     payment: "Pembayaran",
     checkoutConfirmTitle: "Konfirmasi Pembayaran",
