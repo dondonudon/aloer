@@ -163,11 +163,7 @@ export function ReceiptModal({
 
     const pageWidth = 80;
     const margin = 4;
-
-    const padLine = (left: string, right: string, width = 36) => {
-      const gap = width - left.length - right.length;
-      return `${left}${" ".repeat(Math.max(1, gap))}${right}`;
-    };
+    const rightX = pageWidth - margin;
 
     const SEP_DOUBLE = "================================";
     const SEP_SINGLE = "--------------------------------";
@@ -177,7 +173,6 @@ export function ReceiptModal({
       : receipt.payments.reduce((sum, p) => sum + p.amount, 0);
     const change = totalPaid > receipt.total ? totalPaid - receipt.total : 0;
 
-    // Estimate page height
     const lineH = 4.5;
     const itemCount = receipt.items.length;
     const paymentCount = receipt.isCreditSale
@@ -206,9 +201,14 @@ export function ReceiptModal({
     let y = margin + 4;
 
     const centerText = (text: string, yPos: number) => {
-      const textWidth = doc.getTextWidth(text);
-      doc.text(text, (pageWidth - textWidth) / 2, yPos);
+      doc.text(text, pageWidth / 2, yPos, { align: "center" });
       return yPos + lineH;
+    };
+
+    const rowLine = (left: string, right: string) => {
+      doc.text(left, margin, y);
+      doc.text(right, rightX, y, { align: "right" });
+      y += lineH;
     };
 
     // Header
@@ -233,8 +233,8 @@ export function ReceiptModal({
         item.originalPrice > item.price
           ? `${item.quantity} x ${formatCurrency(item.price)} [SALE]`
           : `${item.quantity} x ${formatCurrency(item.price)}`;
-      doc.text(padLine(priceLabel, formatCurrency(item.subtotal)), margin, y);
-      y += lineH + 1;
+      rowLine(priceLabel, formatCurrency(item.subtotal));
+      y += 1;
     }
 
     doc.text(SEP_SINGLE, margin, y);
@@ -242,52 +242,33 @@ export function ReceiptModal({
 
     // Discounts
     if (receipt.campaignSavings) {
-      doc.text(
-        padLine(
-          t.pos.campaignSavings,
-          `- ${formatCurrency(receipt.campaignSavings)}`,
-        ),
-        margin,
-        y,
+      rowLine(
+        t.pos.campaignSavings,
+        `- ${formatCurrency(receipt.campaignSavings)}`,
       );
-      y += lineH;
     }
     if (receipt.cartCampaignDiscount) {
-      doc.text(
-        padLine(
-          t.pos.cartCampaign,
-          `- ${formatCurrency(receipt.cartCampaignDiscount)}`,
-        ),
-        margin,
-        y,
+      rowLine(
+        t.pos.cartCampaign,
+        `- ${formatCurrency(receipt.cartCampaignDiscount)}`,
       );
-      y += lineH;
     }
     if (receipt.discount) {
-      doc.text(
-        padLine(t.pos.subtotal, formatCurrency(receipt.subtotal)),
-        margin,
-        y,
+      rowLine(t.pos.subtotal, formatCurrency(receipt.subtotal));
+      rowLine(
+        `Disc (${receipt.discount.label})`,
+        `- ${formatCurrency(receipt.discount.amount)}`,
       );
-      y += lineH;
-      doc.text(
-        padLine(
-          `Disc (${receipt.discount.label})`,
-          `- ${formatCurrency(receipt.discount.amount)}`,
-        ),
-        margin,
-        y,
-      );
-      y += lineH;
     }
 
     doc.text(SEP_DOUBLE, margin, y);
     y += lineH;
 
-    // Total
+    // Total — larger bold font, still using coordinate-based alignment
     doc.setFont("courier", "bold");
     doc.setFontSize(11);
-    doc.text(padLine(t.pos.total, formatCurrency(receipt.total)), margin, y);
+    doc.text(t.pos.total, margin, y);
+    doc.text(formatCurrency(receipt.total), rightX, y, { align: "right" });
     y += lineH + 1;
 
     doc.setFont("courier", "normal");
@@ -297,29 +278,22 @@ export function ReceiptModal({
 
     // Payments
     if (receipt.isCreditSale) {
-      doc.text(padLine(t.pos.payment, t.common.credit), margin, y);
-      y += lineH;
+      rowLine(t.pos.payment, t.common.credit);
     } else {
       for (const p of receipt.payments) {
-        doc.text(
-          padLine(
-            p.method.charAt(0).toUpperCase() + p.method.slice(1),
-            formatCurrency(p.amount),
-          ),
-          margin,
-          y,
+        rowLine(
+          p.method.charAt(0).toUpperCase() + p.method.slice(1),
+          formatCurrency(p.amount),
         );
-        y += lineH;
       }
       if (change > 0) {
-        doc.text(padLine("Change", formatCurrency(change)), margin, y);
-        y += lineH;
+        rowLine("Change", formatCurrency(change));
       }
     }
 
     doc.text(SEP_DOUBLE, margin, y);
     y += lineH;
-    y = centerText(t.pos.thankYou, y);
+    centerText(t.pos.thankYou, y);
 
     doc.save(`receipt-${receipt.invoiceNumber}.pdf`);
   }
