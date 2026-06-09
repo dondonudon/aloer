@@ -38,20 +38,22 @@ self.addEventListener("push", (event) => {
 
 self.addEventListener("notificationclick", (event) => {
   event.notification.close();
-  const targetUrl = (event.notification.data && event.notification.data.url) || "/dashboard";
+  const targetUrl = event.notification.data?.url || "/dashboard";
 
   event.waitUntil(
-    self.clients.matchAll({ type: "window", includeUncontrolled: true }).then((windows) => {
-      for (const client of windows) {
-        const url = new URL(client.url);
-        if (url.origin === self.location.origin && "focus" in client) {
-          client.navigate(targetUrl).catch(() => {});
-          return client.focus();
+    self.clients
+      .matchAll({ type: "window", includeUncontrolled: true })
+      .then((windows) => {
+        for (const client of windows) {
+          const url = new URL(client.url);
+          if (url.origin === self.location.origin && "focus" in client) {
+            client.navigate(targetUrl).catch(() => {});
+            return client.focus();
+          }
         }
-      }
-      if (self.clients.openWindow) {
-        return self.clients.openWindow(targetUrl);
-      }
-    }),
+        if (self.clients.openWindow) {
+          return self.clients.openWindow(targetUrl);
+        }
+      }),
   );
 });

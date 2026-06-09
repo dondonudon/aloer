@@ -1,12 +1,15 @@
 "use client";
 
-import { Download, Printer, X } from "lucide-react";
+import { Download, FileImage, FileText, Printer, X } from "lucide-react";
 import Image from "next/image";
-import { useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { useI18n } from "@/lib/i18n/context";
 import type { SalePaymentInput } from "@/lib/types";
 import { formatCurrency, formatDateTime } from "@/lib/utils";
+
+const MONO = (size: number, bold = false) =>
+  `${bold ? "bold " : ""}${size}px "Courier New",Courier,monospace`;
 
 interface ReceiptItem {
   name: string;
@@ -48,6 +51,23 @@ export function ReceiptModal({
 }: ReceiptModalProps) {
   const { t } = useI18n();
   const receiptRef = useRef<HTMLDivElement>(null);
+  const [showDownloadMenu, setShowDownloadMenu] = useState(false);
+  const downloadMenuRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    function handleClickOutside(e: MouseEvent) {
+      if (
+        downloadMenuRef.current &&
+        !downloadMenuRef.current.contains(e.target as Node)
+      ) {
+        setShowDownloadMenu(false);
+      }
+    }
+    if (showDownloadMenu) {
+      document.addEventListener("mousedown", handleClickOutside);
+    }
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [showDownloadMenu]);
 
   function handlePrint() {
     const content = receiptRef.current;
@@ -161,12 +181,28 @@ export function ReceiptModal({
   async function handleDownloadPdf() {
     const { jsPDF } = await import("jspdf");
 
+    // Load logo as data URL so jsPDF can embed it
+    let logoDataUrl: string | null = null;
+    if (storeLogoUrl) {
+      const img = new window.Image();
+      img.crossOrigin = "anonymous";
+      await new Promise<void>((res) => {
+        img.onload = () => res();
+        img.onerror = () => res();
+        img.src = storeLogoUrl;
+      });
+      if (img.naturalWidth > 0) {
+        const tmp = document.createElement("canvas");
+        tmp.width = img.naturalWidth;
+        tmp.height = img.naturalHeight;
+        tmp.getContext("2d")?.drawImage(img, 0, 0);
+        logoDataUrl = tmp.toDataURL("image/png");
+      }
+    }
+
     const pageWidth = 80;
     const margin = 4;
     const rightX = pageWidth - margin;
-
-    const SEP_DOUBLE = "================================";
-    const SEP_SINGLE = "--------------------------------";
 
     const totalPaid = receipt.isCreditSale
       ? 0
@@ -174,6 +210,7 @@ export function ReceiptModal({
     const change = totalPaid > receipt.total ? totalPaid - receipt.total : 0;
 
     const lineH = 4.5;
+    const sepH = 5; // height consumed by a separator (gap + line + gap)
     const itemCount = receipt.items.length;
     const paymentCount = receipt.isCreditSale
       ? 1
@@ -187,6 +224,7 @@ export function ReceiptModal({
       itemCount * lineH * 2 +
       discountLines * lineH +
       paymentCount * lineH +
+      sepH * 5 +
       20;
 
     const doc = new jsPDF({
@@ -199,6 +237,16 @@ export function ReceiptModal({
     doc.setFontSize(9);
 
     let y = margin + 4;
+
+    const sep = () => {
+      y += 1.5;
+      doc.setDrawColor(0);
+      doc.setLineWidth(0.2);
+      doc.setLineDashPattern([1, 1], 0);
+      doc.line(margin, y, rightX, y);
+      doc.setLineDashPattern([], 0);
+      y += 5;
+    };
 
     const centerText = (text: string, yPos: number) => {
       doc.text(text, pageWidth / 2, yPos, { align: "center" });
@@ -214,15 +262,24 @@ export function ReceiptModal({
     // Header
     doc.setFont("courier", "bold");
     doc.setFontSize(12);
-    y = centerText(storeName, y);
+    if (logoDataUrl) {
+      const logoMm = 10;
+      const gap = 2;
+      const textW = doc.getTextWidth(storeName);
+      const startX = (pageWidth - logoMm - gap - textW) / 2;
+      doc.addImage(logoDataUrl, "PNG", startX, y - logoMm + 2, logoMm, logoMm);
+      doc.text(storeName, startX + logoMm + gap, y);
+      y += lineH + 2;
+    } else {
+      y = centerText(storeName, y);
+    }
 
     doc.setFont("courier", "normal");
     doc.setFontSize(9);
     y = centerText(formatDateTime(receipt.createdAt), y);
     y = centerText(receipt.invoiceNumber, y);
 
-    doc.text(SEP_DOUBLE, margin, y);
-    y += lineH;
+    sep();
 
     // Items
     for (const item of receipt.items) {
@@ -237,8 +294,7 @@ export function ReceiptModal({
       y += 1;
     }
 
-    doc.text(SEP_SINGLE, margin, y);
-    y += lineH;
+    sep();
 
     // Discounts
     if (receipt.campaignSavings) {
@@ -261,10 +317,9 @@ export function ReceiptModal({
       );
     }
 
-    doc.text(SEP_DOUBLE, margin, y);
-    y += lineH;
+    sep();
 
-    // Total — larger bold font, still using coordinate-based alignment
+    // Total
     doc.setFont("courier", "bold");
     doc.setFontSize(11);
     doc.text(t.pos.total, margin, y);
@@ -273,8 +328,8 @@ export function ReceiptModal({
 
     doc.setFont("courier", "normal");
     doc.setFontSize(9);
-    doc.text(SEP_SINGLE, margin, y);
-    y += lineH;
+
+    sep();
 
     // Payments
     if (receipt.isCreditSale) {
@@ -286,16 +341,225 @@ export function ReceiptModal({
           formatCurrency(p.amount),
         );
       }
-      if (change > 0) {
-        rowLine("Change", formatCurrency(change));
-      }
+      if (change > 0) rowLine("Change", formatCurrency(change));
     }
 
-    doc.text(SEP_DOUBLE, margin, y);
-    y += lineH;
+    sep();
+
     centerText(t.pos.thankYou, y);
 
     doc.save(`receipt-${receipt.invoiceNumber}.pdf`);
+    setShowDownloadMenu(false);
+  }
+
+  async function handleDownloadJpg() {
+    const DPR = 2;
+    const W = 320;
+    const PAD = 14;
+    const LH = 18;
+    const RIGHT = W - PAD;
+
+    const totalPaid = receipt.isCreditSale
+      ? 0
+      : receipt.payments.reduce((sum, p) => sum + p.amount, 0);
+    const change = totalPaid > receipt.total ? totalPaid - receipt.total : 0;
+
+    // Load logo ahead of drawing
+    let logoImg: HTMLImageElement | null = null;
+    if (storeLogoUrl) {
+      const img = new window.Image();
+      img.crossOrigin = "anonymous";
+      await new Promise<void>((res) => {
+        img.onload = () => res();
+        img.onerror = () => res();
+        img.src = storeLogoUrl;
+      });
+      if (img.naturalWidth > 0) logoImg = img;
+    }
+
+    // Allocate a tall canvas; we'll crop it at the end
+    const canvas = document.createElement("canvas");
+    canvas.width = W * DPR;
+    canvas.height = 1200 * DPR;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+    ctx.scale(DPR, DPR);
+    ctx.fillStyle = "#fff";
+    ctx.fillRect(0, 0, W, 1200);
+
+    let y = PAD;
+
+    const textLeft = (text: string, yPos: number) => {
+      ctx.textAlign = "left";
+      ctx.fillText(text, PAD, yPos);
+    };
+    const textRight = (text: string, yPos: number) => {
+      ctx.textAlign = "right";
+      ctx.fillText(text, RIGHT, yPos);
+    };
+    const textCenter = (text: string, yPos: number) => {
+      ctx.textAlign = "center";
+      ctx.fillText(text, W / 2, yPos);
+    };
+    const row = (left: string, right: string) => {
+      ctx.textAlign = "left";
+      ctx.fillText(left, PAD, y);
+      ctx.textAlign = "right";
+      ctx.fillText(right, RIGHT, y);
+      y += LH;
+    };
+
+    const sep = () => {
+      y += 6;
+      ctx.save();
+      ctx.strokeStyle = "#000";
+      ctx.lineWidth = 0.5;
+      ctx.setLineDash([4, 4]);
+      ctx.beginPath();
+      ctx.moveTo(PAD, y);
+      ctx.lineTo(RIGHT, y);
+      ctx.stroke();
+      ctx.restore();
+      y += 16;
+    };
+
+    // Header
+    ctx.font = MONO(15, true);
+    ctx.fillStyle = "#000";
+    if (logoImg) {
+      const logoSize = 36;
+      const gap = 8;
+      const textW = ctx.measureText(storeName).width;
+      const totalW = logoSize + gap + textW;
+      const startX = (W - totalW) / 2;
+      ctx.drawImage(logoImg, startX, y, logoSize, logoSize);
+      // vertically center text against the logo
+      ctx.textAlign = "left";
+      ctx.fillText(storeName, startX + logoSize + gap, y + logoSize / 2 + 6);
+      y += logoSize + 8;
+    } else {
+      textCenter(storeName, y);
+      y += LH + 2;
+    }
+
+    ctx.font = MONO(11);
+    ctx.fillStyle = "#555";
+    textCenter(formatDateTime(receipt.createdAt), y);
+    y += LH;
+    ctx.fillStyle = "#000";
+    textCenter(receipt.invoiceNumber, y);
+    y += LH + 2;
+
+    ctx.font = MONO(12);
+    sep();
+
+    // Items
+    for (const item of receipt.items) {
+      // Word-wrap item name
+      const maxW = W - PAD * 2;
+      const words = item.name.split(" ");
+      let line = "";
+      for (const word of words) {
+        const test = line ? `${line} ${word}` : word;
+        if (ctx.measureText(test).width > maxW && line) {
+          textLeft(line, y);
+          y += LH;
+          line = word;
+        } else {
+          line = test;
+        }
+      }
+      if (line) {
+        textLeft(line, y);
+        y += LH;
+      }
+
+      ctx.fillStyle = "#555";
+      const priceLabel =
+        item.originalPrice > item.price
+          ? `${item.quantity} x ${formatCurrency(item.price)} [SALE]`
+          : `${item.quantity} x ${formatCurrency(item.price)}`;
+      ctx.textAlign = "left";
+      ctx.fillText(priceLabel, PAD, y);
+      ctx.fillStyle = "#000";
+      textRight(formatCurrency(item.subtotal), y);
+      y += LH + 2;
+    }
+
+    sep();
+
+    // Discounts
+    if (receipt.campaignSavings) {
+      row(
+        t.pos.campaignSavings,
+        `- ${formatCurrency(receipt.campaignSavings)}`,
+      );
+    }
+    if (receipt.cartCampaignDiscount) {
+      row(
+        t.pos.cartCampaign,
+        `- ${formatCurrency(receipt.cartCampaignDiscount)}`,
+      );
+    }
+    if (receipt.discount) {
+      row(t.pos.subtotal, formatCurrency(receipt.subtotal));
+      row(
+        `Disc (${receipt.discount.label})`,
+        `- ${formatCurrency(receipt.discount.amount)}`,
+      );
+    }
+
+    sep();
+
+    // Total
+    ctx.font = MONO(14, true);
+    row(t.pos.total, formatCurrency(receipt.total));
+
+    ctx.font = MONO(12);
+    sep();
+
+    // Payments
+    if (receipt.isCreditSale) {
+      row(t.pos.payment, t.common.credit);
+    } else {
+      for (const p of receipt.payments) {
+        row(
+          p.method.charAt(0).toUpperCase() + p.method.slice(1),
+          formatCurrency(p.amount),
+        );
+      }
+      if (change > 0) row("Change", formatCurrency(change));
+    }
+
+    sep();
+
+    ctx.font = MONO(11);
+    ctx.fillStyle = "#555";
+    textCenter(t.pos.thankYou, y);
+    y += LH + PAD;
+
+    // Crop to actual content height
+    const out = document.createElement("canvas");
+    out.width = W * DPR;
+    out.height = y * DPR;
+    out
+      .getContext("2d")
+      ?.drawImage(canvas, 0, 0, W * DPR, y * DPR, 0, 0, W * DPR, y * DPR);
+
+    out.toBlob(
+      (blob) => {
+        if (!blob) return;
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = `receipt-${receipt.invoiceNumber}.jpg`;
+        a.click();
+        URL.revokeObjectURL(url);
+      },
+      "image/jpeg",
+      0.92,
+    );
+    setShowDownloadMenu(false);
   }
 
   return (
@@ -450,15 +714,43 @@ export function ReceiptModal({
             <Printer className="h-4 w-4" aria-hidden="true" />
             {t.pos.print}
           </Button>
-          <Button
-            type="button"
-            variant="secondary"
-            className="flex-1 flex items-center justify-center gap-2"
-            onClick={handleDownloadPdf}
-          >
-            <Download className="h-4 w-4" aria-hidden="true" />
-            {t.pos.downloadPdf}
-          </Button>
+          <div className="relative" ref={downloadMenuRef}>
+            <Button
+              type="button"
+              variant="secondary"
+              className="flex items-center justify-center px-3"
+              onClick={() => setShowDownloadMenu((v) => !v)}
+              aria-label={t.pos.downloadPdf}
+            >
+              <Download className="h-4 w-4" aria-hidden="true" />
+            </Button>
+            {showDownloadMenu && (
+              <div className="absolute bottom-full mb-1 right-0 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg overflow-hidden z-10 min-w-32.5">
+                <button
+                  type="button"
+                  className="w-full flex items-center gap-2 px-3 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                  onClick={handleDownloadPdf}
+                >
+                  <FileText
+                    className="h-4 w-4 text-gray-500"
+                    aria-hidden="true"
+                  />
+                  PDF
+                </button>
+                <button
+                  type="button"
+                  className="w-full flex items-center gap-2 px-3 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                  onClick={handleDownloadJpg}
+                >
+                  <FileImage
+                    className="h-4 w-4 text-gray-500"
+                    aria-hidden="true"
+                  />
+                  JPG
+                </button>
+              </div>
+            )}
+          </div>
           <Button type="button" className="flex-1" onClick={onClose}>
             {t.pos.done}
           </Button>
